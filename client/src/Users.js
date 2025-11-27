@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { userAPI } from '../api';
+import { userAPI } from './api';
 import './Users.css';
 
 function Users() {
