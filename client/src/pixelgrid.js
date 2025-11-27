@@ -52,7 +52,7 @@ export default function PixelGrid() {
 
   function handleSwatchClick(idx) {
     setSelectedIndex(idx);
-    setColor(swatches[idx] || "#000000");
+    setColor(swatches[idx] || "#ffffff");
   }
 
   function saveToHTML() {
