@@ -11,7 +11,6 @@
 
 .nav-buttons {
   display: grid;
-  gap: 10px;
 }
 
 .nav-buttons button {

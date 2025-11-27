@@ -108,10 +108,6 @@ const colors = ${data};
       }}>
         <div className="logo">
           <img src="/android-chrome-512x512.png" alt="favicon" style={{
-            width: "3vw",
-            height: "3vw",
-            marginLeft: "2vw",
-            marginRight: "2vw",
             justifyContent: "center",
           }} />
         </div>
@@ -202,7 +198,6 @@ const colors = ${data};
         background: "#222",
         padding: "1vw",
         position: "relative",
-        marginTop: "4vw",
         display: "inline-flex",
         flexDirection: "column",
         gap: "1vw",
@@ -269,7 +264,6 @@ const colors = ${data};
               height: "5vw",
               border: "0.3vw solid #888",
               borderRadius: "1vw",
-              marginTop: "6px",
               cursor: "pointer",
               overflow: "hidden",
             }}>
@@ -365,8 +359,7 @@ const colors = ${data};
         gridTemplateColumns: `repeat(250, 1vw)`,
         gridTemplateRows: `repeat(${rows}, 1vw)`,
         userSelect: "none",
-        touchAction: "none",
-        marginTop: "4.2vw",
+        touchAction: "none"
       }}>
         {pixelColors.map((c, i) => (
           <div
