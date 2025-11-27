@@ -20,6 +20,7 @@ export default function PixelGrid() {
   const [pixelColors, setPixelColors] = useState(() => Array(totalPixels).fill("#000000"));
 
   const colorPickerRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     function handleResize() {
@@ -161,9 +162,39 @@ const colors = ${data};
               >
                 Save
               </div>
+
+              <div
+                onClick={() => {
+                  setShowFileMenu(false);
+                  // trigger hidden file input to load HTML file
+                  fileInputRef.current && fileInputRef.current.click();
+                }}
+                style={{
+                  cursor: "pointer",
+                  color: "white",
+                  textAlign: "center",
+                  fontSize: ".9vw",
+                  borderBottom: "0.2vw solid #333"
+                }}
+              >
+                Load
+              </div>
             </div>
           )}
         </div>
+        {/* hidden file input used by Load action */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".html"
+          style={{ display: "none" }}
+          onChange={(e) => {
+            const f = e.target.files && e.target.files[0];
+            if (f) loadFromHTML(f);
+            // clear selection so same file can be reloaded if needed
+            e.target.value = null;
+          }}
+        />
       </div>
 
       {/* SIDEBAR */}
