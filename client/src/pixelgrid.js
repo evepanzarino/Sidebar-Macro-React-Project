@@ -60,8 +60,8 @@ export default function PixelGrid() {
     const data = JSON.stringify(pixelColors);
     const html = `
 <body style="margin:0; overflow-x:hidden;">
-<div style="display:grid;grid-template-columns:repeat(250,1vw);grid-auto-rows:1vw;">
-${pixelColors.map(c => `<div style="width:1vw;height:1vw;background:${c}"></div>`).join("")}
+<div style="display:grid;grid-template-columns:repeat(${cols},.5vw);grid-template-rows: repeat(${rows}, .5vw);">
+${pixelColors.map(c => `<div style="width:.5vw;height:.5vw;background:${c}"></div>`).join("")}
 </div>
 <script>
 const colors = ${data};
