@@ -354,10 +354,9 @@ const colors = ${data};
 
       {/* GRID */}
       <div style={{
-        flex: 1,
         display: "grid",
-        gridTemplateColumns: `repeat(${cols}, .5vw)`,
-        gridTemplateRows: `repeat(${rows}, .5vw)`,
+        gridTemplateColumns: `repeat(50, .5vw)`,
+        gridTemplateRows: `repeat(50, .5vw)`,
         userSelect: "none",
         touchAction: "none"
       }}>
