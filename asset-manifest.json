@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/Sidebar-Macro-React-Project/static/css/main.519761d6.css",
+    "main.js": "/Sidebar-Macro-React-Project/static/js/main.04c61261.js",
+    "index.html": "/Sidebar-Macro-React-Project/index.html",
+    "main.519761d6.css.map": "/Sidebar-Macro-React-Project/static/css/main.519761d6.css.map",
+    "main.04c61261.js.map": "/Sidebar-Macro-React-Project/static/js/main.04c61261.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.519761d6.css",
+    "static/js/main.04c61261.js"
+  ]
+}
