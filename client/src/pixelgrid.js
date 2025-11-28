@@ -14,11 +14,11 @@ export default function PixelGrid() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [showFileMenu, setShowFileMenu] = useState(false);
 
-  const pixelSize = 0.25; // 0.25vw
-  const cols = Math.floor(100 / pixelSize); // 100vw / 0.25vw = 400 columns
+  const pixelSize = 0.333; // 0.333vw
+  const cols = Math.floor(100 / pixelSize); // 100vw / 0.333vw = 300 columns
   const rows = Math.ceil((size.h / size.w) * (100 / pixelSize)); // calculate rows: (vh/vw) * (100vw / pixelSize)
   const totalPixels = cols * rows;
-  const [pixelColors, setPixelColors] = useState(() => Array(totalPixels).fill("#000000"));
+  const [pixelColors, setPixelColors] = useState(() => Array(totalPixels).fill("#ffffff"));
 
   const colorPickerRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -357,8 +357,8 @@ const colors = ${data};
       <div style={{
         flex: 1,
         display: "grid",
-        gridTemplateColumns: `repeat(${cols}, 0.25vw)`,
-        gridTemplateRows: `repeat(${rows}, 0.25vw)`,
+        gridTemplateColumns: `repeat(${cols}, 0.333vw)`,
+        gridTemplateRows: `repeat(${rows}, 0.333vw)`,
         userSelect: "none",
         touchAction: "none"
       }}>
