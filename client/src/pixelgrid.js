@@ -16,8 +16,8 @@ export default function PixelGrid() {
 
   const pixelSize = 0.5; // 0.5vw
   const cols = Math.floor(100 / pixelSize); // 100vw / 0.5vw = 200 columns
-  const rows = Math.floor((size.h / size.w) * 100 / pixelSize); // calculate rows based on viewport height
-  const totalPixels = Math.floor(cols * rows);
+  const rows = Math.ceil((size.h / size.w) * 100 / pixelSize); // calculate rows based on viewport height, use ceil to ensure full coverage
+  const totalPixels = cols * rows;
   const [pixelColors, setPixelColors] = useState(() => Array(totalPixels).fill("#000000"));
 
   const colorPickerRef = useRef(null);
