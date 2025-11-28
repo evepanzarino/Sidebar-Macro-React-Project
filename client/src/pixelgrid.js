@@ -21,6 +21,7 @@ export default function PixelGrid() {
   const totalPixels = cols * rows;
   const [pixelColors, setPixelColors] = useState(() => Array(totalPixels).fill("#ffffff"));
 
+  
   const colorPickerRef = useRef(null);
   const fileInputRef = useRef(null);
 
