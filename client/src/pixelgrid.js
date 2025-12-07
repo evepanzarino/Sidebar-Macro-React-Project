@@ -11,10 +11,11 @@ export default function PixelGrid() {
   
   const color = activeTool === "primary" ? primaryColor : secondaryColor;
 
-  // Fixed 200 columns, 200 rows for consistent performance
+  // 200 columns of 0.5vw = 100vw width
   const cols = 200;
-  // Calculate rows: viewport height in pixels / 0.5vw in pixels
-  const rows = Math.floor((size.h / 100) * (size.h / .1));
+  // For rows: 0.5vw in pixels = (viewport width / 100) * 0.5
+  // Number of 0.5vw cells that fit in viewport height = viewport height / (0.5vw in pixels)
+  const rows = Math.floor(size.h / (size.w * 0.005));
   const totalPixels = cols * rows;
   const [pixelColors, setPixelColors] = useState(() => Array(totalPixels).fill("#ffffff"));
 
