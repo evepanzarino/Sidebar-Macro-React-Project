@@ -248,7 +248,8 @@ const colors = ${data};
             <div style={{ width: "100%", textAlign: "center" }}>
               <div style={{ color: "white", fontSize: "1.2vw", marginBottom: "0.5vw" }}>Primary</div>
               <div
-                onClick={() => {
+                onMouseDown={(e) => {
+                  e.preventDefault();
                   if (activeTool === "primary") {
                     primaryColorPickerRef.current?.click();
                   } else {
@@ -296,7 +297,8 @@ const colors = ${data};
             <div style={{ width: "100%", textAlign: "center" }}>
               <div style={{ color: "white", fontSize: "1.2vw", marginBottom: "0.5vw" }}>Secondary</div>
               <div
-                onClick={() => {
+                onMouseDown={(e) => {
+                  e.preventDefault();
                   if (activeTool === "secondary") {
                     secondaryColorPickerRef.current?.click();
                   } else {
