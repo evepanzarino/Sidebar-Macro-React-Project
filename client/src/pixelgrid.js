@@ -21,8 +21,6 @@ export default function PixelGrid() {
   const calculatedRows = Math.floor((size.h / (size.w * 0.005)) * 1.2);
   const rows = calculatedRows > 0 ? calculatedRows : 100; // Fallback to 100 rows if calculation fails
   const totalPixels = cols * rows;
-  
-  console.log('Grid Debug:', { width: size.w, height: size.h, cols, calculatedRows, rows, totalPixels, pixelArrayLength: pixelColors?.length });
 
   const colorPickerRef = useRef(null);
   const fileInputRef = useRef(null);
