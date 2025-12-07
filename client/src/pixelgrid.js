@@ -11,11 +11,11 @@ export default function PixelGrid() {
   
   const color = activeTool === "primary" ? primaryColor : secondaryColor;
 
-  // 100 columns of 1vw = 100vw width
+  // 200 columns of 0.5vw = 100vw width
   const cols = 200;
-  // For rows: calculate to fill viewport height with larger cells
-  // 1vw in pixels = (viewport width / 100)
-  const rows = Math.floor(size.h / .5 *(size.w * size.h));
+  // For rows: calculate to fill viewport height, then multiply by 1.2 for some scrollable content
+  // 0.5vw in pixels = (viewport width / 100) * 0.5
+  const rows = Math.floor(size.h / (size.w * size.h)) * 1.2;
   const totalPixels = cols * rows;
   const [pixelColors, setPixelColors] = useState(() => Array(totalPixels).fill("#ffffff"));
 
@@ -346,8 +346,8 @@ const colors = ${data};
       {/* GRID */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: `repeat(100, 1vw)`,
-        gridTemplateRows: `repeat(${rows}, 1vw)`,
+        gridTemplateColumns: `repeat(200, 0.5vw)`,
+        gridTemplateRows: `repeat(${rows}, 0.5vw)`,
         userSelect: "none",
         touchAction: "none"
       }}>
