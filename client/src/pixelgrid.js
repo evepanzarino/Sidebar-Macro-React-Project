@@ -16,7 +16,7 @@ export default function PixelGrid() {
   // For rows: 0.5vw in pixels = (viewport width / 100) * 0.5
   // Number of 0.5vw cells that fit in viewport height = viewport height / (0.5vw in pixels)
   // Ensure minimum 200 rows for mobile devices
-  const rows = Math.max(200, Math.floor(size.h / .5 * (size.w * size.h)));
+  const rows = Math.max(200, Math.floor(size.h / (size.w * 0.005)));
   const totalPixels = cols * rows;
   const [pixelColors, setPixelColors] = useState(() => Array(totalPixels).fill("#ffffff"));
 
