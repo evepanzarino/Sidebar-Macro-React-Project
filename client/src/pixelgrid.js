@@ -232,7 +232,13 @@ const colors = ${data};
             <div style={{ width: "100%", textAlign: "center" }}>
               <div style={{ color: "white", fontSize: "1.2vw", marginBottom: "0.5vw" }}>Primary</div>
               <div
-                onClick={() => setActiveTool("primary")}
+                onClick={() => {
+                  if (activeTool === "primary") {
+                    colorPickerRef.current?.click();
+                  } else {
+                    setActiveTool("primary");
+                  }
+                }}
                 style={{
                   width: "7vw",
                   height: "7vw",
@@ -267,7 +273,13 @@ const colors = ${data};
             <div style={{ width: "100%", textAlign: "center" }}>
               <div style={{ color: "white", fontSize: "1.2vw", marginBottom: "0.5vw" }}>Secondary</div>
               <div
-                onClick={() => setActiveTool("secondary")}
+                onClick={() => {
+                  if (activeTool === "secondary") {
+                    colorPickerRef.current?.click();
+                  } else {
+                    setActiveTool("secondary");
+                  }
+                }}
                 style={{
                   width: "7vw",
                   height: "7vw",
