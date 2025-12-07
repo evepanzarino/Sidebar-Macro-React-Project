@@ -327,35 +327,22 @@ const colors = ${data};
               />
             </div>
 
-            {/* COLOR PICKER */}
-            <div style={{
-              width: "7vw",
-              height: "3vw",
-              border: "0.3vw solid #888",
-              borderRadius: "1vw",
-              overflow: "hidden",
-              marginTop: "1vw",
-            }}>
-              <input
-                ref={colorPickerRef}
-                type="color"
-                value={color}
-                onChange={(e) => {
-                  if (activeTool === "primary") {
-                    setPrimaryColor(e.target.value);
-                  } else {
-                    setSecondaryColor(e.target.value);
-                  }
-                }}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  border: "none",
-                  padding: 0,
-                  cursor: "pointer",
-                }}
-              />
-            </div>
+            {/* COLOR PICKER - HIDDEN */}
+            <input
+              ref={colorPickerRef}
+              type="color"
+              value={color}
+              onChange={(e) => {
+                if (activeTool === "primary") {
+                  setPrimaryColor(e.target.value);
+                } else {
+                  setSecondaryColor(e.target.value);
+                }
+              }}
+              style={{
+                display: "none"
+              }}
+            />
           </div>
         )}
       </div>
