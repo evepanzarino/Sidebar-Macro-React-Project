@@ -260,6 +260,9 @@ const colors = ${data};
                     primaryColorPickerRef.current?.click();
                   } else {
                     setActiveTool("primary");
+                    setTimeout(() => {
+                      activeToolRef.current = "primary";
+                    }, 0);
                   }
                 }}
                 style={{
@@ -309,6 +312,9 @@ const colors = ${data};
                     secondaryColorPickerRef.current?.click();
                   } else {
                     setActiveTool("secondary");
+                    setTimeout(() => {
+                      activeToolRef.current = "secondary";
+                    }, 0);
                   }
                 }}
                 style={{
