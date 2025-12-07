@@ -43,9 +43,9 @@ jobs:
           echo "--- client dir listing ---"
           ls -la
 
-      - name: Install dependencies (use npm ci for reproducible installs)
+      - name: Install dependencies
         working-directory: ./client
-        run: npm ci --no-audit --no-fund
+        run: npm install --no-audit --no-fund
 
       - name: Build React app (verbose)
         working-directory: ./client
