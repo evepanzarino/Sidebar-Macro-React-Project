@@ -328,6 +328,7 @@ const colors = ${data};
         )}
       </div>
 
+
       {/* GRID */}
       <div style={{
         display: "grid",
