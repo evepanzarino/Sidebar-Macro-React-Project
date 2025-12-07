@@ -25,6 +25,19 @@ export default function PixelGrid() {
   const colorPickerRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  // Resize pixelColors array when totalPixels changes
+  useEffect(() => {
+    setPixelColors((prev) => {
+      if (prev.length === totalPixels) return prev;
+      const newArray = Array(totalPixels).fill("#ffffff");
+      // Copy over existing colors if possible
+      for (let i = 0; i < Math.min(prev.length, totalPixels); i++) {
+        newArray[i] = prev[i];
+      }
+      return newArray;
+    });
+  }, [totalPixels]);
+
   useEffect(() => {
     function handleResize() {
       setSize({ w: window.innerWidth, h: window.innerHeight });
