@@ -370,7 +370,7 @@ const colors = ${data};
         touchAction: "none",
         flex: 1,
         overflow: "auto",
-        marginTop: "4vw"
+        marginTop: "0"
       }}>
         {(pixelColors || []).map((c, i) => (
           <div
