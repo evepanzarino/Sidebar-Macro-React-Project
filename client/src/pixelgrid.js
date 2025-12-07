@@ -15,10 +15,11 @@ export default function PixelGrid() {
   const cols = 200;
   // For rows: calculate to fill viewport height, then multiply by 1.2 for some scrollable content
   // 0.5vw in pixels = (viewport width / 100) * 0.5
-  const rows = Math.floor((size.h / (size.w * 0.005)) * 1.2);
+  const calculatedRows = Math.floor((size.h / (size.w * 0.005)) * 1.2);
+  const rows = calculatedRows > 0 ? calculatedRows : 100; // Fallback to 100 rows if calculation fails
   const totalPixels = cols * rows;
   
-  console.log('Grid Debug:', { width: size.w, height: size.h, cols, rows, totalPixels });
+  console.log('Grid Debug:', { width: size.w, height: size.h, cols, calculatedRows, rows, totalPixels, pixelArrayLength: pixelColors?.length });
   
   const [pixelColors, setPixelColors] = useState(() => Array(totalPixels).fill("#ffffff"));
 
