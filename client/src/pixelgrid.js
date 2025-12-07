@@ -11,6 +11,9 @@ export default function PixelGrid() {
   
   const color = activeTool === "primary" ? primaryColor : secondaryColor;
 
+  // Initialize with empty array, will be populated by useEffect
+  const [pixelColors, setPixelColors] = useState([]);
+
   // 200 columns of 0.5vw = 100vw width
   const cols = 200;
   // For rows: calculate to fill viewport height, then multiply by 1.2 for some scrollable content
@@ -20,8 +23,6 @@ export default function PixelGrid() {
   const totalPixels = cols * rows;
   
   console.log('Grid Debug:', { width: size.w, height: size.h, cols, calculatedRows, rows, totalPixels, pixelArrayLength: pixelColors?.length });
-  
-  const [pixelColors, setPixelColors] = useState(() => Array(totalPixels).fill("#ffffff"));
 
   const colorPickerRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -371,7 +372,7 @@ const colors = ${data};
         overflow: "auto",
         marginTop: "4vw"
       }}>
-        {pixelColors.map((c, i) => (
+        {(pixelColors || []).map((c, i) => (
           <div
             key={i}
             style={{ background: c }}
