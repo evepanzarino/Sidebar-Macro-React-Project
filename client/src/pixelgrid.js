@@ -25,6 +25,12 @@ export default function PixelGrid() {
   const primaryColorPickerRef = useRef(null);
   const secondaryColorPickerRef = useRef(null);
   const fileInputRef = useRef(null);
+  const activeToolRef = useRef(activeTool);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    activeToolRef.current = activeTool;
+  }, [activeTool]);
 
   // Resize pixelColors array when totalPixels changes
   useEffect(() => {
@@ -250,7 +256,7 @@ const colors = ${data};
               <div
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  if (activeTool === "primary") {
+                  if (activeToolRef.current === "primary") {
                     primaryColorPickerRef.current?.click();
                   } else {
                     setActiveTool("primary");
@@ -299,7 +305,7 @@ const colors = ${data};
               <div
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  if (activeTool === "secondary") {
+                  if (activeToolRef.current === "secondary") {
                     secondaryColorPickerRef.current?.click();
                   } else {
                     setActiveTool("secondary");
