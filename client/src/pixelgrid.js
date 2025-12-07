@@ -13,10 +13,9 @@ export default function PixelGrid() {
 
   // 200 columns of 0.5vw = 100vw width
   const cols = 200;
-  // For rows: 0.5vw in pixels = (viewport width / 100) * 0.5
-  // Number of 0.5vw cells that fit in viewport height = viewport height / (0.5vw in pixels)
-  // Ensure minimum 200 rows for mobile devices
-  const rows = Math.max(200, Math.floor(size.h / (size.w * 0.005)));
+  // For rows: calculate to fill viewport height, then multiply by 3 for scrollable content
+  // 0.5vw in pixels = (viewport width / 100) * 0.5
+  const rows = Math.floor(size.h / (size.w * 0.005)) * 3;
   const totalPixels = cols * rows;
   const [pixelColors, setPixelColors] = useState(() => Array(totalPixels).fill("#ffffff"));
 
