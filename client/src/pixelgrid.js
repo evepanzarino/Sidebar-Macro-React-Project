@@ -3,16 +3,13 @@ import { useEffect, useState, useRef } from "react";
 export default function PixelGrid() {
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight });
   const [isDrawing, setIsDrawing] = useState(false);
-  const [color, setColor] = useState("#3498db");
-  const [swatches, setSwatches] = useState([
-    "#3498db",
-    "#e74c3c",
-    "#2ecc71",
-    "#ffffff",
-  ]);
+  const [primaryColor, setPrimaryColor] = useState("#000000");
+  const [secondaryColor, setSecondaryColor] = useState("#ffffff");
+  const [activeTool, setActiveTool] = useState("primary"); // "primary" or "secondary"
   const [showColorMenu, setShowColorMenu] = useState(true);
-  const [selectedIndex, setSelectedIndex] = useState(0);
   const [showFileMenu, setShowFileMenu] = useState(false);
+  
+  const color = activeTool === "primary" ? primaryColor : secondaryColor;
 
   const cols = size.w;
   const rows = size.h;
@@ -48,11 +45,6 @@ export default function PixelGrid() {
     if (!raw) return "#";
     const v = raw.startsWith("#") ? raw.slice(1) : raw;
     return "#" + v.slice(0, 6);
-  }
-
-  function handleSwatchClick(idx) {
-    setSelectedIndex(idx);
-    setColor(swatches[idx] || "#ffffff");
   }
 
   function saveToHTML() {
@@ -233,121 +225,105 @@ const colors = ${data};
             width: "100%",
             transition: "max-height 0.3s ease",
           }}>
-            {swatches.map((sw, i) => (
+            {/* PRIMARY COLOR */}
+            <div style={{ width: "100%", textAlign: "center" }}>
+              <div style={{ color: "white", fontSize: "1.2vw", marginBottom: "0.5vw" }}>Primary</div>
               <div
-                key={i}
-                onClick={() => handleSwatchClick(i)}
+                onClick={() => setActiveTool("primary")}
                 style={{
-                  background: sw,
-                  border: i === selectedIndex ? "0.4vw solid white" : "0.3vw solid #666",
+                  width: "7vw",
+                  height: "7vw",
+                  background: primaryColor,
+                  border: activeTool === "primary" ? "0.4vw solid white" : "0.3vw solid #666",
+                  borderRadius: "1vw",
+                  cursor: "pointer",
+                  margin: "0 auto",
+                  boxShadow: activeTool === "primary" ? "0 0 1vw rgba(255,255,255,0.5)" : "none",
                 }}
-                className="colored-label"
-              >
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSwatches(prev => prev.filter((_, idx) => idx !== i));
-                    if (selectedIndex === i) setSelectedIndex(null);
-                  }}
-                  className="swatch-remove"
-                  aria-label={`Remove swatch ${i + 1}`}
-                >
-                  ×
-                </button>
-              </div>
-            ))}
+              />
+              <input
+                type="text"
+                value={primaryColor}
+                onChange={(e) => setPrimaryColor(normalizeHexInput(e.target.value))}
+                maxLength={7}
+                style={{
+                  width: "7vw",
+                  marginTop: "0.5vw",
+                  background: "#111",
+                  border: "0.2vw solid #666",
+                  color: "white",
+                  textAlign: "center",
+                  borderRadius: "0.5vw",
+                  fontSize: "1.2vw",
+                  padding: "0.3vw",
+                }}
+              />
+            </div>
 
-            {/* MAIN COLOR PICKER */}
+            {/* SECONDARY COLOR */}
+            <div style={{ width: "100%", textAlign: "center" }}>
+              <div style={{ color: "white", fontSize: "1.2vw", marginBottom: "0.5vw" }}>Secondary</div>
+              <div
+                onClick={() => setActiveTool("secondary")}
+                style={{
+                  width: "7vw",
+                  height: "7vw",
+                  background: secondaryColor,
+                  border: activeTool === "secondary" ? "0.4vw solid white" : "0.3vw solid #666",
+                  borderRadius: "1vw",
+                  cursor: "pointer",
+                  margin: "0 auto",
+                  boxShadow: activeTool === "secondary" ? "0 0 1vw rgba(255,255,255,0.5)" : "none",
+                }}
+              />
+              <input
+                type="text"
+                value={secondaryColor}
+                onChange={(e) => setSecondaryColor(normalizeHexInput(e.target.value))}
+                maxLength={7}
+                style={{
+                  width: "7vw",
+                  marginTop: "0.5vw",
+                  background: "#111",
+                  border: "0.2vw solid #666",
+                  color: "white",
+                  textAlign: "center",
+                  borderRadius: "0.5vw",
+                  fontSize: "1.2vw",
+                  padding: "0.3vw",
+                }}
+              />
+            </div>
+
+            {/* COLOR PICKER */}
             <div style={{
-              width: "5vw",
-              height: "5vw",
+              width: "7vw",
+              height: "3vw",
               border: "0.3vw solid #888",
               borderRadius: "1vw",
-              cursor: "pointer",
               overflow: "hidden",
+              marginTop: "1vw",
             }}>
               <input
                 ref={colorPickerRef}
                 type="color"
                 value={color}
                 onChange={(e) => {
-                  const c = e.target.value;
-                  setColor(c);
-                  if (selectedIndex != null) {
-                    setSwatches(prev => {
-                      const copy = [...prev];
-                      copy[selectedIndex] = c;
-                      return copy;
-                    });
+                  if (activeTool === "primary") {
+                    setPrimaryColor(e.target.value);
+                  } else {
+                    setSecondaryColor(e.target.value);
                   }
                 }}
                 style={{
-                  width: "100vw",
-                  height: "100vh",
+                  width: "100%",
+                  height: "100%",
                   border: "none",
                   padding: 0,
                   cursor: "pointer",
                 }}
               />
             </div>
-<div className="selected-label">
-  Selected
-  </div>
-            {/* HEX INPUT */}
-            <input
-              type="text"
-              value={color}
-              onClick={() => colorPickerRef.current.click()} // open main color picker
-              onChange={(e) => {
-                const normalized = normalizeHexInput(e.target.value);
-                setColor(normalized);
-                if (selectedIndex != null) {
-                  setSwatches(prev => {
-                    const copy = [...prev];
-                    copy[selectedIndex] = normalized;
-                    return copy;
-                  });
-                }
-              }}
-              maxLength={7}
-              style={{
-                width: "7.5vw",
-                marginTop: "1vw",
-                background: "#111",
-                border: "0.3vw solid #666",
-                color: "white",
-                textAlign: "center",
-                borderRadius: "1vw",
-                fontSize: "1.5vw",
-              }}
-            />
-
-            <button
-              type="button"
-              onClick={() => {
-                if (swatches.length < 4) {
-                  setSwatches(prev => [...prev, "#ffffff"]);
-                  setSelectedIndex(swatches.length);
-                  setColor("#ffffff");
-                }
-              }}
-              style={{
-                marginTop: "1vw",
-                padding: "0.5vw 1vw",
-                background: "#333",
-                color: "#fff",
-                border: "0.3vw solid #666",
-                borderRadius: "1vw",
-                cursor: swatches.length >= 4 ? "not-allowed" : "pointer",
-                opacity: swatches.length >= 4 ? 0.5 : 1,
-                fontSize: "1.3vw",
-                width: "7vw",
-                textAlign: "center",
-              }}
-            >
-              + Add
-            </button>
           </div>
         )}
       </div>
