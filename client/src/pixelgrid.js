@@ -364,9 +364,9 @@ const colors = ${data};
             position: "fixed",
             top: 0,
             left: 0,
-            width: "35vw",
-            height: "35vw",
-            display: "grid",
+            width: "100vw",
+            height: "100vh",
+            display: "flex",
             alignItems: "center",
             justifyContent: "center",
             zIndex: 1000,
@@ -375,9 +375,6 @@ const colors = ${data};
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: "#222",
-              border: "0.3vw solid #666",
-              borderRadius: "1vw",
               padding: "2vw",
               minWidth: "30vw",
               display: "flex",
