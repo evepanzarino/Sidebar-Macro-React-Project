@@ -18,27 +18,16 @@ export default function PixelGrid() {
 
   // 250 columns of 0.4vw = 100vw width
   const cols = 250;
-  // For rows: calculate to fill viewport height, then multiply by 1.2 for some scrollable content
+  // For rows: calculate to fill viewport height
   // 0.4vw in pixels = (viewport width / 100) * 0.4
-  const calculatedRows = Math.floor((size.h / (size.w * 0.004)) * 1.2);
+  const calculatedRows = Math.floor(size.h / (size.w * 0.004));
   const rows = calculatedRows > 0 ? calculatedRows : 100; // Fallback to 100 rows if calculation fails
   const totalPixels = cols * rows;
 
   const fileInputRef = useRef(null);
-  const initializedRef = useRef(false);
 
-  // Initialize pixelColors array once on mount
+  // Initialize/resize pixelColors array when totalPixels changes
   useEffect(() => {
-    if (!initializedRef.current && totalPixels > 0) {
-      setPixelColors(Array(totalPixels).fill("#ffffff"));
-      initializedRef.current = true;
-    }
-  }, [totalPixels]);
-
-  // Resize pixelColors array when totalPixels changes after initialization
-  useEffect(() => {
-    if (!initializedRef.current) return; // Skip until initialized
-    
     setPixelColors((prev) => {
       if (prev.length === totalPixels) return prev;
       const newArray = Array(totalPixels).fill("#ffffff");
