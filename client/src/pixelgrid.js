@@ -225,8 +225,7 @@ const colors = ${data};
               background: "#333",
               color: "white",
               border: "0.3vw solid #666",
-              borderRadius: "1vw",
-              padding: "0.5vw 1vw",
+              padding: ".5vw 1vw",
               cursor: "pointer",
               fontSize: "1.3vw",
             }}
@@ -377,10 +376,10 @@ const colors = ${data};
             onClick={(e) => e.stopPropagation()}
             style={{
               padding: "2vw",
-              minWidth: "30vw",
+              minWidth: "5vw",
               display: "flex",
               flexDirection: "column",
-              gap: "1.5vw",
+              gap: "1vw",
             }}
           >
             <div style={{ color: "white", fontSize: "1.5vw", textAlign: "center" }}>
