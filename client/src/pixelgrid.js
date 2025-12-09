@@ -257,11 +257,10 @@ const colors = ${data};
                   }
                 }}
                 style={{
-                  width: "7vw",
-                  height: "7vw",
+                  width: "4vw",
+                  height: "4vw",
                   background: primaryColor,
-                  border: activeTool === "primary" ? "0.4vw solid white" : "0.3vw solid #666",
-                  borderRadius: "1vw",
+                  border: activeTool === "primary" ? "0.4vw solid white" : "0.3vw solid #000000",
                   cursor: "pointer",
                   margin: "0 auto",
                   boxShadow: activeTool === "primary" ? "0 0 1vw rgba(255,255,255,0.5)" : "none",
@@ -273,13 +272,12 @@ const colors = ${data};
                 onChange={(e) => setPrimaryColor(normalizeHexInput(e.target.value))}
                 maxLength={7}
                 style={{
-                  width: "7vw",
+                  width: "4vw",
                   marginTop: "0.5vw",
                   background: "#111",
                   border: "0.2vw solid #666",
                   color: "white",
                   textAlign: "center",
-                  borderRadius: "0.5vw",
                   fontSize: "1.2vw",
                   padding: "0.3vw",
                 }}
@@ -299,10 +297,10 @@ const colors = ${data};
                   }
                 }}
                 style={{
-                  width: "7vw",
-                  height: "7vw",
+                  width: "4vw",
+                  height: "4vw",
                   background: secondaryColor,
-                  border: activeTool === "secondary" ? "0.4vw solid white" : "0.3vw solid #666",
+                  border: activeTool === "secondary" ? "0.4vw solid white" : "0.3vw solid #000000",
                   borderRadius: "1vw",
                   cursor: "pointer",
                   margin: "0 auto",
@@ -315,10 +313,10 @@ const colors = ${data};
                 onChange={(e) => setSecondaryColor(normalizeHexInput(e.target.value))}
                 maxLength={7}
                 style={{
-                  width: "7vw",
-                  marginTop: "0.5vw",
-                  background: "#111",
-                  border: "0.2vw solid #666",
+                  width: "4vw",
+                  marginTop: ".5vw",
+                  background: "#000000",
+                  border: "0.2vw solid #000000",
                   color: "white",
                   textAlign: "center",
                   borderRadius: "0.5vw",
