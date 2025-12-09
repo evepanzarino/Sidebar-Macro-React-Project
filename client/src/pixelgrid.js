@@ -112,10 +112,10 @@ const colors = ${data};
         left: 0,
         width: "100vw",
         background: "#ffffff",
-        borderBottom: "0.3vw solid #444",
+        borderBottom: "0.3vw solid #000000",
         display: "grid",
         alignItems: "center",
-        gridTemplateColumns: "repeat(10, 10%)",
+        gridTemplateColumns: "repeat(2, auto)",
         zIndex: 20
       }}>
         <div className="logo">
@@ -207,7 +207,7 @@ const colors = ${data};
 
       {/* SIDEBAR */}
       <div style={{
-        background: "#222",
+        background: "#fdfdfd",
         padding: "1vw",
         position: "relative",
         display: "inline-flex",
@@ -274,8 +274,8 @@ const colors = ${data};
                 style={{
                   width: "4vw",
                   marginTop: "0.5vw",
-                  background: "#111",
-                  border: "0.2vw solid #666",
+                  background: "#0000000",
+                  border: "0.2vw solid #000000",
                   color: "white",
                   textAlign: "center",
                   fontSize: "1.2vw",
@@ -301,7 +301,6 @@ const colors = ${data};
                   height: "4vw",
                   background: secondaryColor,
                   border: activeTool === "secondary" ? "0.4vw solid white" : "0.3vw solid #000000",
-                  borderRadius: "1vw",
                   cursor: "pointer",
                   margin: "0 auto",
                   boxShadow: activeTool === "secondary" ? "0 0 1vw rgba(255,255,255,0.5)" : "none",
@@ -319,7 +318,6 @@ const colors = ${data};
                   border: "0.2vw solid #000000",
                   color: "white",
                   textAlign: "center",
-                  borderRadius: "0.5vw",
                   fontSize: "1.2vw",
                   padding: "0.3vw",
                 }}
@@ -419,7 +417,7 @@ const colors = ${data};
               style={{
                 width: "100%",
                 background: "#111",
-                border: "0.2vw solid #666",
+                border: "0.2vw solid #000000",
                 color: "white",
                 textAlign: "center",
                 borderRadius: "0.5vw",
@@ -432,7 +430,6 @@ const colors = ${data};
               onClick={() => setShowColorEditor(false)}
               style={{
                 color: "white",
-                borderRadius: "0.5vw",
                 fontSize: "1.3vw",
                 padding: "1vw",
                 cursor: "pointer",
