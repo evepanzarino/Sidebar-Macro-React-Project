@@ -331,7 +331,7 @@ const colors = ${data};
                   margin: "0 auto",
                   boxShadow: activeTool === "primary" 
                     ? (isLightColor(primaryColor) ? "0 0 1vw rgba(0,0,0,0.5)" : "0 0 1vw rgba(255,255,255,0.5)") 
-                    : "none",
+                    : (isLightColor(primaryColor) ? "0 0 1vw rgba(0,0,0,0.5)" : "0 0 1vw rgba(255,255,255,0.5)") ,
                 }}
               />
             </div>
