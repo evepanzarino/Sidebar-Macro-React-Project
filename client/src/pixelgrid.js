@@ -113,7 +113,7 @@ const colors = ${data};
   }
 
   return (
-    <div className="pixelgrid-container" style={{ display: "flex", width: "100vw", overflow: "hidden" }}>
+    <div className="pixelgrid-container" style={{ width: "100vw", overflow: "hidden" }}>
 
       {/* TOP BAR */}
       <div style={{
