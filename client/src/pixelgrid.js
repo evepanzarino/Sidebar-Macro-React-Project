@@ -120,7 +120,7 @@ const colors = ${data};
         top: 0,
         left: 0,
         width: "100vw",
-        height: "7vw",
+        height: "auto",
         background: "#ffffff",
         borderBottom: "0.3vw solid #000000",
         display: "grid",
