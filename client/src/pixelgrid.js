@@ -309,7 +309,7 @@ const colors = ${data};
           }}>
             {/* PRIMARY COLOR */}
             <div style={{ width: "100%", textAlign: "center" }}>
-              <div style={{ color: "white", fontSize: "1.2vw", marginBottom: "0.5vw" }}>Primary</div>
+              <div style={{ color: "black", fontSize: "1vw", marginBottom: "0.5vw" }}>Primary</div>
               <div
                 onClick={() => {
                   if (activeTool === "primary") {
@@ -337,7 +337,7 @@ const colors = ${data};
 
             {/* SECONDARY COLOR */}
             <div style={{ width: "100%", textAlign: "center" }}>
-              <div style={{ color: "white", fontSize: "1.2vw", marginBottom: "0.5vw" }}>Secondary</div>
+              <div style={{ color: "black", fontSize: "1vw", marginBottom: "0.5vw" }}>Secondary</div>
               <div
                 onClick={() => {
                   if (activeTool === "secondary") {
@@ -419,7 +419,7 @@ const colors = ${data};
               gap: "1vw",
             }}
           >
-            <div style={{ color: "black", fontSize: "1vw", textAlign: "center" }}>
+            <div style={{ color: "white", fontSize: "1.5vw", textAlign: "center" }}>
               Edit {editingColor === "primary" ? "Primary" : "Secondary"} Color
             </div>
             
