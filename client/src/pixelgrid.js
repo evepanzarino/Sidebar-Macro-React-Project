@@ -275,6 +275,7 @@ const colors = ${data};
         background: "#fefefe",
         position: "relative",
         display: "inline-flex",
+        width: "5.2vw",
         flexDirection: "column",
         gap: "1vw",
         alignItems: "center",
@@ -288,9 +289,8 @@ const colors = ${data};
               background: "#333",
               color: "white",
               border: "0.3vw solid #666",
-              padding: ".5vw 1vw",
               cursor: "pointer",
-              fontSize: "1.3vw",
+              fontSize: "1vw",
             }}
           >
             {showColorMenu ? "▼ Color" : "► Color"}
