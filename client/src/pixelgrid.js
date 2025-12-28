@@ -127,10 +127,19 @@ const colors = ${data};
         gridTemplateColumns: "repeat(2, auto)",
         zIndex: 20
       }}>
-        <div className="logo">
-          <img src="/android-chrome-512x512.png" alt="favicon" style={{
-            justifyContent: "center",
-          }} />
+        <div className="logo" style={{
+          display: "grid",
+          gridTemplateColumns: "1vw, 1vw, 1vw, 1vw, 1vw, 1vw, 1vw",
+          gridTemplateRows: "1vw, 1vw, 1vw, 1vw, 1vw, 1vw, 1vw",
+        }}>
+          <div className="logo-pixels"></div>
+             <div className="logo-pixels"></div>
+                <div className="logo-pixels"></div>
+                   <div className="logo-pixels"></div>
+                      <div className="logo-pixels"></div>
+                         <div className="logo-pixels"></div>
+                            <div className="logo-pixels"></div>
+          
         </div>
 
         {/* FILE BUTTON */}
