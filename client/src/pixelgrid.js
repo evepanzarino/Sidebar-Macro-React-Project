@@ -288,6 +288,7 @@ const colors = ${data};
             style={{
               background: "#333",
               color: "white",
+              width: "100%",
               border: "0.3vw solid #666",
               cursor: "pointer",
               fontSize: "1vw",
