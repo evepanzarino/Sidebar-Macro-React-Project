@@ -112,11 +112,10 @@ const colors = ${data};
   }
 
   return (
-    <div style={{ display: "flex", width: "100vw", height: "100vh", overflow: "hidden" }}>
+    <div style={{ display: "flex", width: "100vw", height: "7vw", overflow: "hidden" }}>
 
       {/* TOP BAR */}
       <div style={{
-        position: "absolute",
         top: 0,
         left: 0,
         width: "100vw",
@@ -269,7 +268,6 @@ const colors = ${data};
       {/* SIDEBAR */}
       <div style={{
         background: "#fefefe",
-        padding: "1vw",
         position: "relative",
         display: "inline-flex",
         flexDirection: "column",
@@ -282,7 +280,6 @@ const colors = ${data};
           <button
             onClick={() => setShowColorMenu(prev => !prev)}
             style={{
-              width: "4vw",
               background: "#333",
               color: "white",
               border: "0.3vw solid #666",
