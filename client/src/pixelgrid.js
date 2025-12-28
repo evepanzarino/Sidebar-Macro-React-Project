@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import "./pixelgrid.css";
 
 export default function PixelGrid() {
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight });
