@@ -330,8 +330,8 @@ const colors = ${data};
                   cursor: "pointer",
                   margin: "0 auto",
                   boxShadow: activeTool === "primary" 
-                    ? (isLightColor(primaryColor) ? "0 0 1vw rgba(0,0,0,0.5)" : "0 0 1vw rgba(255,255,255,0.5)") 
-                    : (isLightColor(primaryColor) ? "0 0 1vw rgba(0,0,0,0.5)" : "0 0 1vw rgba(255,255,255,0.5)") ,
+                    ? (isLightColor(primaryColor) ? "0px 0px .2vw .2vw #000000" : "0px 0px .2vw .2vw #000000") 
+                    : (isLightColor(primaryColor) ? "0px 0px .2vw .2vw #000000" : "0px 0px .2vw .2vw #000000") ,
                 }}
               />
             </div>
