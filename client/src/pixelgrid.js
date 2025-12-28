@@ -269,7 +269,7 @@ const colors = ${data};
 
       {/* SIDEBAR */}
 
-<div>
+<div className="pixelgrid-sidebar" >
 
       <div style={{
         background: "#fefefe",
