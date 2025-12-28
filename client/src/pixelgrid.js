@@ -68,16 +68,6 @@ export default function PixelGrid() {
     return "#" + v.slice(0, 6);
   }
 
-  function isLightColor(hex) {
-    // Convert hex to RGB
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    // Calculate relative luminance
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    return luminance > 0.5;
-  }
-
   function saveToHTML() {
     const data = JSON.stringify(pixelColors);
     const html = `
@@ -270,10 +260,10 @@ const colors = ${data};
                   width: "4vw",
                   height: "4vw",
                   background: primaryColor,
-                  border: activeTool === "primary" ? (isLightColor(primaryColor) ? "0.4vw solid black" : "0.4vw solid white") : "0.3vw solid #000000",
+                  border: activeTool === "primary" ? "0.4vw solid white" : "0.3vw solid #000000",
                   cursor: "pointer",
                   margin: "0 auto",
-                  boxShadow: activeTool === "primary" ? (isLightColor(primaryColor) ? "0 0 1vw rgba(0,0,0,0.5)" : "0 0 1vw rgba(255,255,255,0.5)") : "none",
+                  boxShadow: activeTool === "primary" ? "0 0 1vw rgba(255,255,255,0.5)" : "none",
                 }}
               />
             </div>
@@ -294,10 +284,10 @@ const colors = ${data};
                   width: "4vw",
                   height: "4vw",
                   background: secondaryColor,
-                  border: activeTool === "secondary" ? (isLightColor(secondaryColor) ? "0.4vw solid black" : "0.4vw solid white") : "0.3vw solid #000000",
+                  border: activeTool === "secondary" ? "0.4vw solid white" : "0.3vw solid #000000",
                   cursor: "pointer",
                   margin: "0 auto",
-                  boxShadow: activeTool === "secondary" ? (isLightColor(secondaryColor) ? "0 0 1vw rgba(0,0,0,0.5)" : "0 0 1vw rgba(255,255,255,0.5)") : "none",
+                  boxShadow: activeTool === "secondary" ? "0 0 1vw rgba(255,255,255,0.5)" : "none",
                 }}
               />
 
