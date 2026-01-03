@@ -193,7 +193,6 @@ const colors = ${data};
             style={{
               background: "#222",
               color: "white",
-              border: "0.2vw solid #555",
               width: "100%",
               cursor: "pointer",
               fontSize: "2vw"
@@ -208,10 +207,7 @@ const colors = ${data};
               top: "100%",
               left: 0,
               background: "#222",
-              border: "0.25vw solid #555",
               display: "grid",
-              padding: "0.5vw 0",
-              marginTop: "0.6vw",
               width: "100%",
               boxShadow: "0 0.6vw 2vw rgba(0,0,0,0.5)",
               zIndex: 30
@@ -243,7 +239,6 @@ const colors = ${data};
                   color: "white",
                   textAlign: "center",
                   fontSize: ".9vw",
-                  borderBottom: "0.2vw solid #333"
                 }}
               >
                 Load
@@ -288,7 +283,6 @@ const colors = ${data};
               background: "#333",
               color: "white",
               width: "100%",
-              border: "0.3vw solid #666",
               cursor: "pointer",
               fontSize: "1vw",
             }}
