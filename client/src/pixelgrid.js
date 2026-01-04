@@ -569,7 +569,7 @@ const colors = ${data};
           <div
             key={i}
             style={{ background: c }}
-            className="pixel"
+            className={`pixel ${isLightColor(c) ? 'pixel-light' : 'pixel-dark'}`}
             onPointerDown={(e) => {
               setIsDrawing(true);
               paintPixel(e, i);
