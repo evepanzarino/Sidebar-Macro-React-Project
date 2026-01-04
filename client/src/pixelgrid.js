@@ -189,8 +189,8 @@ const colors = ${data};
         <div className="title" style={{
           display: "grid",
           position: "relative",
-          gridTemplateColumns: "repeat(7, .75vw)",
-          gridTemplateRows: "repeat(4, .75vw)",
+          gridTemplateColumns: "repeat(4, .75vw)",
+          gridTemplateRows: "repeat(7, .75vw)",
         }}>
 <div className="title-p"></div>
 <div className="title-p"></div>
