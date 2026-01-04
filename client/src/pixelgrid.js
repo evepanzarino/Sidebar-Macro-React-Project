@@ -121,11 +121,13 @@ const colors = ${data};
         left: 0,
         width: "100vw",
         height: "auto",
-        background: "#ffffff",
-        borderBottom: "0.3vw solid #000000",
+        background: "rgb(255, 255, 255)",
+        borderBottomWidth: "0.3vw",
+        borderBottomStyle: "solid",
+        borderBottomColor: "rgb(0, 0, 0)",
         display: "grid",
         alignItems: "center",
-        gridTemplateColumns: "repeat(10, 5.2vw)",
+        gridTemplateColumns: "5.25vw 3vw 1.5vw auto",
         zIndex: 20
       }}>
         <div className="logo" style={{
@@ -227,30 +229,30 @@ const colors = ${data};
         <div className="title-letter-2" style={{
           display: "grid",
           position: "relative",
-          gridTemplateColumns: "repeat(3, .75vw)",
+          gridTemplateColumns: "repeat(2, .75vw)",
           gridTemplateRows: "repeat(7, .75vw)",
-          width: "2.25vw"
+          width: "1.5vw"
         }}>
 <div className="title-i"></div>
-<div className="title-i" style={{backgroundColor: "#000000"}}></div>
-<div className="title-i"></div>
-<div className="title-i"></div>
-<div className="title-i"></div>
 <div className="title-i"></div>
 <div className="title-i"></div>
 <div className="title-i" style={{backgroundColor: "#000000"}}></div>
 <div className="title-i"></div>
 <div className="title-i"></div>
-<div className="title-i" style={{backgroundColor: "#000000"}}></div>
-<div className="title-i"></div>
 <div className="title-i"></div>
 <div className="title-i" style={{backgroundColor: "#000000"}}></div>
 <div className="title-i"></div>
+<div className="title-i" style={{backgroundColor: "#000000"}}></div>
 <div className="title-i"></div>
 <div className="title-i" style={{backgroundColor: "#000000"}}></div>
 <div className="title-i"></div>
 <div className="title-i"></div>
-<div className="title-i" style={{backgroundColor: "#000000"}}></div>
+<div className="title-i"></div>
+<div className="title-i"></div>
+<div className="title-i" style={{backgroundColor: "rgb(0, 0, 0)"}}></div>
+<div className="title-i"></div>
+<div className="title-i"></div>
+<div className="title-i"></div>
 <div className="title-i"></div>
 <div className="title-i"></div>
 <div className="title-i"></div>
