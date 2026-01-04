@@ -186,6 +186,43 @@ const colors = ${data};
           
         </div>
 
+        <div className="title" style={{
+          display: "grid",
+          position: "relative",
+          gridTemplateColumns: "repeat(7, .75vw)",
+          gridTemplateRows: "repeat(4, .75vw)",
+        }}>
+<div className="title-p"></div>
+<div className="title-p"></div>
+<div className="title-p"></div>
+<div className="title-p"></div>
+<div className="title-p"></div>
+<div className="title-p" style={{color: "#000000"}}></div>
+<div className="title-p" style={{color: "#000000"}}></div>
+<div className="title-p" style={{color: "#000000"}}></div>
+<div className="title-p"></div>
+<div className="title-p" ></div>
+<div className="title-p" style={{color: "#000000"}}></div>
+<div className="title-p"></div>
+<div className="title-p" style={{color: "#000000"}}></div>
+<div className="title-p"></div>
+<div className="title-p"></div>
+<div className="title-p" style={{color: "#000000"}}></div>
+<div className="title-p"></div>
+<div className="title-p"></div>
+<div className="title-p" style={{color: "#000000"}}></div>
+<div className="title-p"></div>
+<div className="title-p"></div>
+<div className="title-p"></div>
+<div className="title-p"></div>
+<div className="title-p"></div>
+<div className="title-p"></div>
+<div className="title-p"></div>
+<div className="title-p"></div>
+<div className="title-p"></div>
+          
+        </div>
+
         {/* FILE BUTTON */}
         <div style={{ position: "relative" }}>
           <button
