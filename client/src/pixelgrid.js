@@ -231,7 +231,7 @@ const colors = ${data};
           position: "relative",
           gridTemplateColumns: "repeat(2, .75vw)",
           gridTemplateRows: "repeat(7, .75vw)",
-          width: "1.5vw"
+          width: "2.25vw"
         }}>
 <div className="title-i"></div>
 <div className="title-i"></div>
@@ -240,13 +240,27 @@ const colors = ${data};
 <div className="title-i"></div>
 <div className="title-i"></div>
 <div className="title-i"></div>
-<div className="title-i" style={{backgroundColor: "#000000"}}></div>
+<div className="title-i" style={{backgroundColor: "rgb(0, 0, 0)"}}></div>
 <div className="title-i"></div>
 <div className="title-i" style={{backgroundColor: "#000000"}}></div>
 <div className="title-i"></div>
 <div className="title-i" style={{backgroundColor: "#000000"}}></div>
+<div className="title-i"></div>
+<div className="title-i"></div>
+<div className="title-i"></div>
 <div className="title-i"></div>
 <div className="title-i" style={{backgroundColor: "rgb(0, 0, 0)"}}></div>
+<div className="title-i"></div>
+<div className="title-i"></div>
+<div className="title-i" style={{backgroundColor: "rgb(0, 0, 0)"}}></div>
+<div className="title-i"></div>
+<div className="title-i"></div>
+<div className="title-i"></div>
+<div className="title-i"></div>
+<div className="title-i"></div>
+<div className="title-i"></div>
+<div className="title-i"></div>
+<div className="title-i"></div>
         </div>
 
         {/* FILE BUTTON */}
