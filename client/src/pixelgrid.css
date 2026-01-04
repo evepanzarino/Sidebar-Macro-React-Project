@@ -2,14 +2,14 @@
 
 .pixel {
   box-sizing: border-box;
-  border: 0.1vw solid transparent;
-  transition: border-color 0s;
+  border: 0.1vw solid transparent !important;
+  transition: none;
 }
 
 .pixel-light:hover {
-  border-color: #000000;
+  border: 0.1vw solid #000000 !important;
 }
 
 .pixel-dark:hover {
-  border-color: #fefefe;
+  border: 0.1vw solid #fefefe !important;
 }
