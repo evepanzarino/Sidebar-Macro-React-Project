@@ -1,5 +1,9 @@
 /* PixelGrid styles */
 
+.pixel {
+  box-sizing: border-box;
+}
+
 .pixel:hover {
   border: 0.1vw solid #48484A;
 }
