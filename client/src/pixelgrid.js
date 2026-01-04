@@ -537,6 +537,7 @@ const colors = ${data};
 <div className="title-d"></div>
 <div className="title-d"></div>
         </div>
+        <div className="title-pixel-padding"></div>
 
         {/* FILE BUTTON */}
         <div style={{ position: "relative" }}>
