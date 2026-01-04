@@ -568,7 +568,7 @@ const colors = ${data};
       }}>
         {(pixelColors || []).map((c, i) => {
           const isLight = isLightColor(c);
-          const isHovered = hoveredPixel === i;
+          const isHovered = !isDrawing && hoveredPixel === i;
           const borderColor = isHovered ? (isLight ? '#000000' : '#fefefe') : 'transparent';
           
           return (
@@ -582,17 +582,18 @@ const colors = ${data};
               onPointerDown={(e) => {
                 setIsDrawing(true);
                 paintPixel(e, i);
-                setHoveredPixel(null);
               }}
               onPointerEnter={() => {
-                setHoveredPixel(i);
                 if (isDrawing) {
                   paintPixel(null, i);
-                  setHoveredPixel(null);
+                } else {
+                  setHoveredPixel(i);
                 }
               }}
               onPointerLeave={() => {
-                setHoveredPixel(null);
+                if (!isDrawing) {
+                  setHoveredPixel(null);
+                }
               }}
             />
           );
