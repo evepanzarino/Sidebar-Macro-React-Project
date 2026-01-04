@@ -11,6 +11,7 @@ export default function PixelGrid() {
   const [showFileMenu, setShowFileMenu] = useState(false);
   const [showColorEditor, setShowColorEditor] = useState(false);
   const [editingColor, setEditingColor] = useState(null); // "primary" or "secondary"
+  const [hoveredPixel, setHoveredPixel] = useState(null);
   
   const color = activeTool === "primary" ? primaryColor : secondaryColor;
 
@@ -565,20 +566,37 @@ const colors = ${data};
         flex: 1,
         overflow: "auto"
       }}>
-        {(pixelColors || []).map((c, i) => (
-          <div
-            key={`${i}-${c}`}
-            style={{ background: c, boxSizing: 'border-box' }}
-            className={`pixel ${isLightColor(c) ? 'pixel-light' : 'pixel-dark'}`}
-            onPointerDown={(e) => {
-              setIsDrawing(true);
-              paintPixel(e, i);
-            }}
-            onPointerEnter={() => {
-              if (isDrawing) paintPixel(null, i);
-            }}
-          />
-        ))}
+        {(pixelColors || []).map((c, i) => {
+          const isLight = isLightColor(c);
+          const isHovered = hoveredPixel === i;
+          const borderColor = isHovered ? (isLight ? '#000000' : '#fefefe') : 'transparent';
+          
+          return (
+            <div
+              key={`${i}-${c}`}
+              style={{ 
+                background: c, 
+                boxSizing: 'border-box',
+                border: `0.1vw solid ${borderColor}`
+              }}
+              onPointerDown={(e) => {
+                setIsDrawing(true);
+                paintPixel(e, i);
+                setHoveredPixel(null);
+              }}
+              onPointerEnter={() => {
+                setHoveredPixel(i);
+                if (isDrawing) {
+                  paintPixel(null, i);
+                  setHoveredPixel(null);
+                }
+              }}
+              onPointerLeave={() => {
+                setHoveredPixel(null);
+              }}
+            />
+          );
+        })}
       </div>
       </div>
       
