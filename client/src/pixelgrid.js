@@ -231,25 +231,25 @@ const colors = ${data};
           width: "2.25vw"
         }}>
 <div className="title-i"></div>
+<div className="title-i" style={{backgroundColor: "#000000"}}></div>
 <div className="title-i"></div>
 <div className="title-i"></div>
 <div className="title-i"></div>
 <div className="title-i"></div>
 <div className="title-i"></div>
+<div className="title-i" style={{backgroundColor: "#000000"}}></div>
 <div className="title-i"></div>
 <div className="title-i"></div>
+<div className="title-i" style={{backgroundColor: "#000000"}}></div>
 <div className="title-i"></div>
 <div className="title-i"></div>
+<div className="title-i" style={{backgroundColor: "#000000"}}></div>
 <div className="title-i"></div>
 <div className="title-i"></div>
+<div className="title-i" style={{backgroundColor: "#000000"}}></div>
 <div className="title-i"></div>
 <div className="title-i"></div>
-<div className="title-i"></div>
-<div className="title-i"></div>
-<div className="title-i"></div>
-<div className="title-i"></div>
-<div className="title-i"></div>
-<div className="title-i"></div>
+<div className="title-i" style={{backgroundColor: "#000000"}}></div>
 <div className="title-i"></div>
 <div className="title-i"></div>
 <div className="title-i"></div>
