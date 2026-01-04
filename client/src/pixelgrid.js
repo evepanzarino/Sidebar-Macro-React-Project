@@ -231,7 +231,7 @@ const colors = ${data};
           position: "relative",
           gridTemplateColumns: "repeat(2, .75vw)",
           gridTemplateRows: "repeat(7, .75vw)",
-          width: "2.25vw"
+          width: "1.5vw"
         }}>
 <div className="title-i"></div>
 <div className="title-i"></div>
