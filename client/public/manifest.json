@@ -1,5 +1,5 @@
 {
-  "name": "PixelGrid - Pixel Art Editor",
+  "name": "PixelGrid",
   "short_name": "PixelGrid",
   "description": "Create and edit pixel art in your browser",
   "start_url": "/",
@@ -9,13 +9,13 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "/pixelgrid-title.png",
+      "src": "/pixelgrid-logo.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/pixelgrid-title.png",
+      "src": "/pixelgrid-logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
