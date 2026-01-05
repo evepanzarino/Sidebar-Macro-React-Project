@@ -2,7 +2,7 @@
   "name": "PixelGrid",
   "short_name": "PixelGrid",
   "description": "Create and edit pixel art in your browser",
-  "start_url": "/",
+  "start_url": "/pixelgrid/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",
