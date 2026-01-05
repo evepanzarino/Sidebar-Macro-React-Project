@@ -11,7 +11,7 @@ function App() {
     <div className="App">
       {currentPage !== 'pixelgrid' && (
         <nav className="navbar">
-          <h1 className="app-title">Full Stack App</h1>
+          <h1 className="app-title">PixelGrid</h1>
           <div className="nav-buttons">
             <button
               onClick={() => setCurrentPage('pixelgrid')}
