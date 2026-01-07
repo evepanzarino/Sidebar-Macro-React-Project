@@ -33,6 +33,7 @@ export default function PixelGrid() {
   const cols = 200;
   // For rows: use a fixed maximum to prevent data loss on resize
   const maxRows = 200; // Fixed maximum rows to ensure consistent grid size
+  const basePixelSize = 0.75; // Desktop pixel size
   const displayPixelSize = basePixelSize * zoomFactor;
   const totalPixels = cols * maxRows;
 
