@@ -18,12 +18,20 @@ export default function PixelGrid() {
   // Initialize with empty array, will be populated by useEffect
   const [pixelColors, setPixelColors] = useState([]);
 
-  // 250 columns of 0.4vw = 100vw width
+  // Zoom factor for drawing area based on screen size
+  const getZoomFactor = () => {
+    if (size.w <= 768) return 2.0; // Mobile: 2x zoom
+    if (size.w <= 1024) return 1.5; // Tablet: 1.5x zoom
+    return 1.0; // Desktop: no zoom
+  };
+
+  const zoomFactor = getZoomFactor();
   const cols = 200;
-  // For rows: calculate to fill viewport height
-  // 0.4vw in pixels = (viewport width / 100) * 0.4
-  const calculatedRows = Math.floor(size.h / (size.w * 0.005));
-  const rows = calculatedRows > 0 ? calculatedRows : 100; // Fallback to 100 rows if calculation fails
+  // For rows: calculate to fill viewport height with zoom
+  const basePixelSize = 0.5; // Always save at 0.5vw
+  const displayPixelSize = basePixelSize * zoomFactor;
+  const calculatedRows = Math.floor(size.h / (size.w * (displayPixelSize / 100)));
+  const rows = calculatedRows > 0 ? calculatedRows : 100;
   const totalPixels = cols * rows;
 
   const fileInputRef = useRef(null);
@@ -703,8 +711,8 @@ const colors = ${data};
       {/* GRID */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: `repeat(200, 0.5vw)`,
-        gridTemplateRows: `repeat(${rows}, 0.5vw)`,
+        gridTemplateColumns: `repeat(200, ${displayPixelSize}vw)`,
+        gridTemplateRows: `repeat(${rows}, ${displayPixelSize}vw)`,
         userSelect: "none",
         touchAction: "none",
         flex: 1,
@@ -721,7 +729,7 @@ const colors = ${data};
               style={{ 
                 background: c, 
                 boxSizing: 'border-box',
-                border: `0.1vw solid ${borderColor}`
+                border: `${0.1 * zoomFactor}vw solid ${borderColor}`
               }}
               onPointerDown={(e) => {
                 setIsDrawing(true);
