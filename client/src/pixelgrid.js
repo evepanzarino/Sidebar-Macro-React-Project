@@ -12,8 +12,11 @@ export default function PixelGrid() {
   const [showColorEditor, setShowColorEditor] = useState(false);
   const [editingColor, setEditingColor] = useState(null); // "primary" or "secondary"
   const [hoveredPixel, setHoveredPixel] = useState(null);
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [isDraggingSlider, setIsDraggingSlider] = useState(false);
   
   const color = activeTool === "primary" ? primaryColor : secondaryColor;
+  const gridRef = useRef(null);
 
   // Initialize with empty array, will be populated by useEffect
   const [pixelColors, setPixelColors] = useState([]);
@@ -709,15 +712,22 @@ const colors = ${data};
       </div>
 
       {/* GRID */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(200, ${displayPixelSize}vw)`,
-        gridTemplateRows: `repeat(${rows}, ${displayPixelSize}vw)`,
-        userSelect: "none",
-        touchAction: "none",
-        flex: 1,
-        overflow: "auto"
-      }}>
+      <div 
+        ref={gridRef}
+        onScroll={(e) => {
+          if (size.w <= 1024) {
+            setScrollPosition(e.target.scrollLeft);
+          }
+        }}
+        style={{
+          display: "grid",
+          gridTemplateColumns: `repeat(200, ${displayPixelSize}vw)`,
+          gridTemplateRows: `repeat(${rows}, ${displayPixelSize}vw)`,
+          userSelect: "none",
+          touchAction: "none",
+          flex: 1,
+          overflow: "auto"
+        }}>
         {(pixelColors || []).map((c, i) => {
           const isLight = isLightColor(c);
           const isHovered = !isDrawing && hoveredPixel === i;
@@ -760,77 +770,115 @@ const colors = ${data};
           bottom: 0,
           left: 0,
           width: "100%",
-          height: "5vw",
+          height: "15vw",
           display: "grid",
-          gridTemplateColumns: "5vw 1fr 5vw",
+          gridTemplateColumns: "15vw 1fr 15vw",
           background: "#ffffff",
-          borderTop: "0.2vw solid #000000",
+          borderTop: "0.3vw solid #000000",
           zIndex: 100
         }}>
-          {/* Left indicator square */}
-          <div style={{
-            width: "5vw",
-            height: "5vw",
-            display: "grid",
-            gridTemplateColumns: "repeat(10, 0.5vw)",
-            gridTemplateRows: "repeat(10, 0.5vw)",
-            background: "#ffffff"
-          }}>
-            {Array(100).fill(null).map((_, i) => (
-              <div key={i} style={{
-                width: "0.5vw",
-                height: "0.5vw",
-                background: pixelColors[i] || "#ffffff"
-              }} />
-            ))}
+          {/* Left scroll button */}
+          <div 
+            onPointerDown={() => {
+              if (gridRef.current) {
+                gridRef.current.scrollLeft = Math.max(0, scrollPosition - 100);
+              }
+            }}
+            style={{
+              width: "15vw",
+              height: "15vw",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "#f0f0f0",
+              border: "0.2vw solid #000000",
+              cursor: "pointer",
+              fontSize: "8vw",
+              userSelect: "none"
+            }}
+          >
+            ◀
           </div>
 
-          {/* Scrollbar track */}
-          <div style={{
-            width: "100%",
-            height: "5vw",
-            background: "#f0f0f0",
-            position: "relative",
-            overflow: "hidden"
-          }}>
-            <div style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
+          {/* Slider track */}
+          <div 
+            style={{
               width: "100%",
-              height: "100%",
-              display: "grid",
-              gridTemplateColumns: `repeat(200, 0.5vw)`,
-              gridTemplateRows: "repeat(10, 0.5vw)",
-              overflowX: "auto",
-              overflowY: "hidden"
-            }}>
-              {pixelColors.slice(0, 2000).map((c, i) => (
-                <div key={i} style={{
-                  width: "0.5vw",
-                  height: "0.5vw",
-                  background: c
-                }} />
-              ))}
+              height: "15vw",
+              background: "#e0e0e0",
+              position: "relative",
+              padding: "2vw"
+            }}
+          >
+            <div
+              onPointerDown={(e) => {
+                setIsDraggingSlider(true);
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const percent = x / rect.width;
+                const maxScroll = gridRef.current ? gridRef.current.scrollWidth - gridRef.current.clientWidth : 0;
+                if (gridRef.current) {
+                  gridRef.current.scrollLeft = percent * maxScroll;
+                }
+              }}
+              onPointerMove={(e) => {
+                if (isDraggingSlider && gridRef.current) {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = e.clientX - rect.left;
+                  const percent = Math.max(0, Math.min(1, x / rect.width));
+                  const maxScroll = gridRef.current.scrollWidth - gridRef.current.clientWidth;
+                  gridRef.current.scrollLeft = percent * maxScroll;
+                }
+              }}
+              onPointerUp={() => setIsDraggingSlider(false)}
+              onPointerLeave={() => setIsDraggingSlider(false)}
+              style={{
+                width: "100%",
+                height: "11vw",
+                background: "#cccccc",
+                borderRadius: "1vw",
+                position: "relative",
+                cursor: "pointer",
+                touchAction: "none"
+              }}
+            >
+              {/* Slider thumb */}
+              <div style={{
+                position: "absolute",
+                left: `${gridRef.current ? (scrollPosition / (gridRef.current.scrollWidth - gridRef.current.clientWidth)) * 100 : 0}%`,
+                top: "50%",
+                transform: "translate(-50%, -50%)",
+                width: "8vw",
+                height: "9vw",
+                background: "#333",
+                border: "0.3vw solid #000",
+                borderRadius: "1vw",
+                pointerEvents: "none"
+              }} />
             </div>
           </div>
 
-          {/* Right indicator square */}
-          <div style={{
-            width: "5vw",
-            height: "5vw",
-            display: "grid",
-            gridTemplateColumns: "repeat(10, 0.5vw)",
-            gridTemplateRows: "repeat(10, 0.5vw)",
-            background: "#ffffff"
-          }}>
-            {Array(100).fill(null).map((_, i) => (
-              <div key={i} style={{
-                width: "0.5vw",
-                height: "0.5vw",
-                background: pixelColors[i + 100] || "#ffffff"
-              }} />
-            ))}
+          {/* Right scroll button */}
+          <div 
+            onPointerDown={() => {
+              if (gridRef.current) {
+                gridRef.current.scrollLeft = scrollPosition + 100;
+              }
+            }}
+            style={{
+              width: "15vw",
+              height: "15vw",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "#f0f0f0",
+              border: "0.2vw solid #000000",
+              cursor: "pointer",
+              fontSize: "8vw",
+              userSelect: "none"
+            }}
+          >
+            ▶
           </div>
         </div>
       )}
