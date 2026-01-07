@@ -844,15 +844,16 @@ const colors = ${data};
             >
               {/* Slider thumb */}
               <div style={{
-                position: "absolute",
+                position: "fixed",
                 left: `${gridRef.current ? (scrollPosition / (gridRef.current.scrollWidth - gridRef.current.clientWidth)) * 100 : 0}%`,
-                top: "50%",
-                transform: "translate(-50%, -50%)",
+                bottom: "0",
+            
+                transform: "translate(-30%, -30%)",
                 width: "8vw",
-                height: "9vw",
-                background: "#333",
-                border: "0.3vw solid #000",
-                borderRadius: "1vw",
+                height: "8w",
+                background: "#000000",
+
+              
                 pointerEvents: "none"
               }} />
             </div>
