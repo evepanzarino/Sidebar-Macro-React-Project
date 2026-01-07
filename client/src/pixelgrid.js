@@ -753,6 +753,88 @@ const colors = ${data};
       </div>
       </div>
       
+      {/* MOBILE/TABLET BOTTOM SCROLLBAR */}
+      {size.w <= 1024 && (
+        <div style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          width: "100%",
+          height: "5vw",
+          display: "grid",
+          gridTemplateColumns: "5vw 1fr 5vw",
+          background: "#ffffff",
+          borderTop: "0.2vw solid #000000",
+          zIndex: 100
+        }}>
+          {/* Left indicator square */}
+          <div style={{
+            width: "5vw",
+            height: "5vw",
+            display: "grid",
+            gridTemplateColumns: "repeat(10, 0.5vw)",
+            gridTemplateRows: "repeat(10, 0.5vw)",
+            background: "#ffffff"
+          }}>
+            {Array(100).fill(null).map((_, i) => (
+              <div key={i} style={{
+                width: "0.5vw",
+                height: "0.5vw",
+                background: pixelColors[i] || "#ffffff"
+              }} />
+            ))}
+          </div>
+
+          {/* Scrollbar track */}
+          <div style={{
+            width: "100%",
+            height: "5vw",
+            background: "#f0f0f0",
+            position: "relative",
+            overflow: "hidden"
+          }}>
+            <div style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              display: "grid",
+              gridTemplateColumns: `repeat(200, 0.5vw)`,
+              gridTemplateRows: "repeat(10, 0.5vw)",
+              overflowX: "auto",
+              overflowY: "hidden"
+            }}>
+              {pixelColors.slice(0, 2000).map((c, i) => (
+                <div key={i} style={{
+                  width: "0.5vw",
+                  height: "0.5vw",
+                  background: c
+                }} />
+              ))}
+            </div>
+          </div>
+
+          {/* Right indicator square */}
+          <div style={{
+            width: "5vw",
+            height: "5vw",
+            display: "grid",
+            gridTemplateColumns: "repeat(10, 0.5vw)",
+            gridTemplateRows: "repeat(10, 0.5vw)",
+            background: "#ffffff"
+          }}>
+            {Array(100).fill(null).map((_, i) => (
+              <div key={i} style={{
+                width: "0.5vw",
+                height: "0.5vw",
+                background: pixelColors[i + 100] || "#ffffff"
+              }} />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* COLOR EDITOR OVERLAY */}
       {showColorEditor && (
         <div
