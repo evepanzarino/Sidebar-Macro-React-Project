@@ -23,7 +23,7 @@ export default function PixelGrid() {
     if (size.w <= 768) return  2.75; // Mobile
     if (size.w <= 1024) return 1.75; // Tablet
     if (size.w <= 1750) return 1.25;
-    return 1.1; // Desktop
+    return 1; // Desktop
   };
 
   const zoomFactor = getZoomFactor();
