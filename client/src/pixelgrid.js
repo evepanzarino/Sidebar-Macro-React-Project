@@ -775,7 +775,8 @@ const colors = ${data};
           height: "15vw",
           display: "grid",
           gridTemplateColumns: "15vw 1fr 15vw",
-          background: "#ffffff",
+          background: "#fefefe",
+          borderTop: "0.2vw solid #000000",
           zIndex: 100
         }}>
           {/* Left scroll button */}
@@ -791,8 +792,8 @@ const colors = ${data};
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              background: "#f0f0f0",
-              border: "0.2vw solid #000000",
+              background: "#fefefe",
+              borderRight: "0.2vw solid #000000",
               cursor: "pointer",
               fontSize: "8vw",
               userSelect: "none"
@@ -806,9 +807,11 @@ const colors = ${data};
             style={{
               width: "100%",
               height: "15vw",
-              background: "#e0e0e0",
+              background: "#fefefe",
               position: "relative",
-              padding: "2vw"
+              padding: "2vw",
+              display: "flex",
+              alignItems: "center"
             }}
           >
             <div
@@ -836,7 +839,7 @@ const colors = ${data};
               style={{
                 width: "100%",
                 height: "11vw",
-                background: "#cccccc",
+                background: "#ffffff",
                 border: "0.2vw solid #000000",
                 position: "relative",
                 cursor: "pointer",
@@ -852,7 +855,6 @@ const colors = ${data};
                 width: "8vw",
                 height: "11vw",
                 background: "#000000",
-                border: "0.2vw solid #000000",
                 pointerEvents: "none"
               }} />
             </div>
@@ -871,8 +873,8 @@ const colors = ${data};
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              background: "#f0f0f0",
-              border: "0.2vw solid #000000",
+              background: "#fefefe",
+              borderLeft: "0.2vw solid #000000",
               cursor: "pointer",
               fontSize: "8vw",
               userSelect: "none"
