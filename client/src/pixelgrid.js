@@ -31,16 +31,14 @@ export default function PixelGrid() {
 
   const zoomFactor = getZoomFactor();
   const cols = 200;
-  // For rows: calculate to fill viewport height with zoom
-  const basePixelSize = 0.75; // Desktop pixel size
+  // For rows: use a fixed maximum to prevent data loss on resize
+  const maxRows = 200; // Fixed maximum rows to ensure consistent grid size
   const displayPixelSize = basePixelSize * zoomFactor;
-  const calculatedRows = Math.floor(size.h / (size.w * (displayPixelSize / 100)));
-  const rows = calculatedRows > 0 ? calculatedRows : 100;
-  const totalPixels = cols * rows;
+  const totalPixels = cols * maxRows;
 
   const fileInputRef = useRef(null);
 
-  // Initialize/resize pixelColors array when totalPixels changes
+  // Initialize pixelColors array once with fixed size
   useEffect(() => {
     setPixelColors((prev) => {
       if (prev.length === totalPixels) return prev;
@@ -723,7 +721,7 @@ const colors = ${data};
         style={{
           display: "grid",
           gridTemplateColumns: `repeat(200, ${displayPixelSize}vw)`,
-          gridTemplateRows: `repeat(${rows}, ${displayPixelSize}vw)`,
+          gridTemplateRows: `repeat(${maxRows}, ${displayPixelSize}vw)`,
           userSelect: "none",
           touchAction: "none",
           flex: 1,
