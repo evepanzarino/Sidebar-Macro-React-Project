@@ -144,7 +144,7 @@ const colors = ${data};
         borderBottomColor: "rgb(0, 0, 0)",
         display: "grid",
         alignItems: "center",
-        gridTemplateColumns: "10vw 3vw 1.5vw 3vw 3vw 2.25vw 3.75vw 3vw 1.5vw 3vw .75vw auto auto auto auto",
+        gridTemplateColumns: "10vw 5.72vw 2.86vw 5.72vw 5.72vw 4.29vw 7.15vw 5.72vw 2.86vw 5.72vw .75vw auto auto auto auto",
         zIndex: 20
       }}>
         <div className="logo" style={{
@@ -208,10 +208,10 @@ const colors = ${data};
         <div className="title-letter-1" style={{
           display: "grid",
           position: "relative",
-          gridTemplateColumns: "repeat(4, .75vw)",
-          gridTemplateRows: "repeat(7, .75vw)",
+          gridTemplateColumns: "repeat(4, 1.43vw)",
+          gridTemplateRows: "repeat(7, 1.43vw)",
           padding: 0,
-          width: "3vw"
+          width: "5.72vw"
         }}>
 <div className="title-p"></div>
 <div className="title-p"></div>
@@ -246,9 +246,9 @@ const colors = ${data};
         <div className="title-letter-2" style={{
           display: "grid",
           position: "relative",
-          gridTemplateColumns: "repeat(2, .75vw)",
-          gridTemplateRows: "repeat(7, .75vw)",
-          width: "1.5vw"
+          gridTemplateColumns: "repeat(2, 1.43vw)",
+          gridTemplateRows: "repeat(7, 1.43vw)",
+          width: "2.86vw"
         }}>
 <div className="title-i"></div>
 <div className="title-i"></div>
@@ -283,9 +283,9 @@ const colors = ${data};
                 <div className="title-letter-3" style={{
           display: "grid",
           position: "relative",
-          gridTemplateColumns: "repeat(4, .75vw)",
-          gridTemplateRows: "repeat(7, .75vw)",
-          width: "3vw"
+          gridTemplateColumns: "repeat(4, 1.43vw)",
+          gridTemplateRows: "repeat(7, 1.43vw)",
+          width: "5.72vw"
         }}>
 <div className="title-x"></div>
 <div className="title-x"></div>
@@ -320,9 +320,9 @@ const colors = ${data};
         <div className="title-letter-4" style={{
           display: "grid",
           position: "relative",
-          gridTemplateColumns: "repeat(4, .75vw)",
-          gridTemplateRows: "repeat(7, .75vw)",
-          width: "3vw"
+          gridTemplateColumns: "repeat(4, 1.43vw)",
+          gridTemplateRows: "repeat(7, 1.43vw)",
+          width: "5.72vw"
         }}>
 <div className="title-e"></div>
 <div className="title-e"></div>
@@ -357,9 +357,9 @@ const colors = ${data};
 <div className="title-letter-5" style={{
           display: "grid",
           position: "relative",
-          gridTemplateColumns: "repeat(3, .75vw)",
-          gridTemplateRows: "repeat(7, .75vw)",
-          width: "2.25vw"
+          gridTemplateColumns: "repeat(3, 1.43vw)",
+          gridTemplateRows: "repeat(7, 1.43vw)",
+          width: "4.29vw"
         }}>
 <div className="title-l"></div>
 <div className="title-l"></div>
@@ -387,9 +387,9 @@ const colors = ${data};
  <div className="title-letter-6" style={{
           display: "grid",
           position: "relative",
-          gridTemplateColumns: "repeat(5, .75vw)",
-          gridTemplateRows: "repeat(7, .75vw)",
-          width: "3.75vw"
+          gridTemplateColumns: "repeat(5, 1.43vw)",
+          gridTemplateRows: "repeat(7, 1.43vw)",
+          width: "7.15vw"
         }}>
 <div className="title-g"></div>
 <div className="title-g"></div>
@@ -430,9 +430,9 @@ const colors = ${data};
  <div className="title-letter-7" style={{
           display: "grid",
           position: "relative",
-          gridTemplateColumns: "repeat(4, .75vw)",
-          gridTemplateRows: "repeat(7, .75vw)",
-          width: "3vw"
+          gridTemplateColumns: "repeat(4, 1.43vw)",
+          gridTemplateRows: "repeat(7, 1.43vw)",
+          width: "5.72vw"
         }}>
 <div className="title-r"></div>
 <div className="title-r"></div>
@@ -466,9 +466,9 @@ const colors = ${data};
 <div className="title-letter-8" style={{
           display: "grid",
           position: "relative",
-          gridTemplateColumns: "repeat(2, .75vw)",
-          gridTemplateRows: "repeat(7, .75vw)",
-          width: "1.5vw"
+          gridTemplateColumns: "repeat(2, 1.43vw)",
+          gridTemplateRows: "repeat(7, 1.43vw)",
+          width: "2.86vw"
         }}>
 <div className="title-i"></div>
 <div className="title-i"></div>
@@ -503,9 +503,9 @@ const colors = ${data};
 <div className="title-letter-9" style={{
           display: "grid",
           position: "relative",
-          gridTemplateColumns: "repeat(4, .75vw)",
-          gridTemplateRows: "repeat(7, .75vw)",
-          width: "3vw"
+          gridTemplateColumns: "repeat(4, 1.43vw)",
+          gridTemplateRows: "repeat(7, 1.43vw)",
+          width: "5.72vw"
         }}>
           <div className="title-d"></div>
 <div className="title-d"></div>
