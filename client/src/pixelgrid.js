@@ -1382,7 +1382,7 @@ const savedData = ${dataString};
                   color: activeDrawingTool === "movegroup" ? "#fff" : "#000",
                   border: "0.3vw solid #000000",
                   cursor: "pointer",
-                  fontSize: size.w <= 1024 ? "3vw" : "2vw",
+                  fontSize: size.w <= 1024 ? "5vw" : "3.5vw",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -2259,22 +2259,101 @@ const savedData = ${dataString};
                     </div>
                     
                     {/* Layer Name */}
-                    <div
-                      onClick={() => setActiveGroup(group.name)}
-                      style={{
-                        fontSize: "1.2vw",
-                        padding: "0.8vw",
-                        background: activeGroup === group.name ? "#2196F3" : "#222",
-                        borderRadius: "0.3vw",
-                        cursor: "pointer",
-                        border: activeGroup === group.name ? "0.2vw solid #FFD700" : "0.2vw solid #444",
-                        fontWeight: activeGroup === group.name ? "bold" : "normal",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap"
-                      }}
-                    >
-                      {group.name}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5vw", flex: 1 }}>
+                      <div
+                        onClick={() => setActiveGroup(group.name)}
+                        style={{
+                          fontSize: "1.2vw",
+                          padding: "0.8vw",
+                          background: activeGroup === group.name ? "#2196F3" : "#222",
+                          borderRadius: "0.3vw",
+                          cursor: "pointer",
+                          border: activeGroup === group.name ? "0.2vw solid #FFD700" : "0.2vw solid #444",
+                          fontWeight: activeGroup === group.name ? "bold" : "normal",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap"
+                        }}
+                      >
+                        {group.name}
+                      </div>
+                      
+                      {/* Directional Movement Buttons - Show when movegroup tool is active and this layer is active */}
+                      {activeDrawingTool === "movegroup" && activeGroup === group.name && (
+                        <div style={{ display: "flex", gap: "0.3vw", justifyContent: "center", alignItems: "center" }}>
+                          {/* Left Button */}
+                          <button
+                            onClick={() => moveGroup(group.name, 0, -1)}
+                            style={{
+                              background: "#9C27B0",
+                              color: "white",
+                              border: "0.15vw solid #000",
+                              padding: "0.4vw 0.8vw",
+                              cursor: "pointer",
+                              fontSize: "1vw",
+                              fontWeight: "bold",
+                              borderRadius: "0.3vw"
+                            }}
+                            title="Move left"
+                          >
+                            ←
+                          </button>
+                          
+                          {/* Up Button */}
+                          <button
+                            onClick={() => moveGroup(group.name, -1, 0)}
+                            style={{
+                              background: "#9C27B0",
+                              color: "white",
+                              border: "0.15vw solid #000",
+                              padding: "0.4vw 0.8vw",
+                              cursor: "pointer",
+                              fontSize: "1vw",
+                              fontWeight: "bold",
+                              borderRadius: "0.3vw"
+                            }}
+                            title="Move up"
+                          >
+                            ↑
+                          </button>
+                          
+                          {/* Down Button */}
+                          <button
+                            onClick={() => moveGroup(group.name, 1, 0)}
+                            style={{
+                              background: "#9C27B0",
+                              color: "white",
+                              border: "0.15vw solid #000",
+                              padding: "0.4vw 0.8vw",
+                              cursor: "pointer",
+                              fontSize: "1vw",
+                              fontWeight: "bold",
+                              borderRadius: "0.3vw"
+                            }}
+                            title="Move down"
+                          >
+                            ↓
+                          </button>
+                          
+                          {/* Right Button */}
+                          <button
+                            onClick={() => moveGroup(group.name, 0, 1)}
+                            style={{
+                              background: "#9C27B0",
+                              color: "white",
+                              border: "0.15vw solid #000",
+                              padding: "0.4vw 0.8vw",
+                              cursor: "pointer",
+                              fontSize: "1vw",
+                              fontWeight: "bold",
+                              borderRadius: "0.3vw"
+                            }}
+                            title="Move right"
+                          >
+                            →
+                          </button>
+                        </div>
+                      )}
                     </div>
                     
                     {/* Edit Button */}
