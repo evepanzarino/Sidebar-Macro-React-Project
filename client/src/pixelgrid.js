@@ -14,8 +14,10 @@ export default function PixelGrid() {
   const [hoveredPixel, setHoveredPixel] = useState(null);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [isDraggingSlider, setIsDraggingSlider] = useState(false);
-  const [activeDrawingTool, setActiveDrawingTool] = useState("pencil"); // "pencil", "line", or future tools like "bucket"
+  const [activeDrawingTool, setActiveDrawingTool] = useState("pencil"); // "pencil", "line", "pen", or future tools like "bucket"
   const [lineStartPixel, setLineStartPixel] = useState(null); // For line tool: first click position
+  const [penPath, setPenPath] = useState([]); // For pen tool: array of points {x, y}
+  const [isPenPathClosed, setIsPenPathClosed] = useState(false);
   
   const color = activeTool === "primary" ? primaryColor : secondaryColor;
   const gridRef = useRef(null);
@@ -80,13 +82,29 @@ export default function PixelGrid() {
       setHoveredPixel(null);
     };
 
+    function handleKeyDown(e) {
+      if (activeDrawingTool === "pen") {
+        if (e.key === "Enter" && penPath.length > 0) {
+          // Finish the pen path
+          drawPenPath();
+        } else if (e.key === "Escape") {
+          // Cancel the pen path
+          setPenPath([]);
+          setIsPenPathClosed(false);
+        }
+      }
+    }
+
     window.addEventListener("resize", handleResize);
     window.addEventListener("pointerup", stopDrawing);
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("pointerup", stopDrawing);
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDrawingTool, penPath]);
 
   function paintPixel(e, index) {
     setPixelColors((prev) => {
@@ -165,6 +183,87 @@ export default function PixelGrid() {
     });
   }
 
+  function getBezierPoints(p0, p1, p2, p3) {
+    // Cubic Bezier curve
+    const points = [];
+    const steps = 100;
+    for (let t = 0; t <= steps; t++) {
+      const u = t / steps;
+      const u2 = u * u;
+      const u3 = u2 * u;
+      const mu = 1 - u;
+      const mu2 = mu * mu;
+      const mu3 = mu2 * mu;
+      
+      const x = Math.round(mu3 * p0.x + 3 * mu2 * u * p1.x + 3 * mu * u2 * p2.x + u3 * p3.x);
+      const y = Math.round(mu3 * p0.y + 3 * mu2 * u * p1.y + 3 * mu * u2 * p2.y + u3 * p3.y);
+      
+      const index = y * cols + x;
+      if (index >= 0 && index < pixelColors.length && !points.includes(index)) {
+        points.push(index);
+      }
+    }
+    return points;
+  }
+
+  function getQuadraticBezierPoints(p0, p1, p2) {
+    // Quadratic Bezier curve
+    const points = [];
+    const steps = 50;
+    for (let t = 0; t <= steps; t++) {
+      const u = t / steps;
+      const u2 = u * u;
+      const mu = 1 - u;
+      const mu2 = mu * mu;
+      
+      const x = Math.round(mu2 * p0.x + 2 * mu * u * p1.x + u2 * p2.x);
+      const y = Math.round(mu2 * p0.y + 2 * mu * u * p1.y + u2 * p2.y);
+      
+      const index = y * cols + x;
+      if (index >= 0 && index < pixelColors.length && !points.includes(index)) {
+        points.push(index);
+      }
+    }
+    return points;
+  }
+
+  function drawPenPath() {
+    if (penPath.length < 2) return;
+    
+    let allPixels = [];
+    
+    // Draw curves between points
+    for (let i = 0; i < penPath.length - 1; i++) {
+      const p0 = penPath[i];
+      const p1 = penPath[i + 1];
+      
+      // Simple line between points (can be enhanced to bezier curves)
+      const startIndex = p0.y * cols + p0.x;
+      const endIndex = p1.y * cols + p1.x;
+      allPixels = [...allPixels, ...getLinePixels(startIndex, endIndex)];
+    }
+    
+    // Close the path if needed
+    if (isPenPathClosed && penPath.length > 2) {
+      const p0 = penPath[penPath.length - 1];
+      const p1 = penPath[0];
+      const startIndex = p0.y * cols + p0.x;
+      const endIndex = p1.y * cols + p1.x;
+      allPixels = [...allPixels, ...getLinePixels(startIndex, endIndex)];
+    }
+    
+    setPixelColors((prev) => {
+      const copy = [...prev];
+      allPixels.forEach(i => {
+        copy[i] = color;
+      });
+      return copy;
+    });
+    
+    setPenPath([]);
+    setIsPenPathClosed(false);
+  }
+
   function handlePixelClick(e, index) {
     if (activeDrawingTool === "line") {
       if (lineStartPixel === null) {
@@ -175,6 +274,23 @@ export default function PixelGrid() {
         drawLine(lineStartPixel, index);
         setLineStartPixel(null);
       }
+    } else if (activeDrawingTool === "pen") {
+      const x = index % cols;
+      const y = Math.floor(index / cols);
+      
+      // Check if clicking near the first point to close path
+      if (penPath.length > 2) {
+        const firstPoint = penPath[0];
+        const distance = Math.sqrt(Math.pow(x - firstPoint.x, 2) + Math.pow(y - firstPoint.y, 2));
+        if (distance < 5) {
+          setIsPenPathClosed(true);
+          drawPenPath();
+          return;
+        }
+      }
+      
+      // Add point to path
+      setPenPath(prev => [...prev, { x, y }]);
     } else if (activeDrawingTool === "pencil") {
       paintPixel(e, index);
     }
@@ -720,6 +836,8 @@ const colors = ${data};
               onClick={() => {
                 setActiveDrawingTool("pencil");
                 setLineStartPixel(null);
+                setPenPath([]);
+                setIsPenPathClosed(false);
               }}
               style={{
                 width: size.w <= 1024 ? "8vw" : "6vw",
@@ -741,6 +859,8 @@ const colors = ${data};
               onClick={() => {
                 setActiveDrawingTool("line");
                 setLineStartPixel(null);
+                setPenPath([]);
+                setIsPenPathClosed(false);
               }}
               style={{
                 width: size.w <= 1024 ? "8vw" : "6vw",
@@ -757,6 +877,29 @@ const colors = ${data};
               }}
             >
               <i className="fas fa-slash"></i>
+            </button>
+            <button
+              onClick={() => {
+                setActiveDrawingTool("pen");
+                setLineStartPixel(null);
+                setPenPath([]);
+                setIsPenPathClosed(false);
+              }}
+              style={{
+                width: size.w <= 1024 ? "8vw" : "6vw",
+                height: size.w <= 1024 ? "8vw" : "6vw",
+                background: activeDrawingTool === "pen" ? "#333" : "#fefefe",
+                color: activeDrawingTool === "pen" ? "#fff" : "#000",
+                border: "0.3vw solid #000000",
+                cursor: "pointer",
+                fontSize: size.w <= 1024 ? "4vw" : "3vw",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: activeDrawingTool === "pen" ? "0px 0px .2vw .2vw #000000" : "none",
+              }}
+            >
+              <i className="fas fa-pen-nib"></i>
             </button>
           </div>
         </div>
@@ -872,10 +1015,43 @@ const colors = ${data};
           const isInLinePreview = activeDrawingTool === "line" && lineStartPixel !== null && hoveredPixel !== null && 
                                   getLinePixels(lineStartPixel, hoveredPixel).includes(i);
           
+          // Pen tool highlighting
+          const x = i % cols;
+          const y = Math.floor(i / cols);
+          const isPenAnchor = activeDrawingTool === "pen" && penPath.some(p => p.x === x && p.y === y);
+          
+          let isInPenPreview = false;
+          if (activeDrawingTool === "pen" && penPath.length > 0) {
+            // Preview path from last point to hovered point
+            if (hoveredPixel !== null) {
+              const lastPoint = penPath[penPath.length - 1];
+              const lastIndex = lastPoint.y * cols + lastPoint.x;
+              isInPenPreview = getLinePixels(lastIndex, hoveredPixel).includes(i);
+            }
+            
+            // Draw existing path segments
+            for (let j = 0; j < penPath.length - 1; j++) {
+              const p0 = penPath[j];
+              const p1 = penPath[j + 1];
+              const startIndex = p0.y * cols + p0.x;
+              const endIndex = p1.y * cols + p1.x;
+              if (getLinePixels(startIndex, endIndex).includes(i)) {
+                isInPenPreview = true;
+                break;
+              }
+            }
+          }
+          
           let borderColor = 'transparent';
           let borderWidth = `${0.1 * zoomFactor}vw`;
           
-          if (isLineStart || isInLinePreview) {
+          if (isPenAnchor) {
+            borderColor = getContrastBorderColor(c);
+            borderWidth = `${0.3 * zoomFactor}vw`;
+          } else if (isInPenPreview) {
+            borderColor = getContrastBorderColor(c);
+            borderWidth = `${0.2 * zoomFactor}vw`;
+          } else if (isLineStart || isInLinePreview) {
             borderColor = getContrastBorderColor(c);
             borderWidth = `${0.2 * zoomFactor}vw`;
           } else if (isHovered) {
