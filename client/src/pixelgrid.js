@@ -2257,27 +2257,26 @@ const savedData = ${dataString};
           right: 0,
           background: "rgba(0,0,0,0.95)",
           color: "white",
-          padding: "2vw",
+          padding: "0.8vw",
           zIndex: 1000,
           display: "flex",
           flexDirection: "column",
-          gap: "1.5vw",
+          gap: "0.5vw",
           borderTop: "0.3vw solid #ffffff",
-          maxHeight: "25vw",
+          maxHeight: "15vw",
           overflowY: "auto"
         }}>
           
           {/* Top Row: Group Creation + Close */}
-          <div style={{ display: "flex", flexDirection: "row", gap: "2vw", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "auto 1fr auto auto auto", gap: "0.5vw", alignItems: "center" }}>
             
             {/* Group Creation Section - Always Visible */}
-            <div style={{ display: "flex", gap: "1.5vw", alignItems: "center", flex: 1 }}>
-              <div style={{ fontSize: "1.3vw", fontWeight: "bold" }}>
-                Create Group:
-              </div>
-              <input
-                type="text"
-                placeholder="Enter group name"
+            <div style={{ fontSize: "0.8vw", fontWeight: "bold", whiteSpace: "nowrap" }}>
+              Create:
+            </div>
+            <input
+              type="text"
+              placeholder="Group name"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && e.target.value.trim()) {
                     createGroup(e.target.value.trim());
@@ -2285,10 +2284,9 @@ const savedData = ${dataString};
                   }
                 }}
                 style={{
-                  padding: "1vw",
-                  fontSize: "1.5vw",
-                  width: "15vw",
-                  border: "0.2vw solid #4CAF50",
+                  padding: "0.3vw 0.5vw",
+                  fontSize: "0.8vw",
+                  border: "0.15vw solid #4CAF50",
                   textAlign: "center",
                   background: "#222",
                   color: "white"
@@ -2296,7 +2294,7 @@ const savedData = ${dataString};
               />
               <button
                 onClick={() => {
-                  const input = document.querySelector('input[placeholder="Enter group name"]');
+                  const input = document.querySelector('input[placeholder="Group name"]');
                   if (input && input.value.trim()) {
                     createGroup(input.value.trim());
                     input.value = "";
@@ -2305,21 +2303,21 @@ const savedData = ${dataString};
                 style={{
                   background: "#4CAF50",
                   color: "white",
-                  border: "0.2vw solid #000",
-                  padding: "1vw 3vw",
+                  border: "0.15vw solid #000",
+                  padding: "0.3vw 1vw",
                   cursor: "pointer",
-                  fontSize: "1.3vw",
-                  fontWeight: "bold"
+                  fontSize: "0.8vw",
+                  fontWeight: "bold",
+                  whiteSpace: "nowrap"
                 }}
               >
                 + Create
               </button>
               {selectedPixels.length > 0 && (
-                <div style={{ fontSize: "1.2vw", color: "#4CAF50", fontWeight: "bold" }}>
-                  ({selectedPixels.length} pixels selected)
+                <div style={{ fontSize: "0.7vw", color: "#4CAF50", fontWeight: "bold", whiteSpace: "nowrap" }}>
+                  ({selectedPixels.length} sel)
                 </div>
               )}
-            </div>
             
             {/* Close button */}
             <button
@@ -2334,10 +2332,10 @@ const savedData = ${dataString};
               style={{
                 background: "#666",
                 color: "white",
-                border: "0.2vw solid #000",
-                padding: "1vw 2vw",
+                border: "0.15vw solid #000",
+                padding: "0.3vw 0.8vw",
                 cursor: "pointer",
-                fontSize: "1.3vw",
+                fontSize: "0.9vw",
                 fontWeight: "bold"
               }}
             >
@@ -2348,29 +2346,30 @@ const savedData = ${dataString};
           {/* Layers Grid - Only show if groups exist */}
           {groups.length > 0 && (
             <>
-              <div style={{ borderTop: "0.2vw solid #666", margin: "0.5vw 0" }} />
+              <div style={{ borderTop: "0.15vw solid #666", margin: "0.3vw 0" }} />
               
-              <div style={{ fontSize: "1.4vw", fontWeight: "bold", color: "#FFD700" }}>
-                Layers ({groups.length}) - Drag to Reorder Z-Index
+              <div style={{ fontSize: "0.8vw", fontWeight: "bold", color: "#FFD700" }}>
+                Layers ({groups.length}) - Drag=Reorder
               </div>
               
               <div style={{
                 display: "grid",
                 gridTemplateColumns: "auto 1fr auto auto auto auto auto",
-                gap: "0.5vw",
+                gap: "0.3vw",
                 alignItems: "center",
                 background: "#1a1a1a",
-                padding: "1vw",
-                borderRadius: "0.5vw"
+                padding: "0.3vw",
+                borderRadius: "0.3vw",
+                fontSize: "0.7vw"
               }}>
                 {/* Header Row */}
-                <div style={{ fontSize: "1.1vw", fontWeight: "bold", padding: "0.5vw" }}>Z</div>
-                <div style={{ fontSize: "1.1vw", fontWeight: "bold", padding: "0.5vw" }}>Layer Name</div>
-                <div style={{ fontSize: "1.1vw", fontWeight: "bold", padding: "0.5vw" }}>Edit</div>
-                <div style={{ fontSize: "1.1vw", fontWeight: "bold", padding: "0.5vw" }}>Move</div>
-                <div style={{ fontSize: "1.1vw", fontWeight: "bold", padding: "0.5vw" }}>Up</div>
-                <div style={{ fontSize: "1.1vw", fontWeight: "bold", padding: "0.5vw" }}>Down</div>
-                <div style={{ fontSize: "1.1vw", fontWeight: "bold", padding: "0.5vw" }}>Del</div>
+                <div style={{ fontWeight: "bold", padding: "0.2vw" }}>Z</div>
+                <div style={{ fontWeight: "bold", padding: "0.2vw" }}>Name</div>
+                <div style={{ fontWeight: "bold", padding: "0.2vw" }}>Edit</div>
+                <div style={{ fontWeight: "bold", padding: "0.2vw" }}>Move</div>
+                <div style={{ fontWeight: "bold", padding: "0.2vw" }}>Up</div>
+                <div style={{ fontWeight: "bold", padding: "0.2vw" }}>Down</div>
+                <div style={{ fontWeight: "bold", padding: "0.2vw" }}>Del</div>
                 
                 {/* Layer Rows - Sorted by z-index descending */}
                 {groups.sort((a, b) => b.zIndex - a.zIndex).map((group, index) => (
@@ -2430,29 +2429,29 @@ const savedData = ${dataString};
                   >
                     {/* Z-Index */}
                     <div style={{
-                      fontSize: "1.3vw",
+                      fontSize: "0.8vw",
                       fontWeight: "bold",
-                      padding: "0.8vw",
+                      padding: "0.3vw",
                       background: dragOverLayer === group.name ? "#333" : (activeGroup === group.name ? "#2196F3" : "#222"),
-                      borderRadius: "0.3vw",
+                      borderRadius: "0.2vw",
                       textAlign: "center",
-                      border: dragOverLayer === group.name ? "0.2vw dashed #FFD700" : "0.2vw solid #444",
+                      border: dragOverLayer === group.name ? "0.15vw dashed #FFD700" : "0.15vw solid #444",
                       cursor: "grab"
                     }}>
                       {group.zIndex}
                     </div>
                     
                     {/* Layer Name */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5vw", flex: 1 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.2vw", flex: 1 }}>
                       <div
                         onClick={() => setActiveGroup(group.name)}
                         style={{
-                          fontSize: "1.2vw",
-                          padding: "0.8vw",
+                          fontSize: "0.8vw",
+                          padding: "0.3vw",
                           background: activeGroup === group.name ? "#2196F3" : "#222",
-                          borderRadius: "0.3vw",
+                          borderRadius: "0.2vw",
                           cursor: "pointer",
-                          border: activeGroup === group.name ? "0.2vw solid #FFD700" : "0.2vw solid #444",
+                          border: activeGroup === group.name ? "0.15vw solid #FFD700" : "0.15vw solid #444",
                           fontWeight: activeGroup === group.name ? "bold" : "normal",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
@@ -2464,7 +2463,7 @@ const savedData = ${dataString};
                       
                       {/* Directional Movement Buttons - Show when movegroup tool is active and this layer is active */}
                       {activeDrawingTool === "movegroup" && activeGroup === group.name && (
-                        <div style={{ display: "flex", gap: "0.3vw", justifyContent: "center", alignItems: "center" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "0.2vw" }}>
                           {/* Left Button */}
                           <button
                             onClick={() => moveGroup(group.name, 0, -1)}
@@ -2546,12 +2545,12 @@ const savedData = ${dataString};
                       style={{
                         background: activeGroup === group.name ? "#FFD700" : "#444",
                         color: activeGroup === group.name ? "#000" : "white",
-                        border: "0.2vw solid #000",
-                        padding: "0.5vw 1vw",
+                        border: "0.1vw solid #000",
+                        padding: "0.2vw 0.5vw",
                         cursor: "pointer",
-                        fontSize: "1vw",
+                        fontSize: "0.7vw",
                         fontWeight: "bold",
-                        borderRadius: "0.3vw"
+                        borderRadius: "0.2vw"
                       }}
                     >
                       {activeGroup === group.name ? "✓" : "✎"}
