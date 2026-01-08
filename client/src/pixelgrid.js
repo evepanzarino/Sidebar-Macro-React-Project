@@ -221,79 +221,77 @@ export default function PixelGrid() {
       if (targetColor === fillColor) return prev;
       
       const copy = [...prev];
+      
+      // First pass: identify all boundary pixels (non-target colors)
+      const boundaries = new Set();
+      for (let i = 0; i < copy.length; i++) {
+        if (copy[i] !== targetColor) {
+          boundaries.add(i);
+        }
+      }
+      
+      // Second pass: flood fill but respect boundaries
       const queue = [startIndex];
       const visited = new Set([startIndex]);
+      const maxDistance = 200; // Limit fill spread as safety
+      let fillCount = 0;
+      const maxFill = 10000; // Safety limit
       
-      // Helper to check if we should stop spreading in this direction
-      const shouldStop = (index, direction) => {
-        if (index < 0 || index >= copy.length) return true;
-        if (copy[index] === targetColor) return false;
-        
-        // Check if there's a "wall" - at least 2 colored pixels in line with direction
-        const row = Math.floor(index / 200);
-        const col = index % 200;
-        const pixelColor = copy[index];
-        
-        // Check pixels perpendicular to movement direction for wall continuity
-        let wallStrength = 0;
-        
-        if (direction === 'horizontal') {
-          // Moving left/right, check up/down for wall
-          if (row > 0 && copy[index - 200] === pixelColor) wallStrength++;
-          if (row < Math.floor(copy.length / 200) - 1 && copy[index + 200] === pixelColor) wallStrength++;
-        } else if (direction === 'vertical') {
-          // Moving up/down, check left/right for wall
-          if (col > 0 && copy[index - 1] === pixelColor) wallStrength++;
-          if (col < 199 && copy[index + 1] === pixelColor) wallStrength++;
-        } else {
-          // Diagonal or general check
-          const neighbors = [];
-          if (row > 0) neighbors.push(copy[index - 200]);
-          if (row < Math.floor(copy.length / 200) - 1) neighbors.push(copy[index + 200]);
-          if (col > 0) neighbors.push(copy[index - 1]);
-          if (col < 199) neighbors.push(copy[index + 1]);
-          
-          for (const n of neighbors) {
-            if (n === pixelColor) wallStrength++;
-          }
-        }
-        
-        // Stop if wall strength is at least 1 (pixel is part of a line)
-        return wallStrength >= 1;
-      };
-      
-      while (queue.length > 0) {
+      while (queue.length > 0 && fillCount < maxFill) {
         const index = queue.shift();
+        
+        // Skip if this is a boundary
+        if (boundaries.has(index)) continue;
         
         // Only fill pixels that match the target color
         if (copy[index] !== targetColor) continue;
         
         // Fill this pixel
         copy[index] = fillColor;
+        fillCount++;
         
         const row = Math.floor(index / 200);
         const col = index % 200;
         
-        // Check adjacent pixels with directional awareness
-        const directions = [
-          { idx: index - 200, valid: row > 0, dir: 'vertical' }, // up
-          { idx: index + 200, valid: row < Math.floor(copy.length / 200) - 1, dir: 'vertical' }, // down
-          { idx: index - 1, valid: col > 0, dir: 'horizontal' }, // left
-          { idx: index + 1, valid: col < 199, dir: 'horizontal' }, // right
-          { idx: index - 200 - 1, valid: row > 0 && col > 0, dir: 'diagonal' }, // up-left
-          { idx: index - 200 + 1, valid: row > 0 && col < 199, dir: 'diagonal' }, // up-right
-          { idx: index + 200 - 1, valid: row < Math.floor(copy.length / 200) - 1 && col > 0, dir: 'diagonal' }, // down-left
-          { idx: index + 200 + 1, valid: row < Math.floor(copy.length / 200) - 1 && col < 199, dir: 'diagonal' }, // down-right
-        ];
-        
-        for (const d of directions) {
-          if (d.valid && !visited.has(d.idx)) {
-            visited.add(d.idx);
-            if (!shouldStop(d.idx, d.dir)) {
-              queue.push(d.idx);
+        // For each direction, check if we can pass through
+        const tryAdd = (idx, checkRow, checkCol) => {
+          if (checkRow < 0 || checkRow >= Math.floor(copy.length / 200)) return;
+          if (checkCol < 0 || checkCol >= 200) return;
+          if (visited.has(idx)) return;
+          
+          visited.add(idx);
+          
+          // If it's a boundary, don't add to queue
+          if (boundaries.has(idx)) {
+            // Check if this boundary pixel has enough neighbors to form a wall
+            let boundaryNeighbors = 0;
+            const bRow = Math.floor(idx / 200);
+            const bCol = idx % 200;
+            
+            // Count boundary neighbors
+            if (bRow > 0 && boundaries.has(idx - 200)) boundaryNeighbors++;
+            if (bRow < Math.floor(copy.length / 200) - 1 && boundaries.has(idx + 200)) boundaryNeighbors++;
+            if (bCol > 0 && boundaries.has(idx - 1)) boundaryNeighbors++;
+            if (bCol < 199 && boundaries.has(idx + 1)) boundaryNeighbors++;
+            
+            // If isolated boundary pixel (less than 2 neighbors), allow passing through
+            if (boundaryNeighbors < 2) {
+              queue.push(idx);
             }
+          } else {
+            queue.push(idx);
           }
-        }
+        };
+        
+        // Check all 8 directions
+        tryAdd(index - 200, row - 1, col); // up
+        tryAdd(index + 200, row + 1, col); // down
+        tryAdd(index - 1, row, col - 1); // left
+        tryAdd(index + 1, row, col + 1); // right
+        tryAdd(index - 200 - 1, row - 1, col - 1); // up-left
+        tryAdd(index - 200 + 1, row - 1, col + 1); // up-right
+        tryAdd(index + 200 - 1, row + 1, col - 1); // down-left
+        tryAdd(index + 200 + 1, row + 1, col + 1); // down-right
       }
       
       return copy;
