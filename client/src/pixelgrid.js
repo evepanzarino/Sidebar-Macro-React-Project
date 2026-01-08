@@ -361,8 +361,11 @@ export default function PixelGrid() {
     setPixelGroups(newPixelGroups);
     
     setSelectedPixels([]);
-    // Don't close the dialog, just activate the newly created group
+    setSelectionStart(null);
+    setSelectionEnd(null);
+    // Keep bottom bar open and activate the newly created group
     setActiveGroup(groupName);
+    setShowGroupDialog(true);
   }
 
   // Move group pixels
@@ -1651,7 +1654,7 @@ const colors = ${data};
       )}
 
       {/* GROUP DIALOG AND LAYERS PANEL IN BOTTOM BAR */}
-      {(showGroupDialog || activeGroup) && (
+      {showGroupDialog && (
         <div style={{
           position: "fixed",
           bottom: "5vh",
@@ -1662,26 +1665,26 @@ const colors = ${data};
           padding: "2vw",
           zIndex: 1000,
           display: "flex",
-          flexDirection: "row",
+          flexDirection: "column",
           gap: "2vw",
-          alignItems: "center",
-          justifyContent: "center",
           borderTop: "0.3vw solid #ffffff"
         }}>
           
-          {/* Group Creation Section */}
-          {selectedPixels.length > 0 && (
-            <>
+          <div style={{ display: "flex", flexDirection: "row", gap: "2vw", alignItems: "center", justifyContent: "space-between" }}>
+            
+            {/* Left side: Group Creation Section */}
+            <div style={{ display: "flex", gap: "1.5vw", alignItems: "center", flex: 1 }}>
               <div style={{ fontSize: "1.3vw", fontWeight: "bold" }}>
-                {selectedPixels.length} pixels selected
+                Create Group:
               </div>
               <input
                 type="text"
-                placeholder="Group name"
+                placeholder="Enter group name"
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && e.target.value.trim()) {
                     createGroup(e.target.value.trim());
+                    e.target.value = "";
                   }
                 }}
                 style={{
@@ -1694,9 +1697,10 @@ const colors = ${data};
               />
               <button
                 onClick={() => {
-                  const input = document.querySelector('input[placeholder="Group name"]');
+                  const input = document.querySelector('input[placeholder="Enter group name"]');
                   if (input && input.value.trim()) {
                     createGroup(input.value.trim());
+                    input.value = "";
                   }
                 }}
                 style={{
@@ -1709,17 +1713,47 @@ const colors = ${data};
                   fontWeight: "bold"
                 }}
               >
-                Create Group
+                + Create
               </button>
-              <div style={{ borderLeft: "0.2vw solid #666", height: "4vw", margin: "0 1vw" }} />
-            </>
-          )}
+              {selectedPixels.length > 0 && (
+                <div style={{ fontSize: "1.2vw", color: "#4CAF50", fontWeight: "bold" }}>
+                  ({selectedPixels.length} pixels selected)
+                </div>
+              )}
+            </div>
+            
+            {/* Right side: Close button */}
+            <button
+              onClick={() => {
+                setShowGroupDialog(false);
+                setActiveGroup(null);
+                setSelectedPixels([]);
+                setSelectionStart(null);
+                setSelectionEnd(null);
+                setActiveDrawingTool("pencil");
+              }}
+              style={{
+                background: "#666",
+                color: "white",
+                border: "0.2vw solid #000",
+                padding: "1vw 2vw",
+                cursor: "pointer",
+                fontSize: "1.3vw",
+                fontWeight: "bold"
+              }}
+            >
+              ✕
+            </button>
+          </div>
           
-          {/* Layer Editor Section */}
+          {/* Divider */}
+          {activeGroup && <div style={{ borderTop: "0.2vw solid #666", margin: "0.5vw 0" }} />}
+          
+          {/* Layer Styling Section */}
           {activeGroup && (
-            <>
-              <div style={{ fontSize: "1.3vw", fontWeight: "bold" }}>
-                Editing:
+            <div style={{ display: "flex", gap: "2vw", alignItems: "center", justifyContent: "flex-start" }}>
+              <div style={{ fontSize: "1.3vw", fontWeight: "bold", color: "#FFD700" }}>
+                Style Layer:
               </div>
               <input
                 type="text"
@@ -1746,12 +1780,14 @@ const colors = ${data};
                   padding: "1vw",
                   fontSize: "1.5vw",
                   width: "15vw",
-                  border: "0.2vw solid #000000",
-                  textAlign: "center"
+                  border: "0.2vw solid #FFD700",
+                  textAlign: "center",
+                  background: "#222",
+                  color: "white"
                 }}
               />
               <div style={{ display: "flex", gap: "1vw", alignItems: "center" }}>
-                <span style={{ fontSize: "1.2vw" }}>Z:</span>
+                <span style={{ fontSize: "1.2vw" }}>Z-Index:</span>
                 <button
                   onClick={() => {
                     const newGroups = groups.map(g => 
@@ -1822,59 +1858,38 @@ const colors = ${data};
                   fontWeight: "bold"
                 }}
               >
-                Done
+                Done Editing
               </button>
-              <div style={{ borderLeft: "0.2vw solid #666", height: "4vw", margin: "0 1vw" }} />
-            </>
+              
+              {/* All Groups List */}
+              {groups.length > 1 && (
+                <>
+                  <div style={{ borderLeft: "0.2vw solid #666", height: "4vw", margin: "0 1vw" }} />
+                  <div style={{ fontSize: "1.2vw", fontWeight: "bold" }}>
+                    Switch to:
+                  </div>
+                  <select
+                    value={activeGroup || ""}
+                    onChange={(e) => e.target.value && setActiveGroup(e.target.value)}
+                    style={{
+                      padding: "0.8vw",
+                      fontSize: "1.2vw",
+                      background: "#333",
+                      color: "white",
+                      border: "0.2vw solid #000",
+                      cursor: "pointer"
+                    }}
+                  >
+                    {groups.sort((a, b) => b.zIndex - a.zIndex).map(g => (
+                      <option key={g.name} value={g.name}>
+                        {g.name} (z: {g.zIndex})
+                      </option>
+                    ))}
+                  </select>
+                </>
+              )}
+            </div>
           )}
-          
-          {/* All Groups List */}
-          {groups.length > 0 && (
-            <>
-              <div style={{ fontSize: "1.2vw", fontWeight: "bold" }}>
-                All Layers: {groups.length}
-              </div>
-              <select
-                value={activeGroup || ""}
-                onChange={(e) => e.target.value && setActiveGroup(e.target.value)}
-                style={{
-                  padding: "0.8vw",
-                  fontSize: "1.2vw",
-                  background: "#333",
-                  color: "white",
-                  border: "0.2vw solid #000",
-                  cursor: "pointer"
-                }}
-              >
-                <option value="">Select layer...</option>
-                {groups.sort((a, b) => b.zIndex - a.zIndex).map(g => (
-                  <option key={g.name} value={g.name}>
-                    {g.name} (z: {g.zIndex})
-                  </option>
-                ))}
-              </select>
-            </>
-          )}
-          
-          {/* Close button */}
-          <button
-            onClick={() => {
-              setShowGroupDialog(false);
-              setActiveGroup(null);
-              setActiveDrawingTool("pencil");
-            }}
-            style={{
-              background: "#666",
-              color: "white",
-              border: "0.2vw solid #000",
-              padding: "1vw 2vw",
-              cursor: "pointer",
-              fontSize: "1.3vw",
-              fontWeight: "bold"
-            }}
-          >
-            ✕
-          </button>
         </div>
       )}
     </div>
