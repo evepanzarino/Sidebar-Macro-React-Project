@@ -1451,26 +1451,27 @@ const savedData = ${dataString};
           overflow: "auto"
         }}>
         {(pixelColors || []).map((c, i) => {
+          // In drawing mode, skip expensive layer calculations
+          const pixelGroup = viewMode === "layers" ? pixelGroups[i] : null;
           const isHovered = !isDrawing && hoveredPixel === i;
           const isLineStart = (activeDrawingTool === "line" || activeDrawingTool === "curve") && lineStartPixel === i;
           const isCurveEnd = activeDrawingTool === "curve" && curveEndPixel === i;
-          const isSelected = viewMode === "layers" && selectedPixels.includes(i);
-          // Show rectangle preview during drag, but final selection is only colored pixels
+          
+          // Only calculate these in layers mode
+          const isSelected = viewMode === "layers" ? selectedPixels.includes(i) : false;
           const isInSelectionRect = viewMode === "layers" && activeDrawingTool === "select" && selectionStart !== null && selectionEnd !== null && isDrawing && getSelectionRectangle(selectionStart, selectionEnd).includes(i);
-          const pixelGroup = pixelGroups[i];
           const isInActiveGroup = viewMode === "layers" && pixelGroup && pixelGroup.group === activeGroup;
           
-          // Show straight line preview or curve preview
+          // Show straight line preview or curve preview (only in drawing mode for performance)
           let isInLinePreview = false;
-          if (activeDrawingTool === "line" && lineStartPixel !== null && hoveredPixel !== null) {
-            // Line tool: show straight line preview
-            isInLinePreview = getLinePixels(lineStartPixel, hoveredPixel).includes(i);
-          } else if (activeDrawingTool === "curve" && lineStartPixel !== null && curveEndPixel === null && hoveredPixel !== null) {
-            // Curve tool first click done, showing preview to hover
-            isInLinePreview = getLinePixels(lineStartPixel, hoveredPixel).includes(i);
-          } else if (activeDrawingTool === "curve" && lineStartPixel !== null && curveEndPixel !== null) {
-            // Curve tool second click done, showing adjustable curve
-            isInLinePreview = getQuadraticBezierPixels(lineStartPixel, curveEndPixel, curveCurveAmount).includes(i);
+          if (viewMode === "drawing") {
+            if (activeDrawingTool === "line" && lineStartPixel !== null && hoveredPixel !== null) {
+              isInLinePreview = getLinePixels(lineStartPixel, hoveredPixel).includes(i);
+            } else if (activeDrawingTool === "curve" && lineStartPixel !== null && curveEndPixel === null && hoveredPixel !== null) {
+              isInLinePreview = getLinePixels(lineStartPixel, hoveredPixel).includes(i);
+            } else if (activeDrawingTool === "curve" && lineStartPixel !== null && curveEndPixel !== null) {
+              isInLinePreview = getQuadraticBezierPixels(lineStartPixel, curveEndPixel, curveCurveAmount).includes(i);
+            }
           }
           
           let borderColor = 'transparent';
@@ -1490,15 +1491,14 @@ const savedData = ${dataString};
           } else if (isLineStart || isInLinePreview) {
             borderColor = getContrastBorderColor(c);
             borderWidth = `${0.2 * zoomFactor}vw`;
-          } else if (isHovered) {
+          } else if (isHovered && viewMode === "drawing") {
             borderColor = getContrastBorderColor(c);
             borderWidth = `${0.2 * zoomFactor}vw`;
           }
           
           return (
             <div
-              key={`${i}-${c}`}
-              id={pixelGroup ? pixelGroup.group : undefined}
+              key={i}
               style={{ 
                 background: c, 
                 boxSizing: 'border-box',
@@ -1569,17 +1569,21 @@ const savedData = ${dataString};
                 if (isDrawing && activeDrawingTool === "pencil") {
                   paintPixel(null, i);
                 } else if (isDrawing && activeDrawingTool === "select") {
-                  // Update selection rectangle end point
                   setSelectionEnd(i);
                 }
-                setHoveredPixel(i);
+                // Only update hover in drawing mode for performance
+                if (viewMode === "drawing") {
+                  setHoveredPixel(i);
+                }
               }}
               onPointerMove={(e) => {
-                // Update hovered pixel for smoother line preview
-                setHoveredPixel(i);
+                // Update hovered pixel for line preview only when needed
+                if (viewMode === "drawing" && (activeDrawingTool === "line" || activeDrawingTool === "curve")) {
+                  setHoveredPixel(i);
+                }
                 
-                // Handle group dragging
-                if (groupDragStart !== null && activeGroup !== null) {
+                // Handle group dragging (layers mode only)
+                if (viewMode === "layers" && groupDragStart !== null && activeGroup !== null) {
                   const startRow = Math.floor(groupDragStart.pixelIndex / 200);
                   const startCol = groupDragStart.pixelIndex % 200;
                   const currentRow = Math.floor(i / 200);
@@ -1594,8 +1598,8 @@ const savedData = ${dataString};
                 }
               }}
               onPointerLeave={() => {
-                // Don't clear hoveredPixel if we're in line mode with a start point
-                if (!isDrawing && !(activeDrawingTool === "line" && lineStartPixel !== null)) {
+                // Only clear hover in drawing mode
+                if (viewMode === "drawing" && !isDrawing && !(activeDrawingTool === "line" && lineStartPixel !== null)) {
                   setHoveredPixel(null);
                 }
               }}
