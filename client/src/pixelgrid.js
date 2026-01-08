@@ -29,7 +29,8 @@ export default function PixelGrid() {
   // Logo and title pixel size based on screen size
   const getTitlePixelSize = () => {
     if (size.w > 1650) return 0.75; // Desktop: smaller
-    return 1; // Mobile/Tablet: larger
+    if (size.w <= 1024) return 2.14; // Mobile/Tablet scrollbar size: 15vw / 7 pixels = 2.14vw per pixel
+    return 1; // Mid-range
   };
 
   const zoomFactor = getZoomFactor();
