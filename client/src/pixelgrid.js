@@ -361,7 +361,8 @@ export default function PixelGrid() {
     setPixelGroups(newPixelGroups);
     
     setSelectedPixels([]);
-    setShowGroupDialog(false);
+    // Don't close the dialog, just activate the newly created group
+    setActiveGroup(groupName);
   }
 
   // Move group pixels
