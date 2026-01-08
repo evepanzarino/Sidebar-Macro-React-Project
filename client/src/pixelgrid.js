@@ -2252,8 +2252,8 @@ const savedData = ${dataString};
       {viewMode === "layers" && showGroupDialog && (
         <div style={{
           position: "fixed",
-          bottom: "10vh",
-          left: size.w <= 1024 ? "10vw" : "10vw",
+             bottom: size.w <= 1024 ? "10vw" : "0",
+            left: size.w <= 1024 ? "10vw" : "10vw",
           right: 0,
           background: "rgba(0,0,0,0.95)",
           color: "white",
