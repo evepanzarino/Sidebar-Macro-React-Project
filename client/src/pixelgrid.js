@@ -54,16 +54,10 @@ const DrawingPixel = memo(({
   
   borderStyle = `${borderWidth} solid ${borderColor}`;
   
-  // Get the display color (either current pixel or preview from dragged selection)
-  let displayColor = color;
-  if (isInDragPreview) {
-    displayColor = color; // The color is already at this position in the preview calculation
-  }
-  
   return (
     <div
       style={{ 
-        background: displayColor, 
+        background: color, 
         boxSizing: 'border-box',
         border: borderStyle,
         boxShadow,
@@ -1648,6 +1642,7 @@ const savedData = ${dataString};
             
             // Calculate preview position during selected pixels drag
             let isInDragPreview = false;
+            let dragPreviewColor = c;
             if (groupDragStart !== null && groupDragCurrent !== null && activeGroup === "__selected__" && isDrawing) {
               const deltaRow = groupDragCurrent.row - groupDragStart.startRow;
               const deltaCol = groupDragCurrent.col - groupDragStart.startCol;
@@ -1657,12 +1652,15 @@ const savedData = ${dataString};
               const sourceCol = currentCol - deltaCol;
               const sourceIndex = sourceRow * 200 + sourceCol;
               isInDragPreview = selectedPixels.includes(sourceIndex);
+              if (isInDragPreview) {
+                dragPreviewColor = pixelColors[sourceIndex] || c;
+              }
             }
             
             return (
               <DrawingPixel
                 key={i}
-                color={c}
+                color={isInDragPreview ? dragPreviewColor : c}
                 index={i}
                 isHovered={isHovered}
                 isLineStart={isLineStart}
