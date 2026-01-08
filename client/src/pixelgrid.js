@@ -1604,14 +1604,10 @@ const savedData = ${dataString};
                   setHoveredPixel(i);
                 }}
                 onPointerMove={() => {
-                  if (activeDrawingTool === "line" || activeDrawingTool === "curve") {
-                    setHoveredPixel(i);
-                  }
+                  setHoveredPixel(i);
                 }}
                 onPointerLeave={() => {
-                  if (!isDrawing && !(activeDrawingTool === "line" && lineStartPixel !== null)) {
-                    setHoveredPixel(null);
-                  }
+                  setHoveredPixel(null);
                 }}
               />
             );
@@ -1619,7 +1615,6 @@ const savedData = ${dataString};
           
           // LAYERS MODE - Full layer functionality
           const pixelGroup = pixelGroups[i];
-          const isHovered = !isDrawing && hoveredPixel === i;
           const isLineStart = (activeDrawingTool === "line" || activeDrawingTool === "curve") && lineStartPixel === i;
           const isCurveEnd = activeDrawingTool === "curve" && curveEndPixel === i;
           
@@ -1798,26 +1793,20 @@ const savedData = ${dataString};
                 if (isDrawing && activeDrawingTool === "select") {
                   setSelectionEnd(i);
                 }
-                if (activeDrawingTool === "movegroup") {
-                  setHoveredPixel(i);
-                }
+                setHoveredPixel(i);
               }}
               onPointerMove={(e) => {
-                // Update hover for movegroup tool
-                if (activeDrawingTool === "movegroup") {
-                  setHoveredPixel(i);
-                }
+                setHoveredPixel(i);
                 
                 // Track current drag position for visual feedback (no actual move yet)
                 if (groupDragStart !== null && activeGroup !== null && isDrawing) {
                   const currentRow = Math.floor(i / 200);
                   const currentCol = i % 200;
                   setGroupDragCurrent({ row: currentRow, col: currentCol });
-                  setHoveredPixel(i);
                 }
               }}
               onPointerLeave={() => {
-                // Layers mode - no special hover clear needed
+                setHoveredPixel(null);
               }}
             />
           );
