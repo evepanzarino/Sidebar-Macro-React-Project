@@ -1,13 +1,23 @@
 {
   "files": {
     "main.css": "/pixelgrid/static/css/main.e12a7f6a.css",
-    "main.js": "/pixelgrid/static/js/main.16760f6c.js",
+    "main.js": "/pixelgrid/static/js/main.ecd5cdb9.js",
+    "static/js/250.76c80c16.chunk.js": "/pixelgrid/static/js/250.76c80c16.chunk.js",
+    "static/js/265.860c9075.chunk.js": "/pixelgrid/static/js/265.860c9075.chunk.js",
+    "static/js/738.864d3b96.chunk.js": "/pixelgrid/static/js/738.864d3b96.chunk.js",
+    "static/js/897.f8716188.chunk.js": "/pixelgrid/static/js/897.f8716188.chunk.js",
+    "static/js/964.2cbc9538.chunk.js": "/pixelgrid/static/js/964.2cbc9538.chunk.js",
     "index.html": "/pixelgrid/index.html",
     "main.e12a7f6a.css.map": "/pixelgrid/static/css/main.e12a7f6a.css.map",
-    "main.16760f6c.js.map": "/pixelgrid/static/js/main.16760f6c.js.map"
+    "main.ecd5cdb9.js.map": "/pixelgrid/static/js/main.ecd5cdb9.js.map",
+    "250.76c80c16.chunk.js.map": "/pixelgrid/static/js/250.76c80c16.chunk.js.map",
+    "265.860c9075.chunk.js.map": "/pixelgrid/static/js/265.860c9075.chunk.js.map",
+    "738.864d3b96.chunk.js.map": "/pixelgrid/static/js/738.864d3b96.chunk.js.map",
+    "897.f8716188.chunk.js.map": "/pixelgrid/static/js/897.f8716188.chunk.js.map",
+    "964.2cbc9538.chunk.js.map": "/pixelgrid/static/js/964.2cbc9538.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.e12a7f6a.css",
-    "static/js/main.16760f6c.js"
+    "static/js/main.ecd5cdb9.js"
   ]
 }
