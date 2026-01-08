@@ -35,7 +35,7 @@ export default function PixelGrid() {
 
   const getTitlePixelSize = () => {
     if (size.w > 1650) return 0.75; // Desktop: smaller
-    if (size.w <= 1024) return 1.075; // Mobile/Tablet: scaled down to match
+    if (size.w <= 1024) return 0.75; // Mobile/Tablet: scaled down
     return 1.07; // Mid-range
   };
 
