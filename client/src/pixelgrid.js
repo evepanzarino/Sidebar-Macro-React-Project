@@ -29,7 +29,7 @@ export default function PixelGrid() {
   // Logo and title pixel size based on screen size
   const getLogoPixelSize = () => {
     if (size.w > 1650) return 1.075; // Desktop: 7vw / 7 = 1vw per cell
-    if (size.w <= 1024) return 1.075; // Mobile/Tablet: 7.5vw / 7 = 1.07vw
+    if (size.w <= 1024) return 1.43; // Mobile/Tablet: 10vw / 7 = 1.43vw
     return 1; // Mid-range
   };
 
@@ -635,7 +635,7 @@ const colors = ${data};
         background: "#fefefe",
         position: "relative",
         display: "inline-flex",
-        width: "7vw",
+        width: size.w <= 1024 ? "10vw" : "7vw",
         flexDirection: "column",
         gap: "1vw",
         alignItems: "center",
@@ -680,8 +680,8 @@ const colors = ${data};
                   }
                 }}
                 style={{
-                  width: "6vw",
-                  height: "6vw",
+                  width: size.w <= 1024 ? "8vw" : "6vw",
+                  height: size.w <= 1024 ? "8vw" : "6vw",
                   background: primaryColor,
                   border: activeTool === "primary" 
                     ? (isLightColor(primaryColor) ? "0.4vw solid #000000" : "0.4vw solid #ffffff")
@@ -708,8 +708,8 @@ const colors = ${data};
                   }
                 }}
                 style={{
-                  width: "6vw",
-                  height: "6vw",
+                  width: size.w <= 1024 ? "8vw" : "6vw",
+                  height: size.w <= 1024 ? "8vw" : "6vw",
                   background: secondaryColor,
                   border: activeTool === "secondary" 
                     ? (isLightColor(secondaryColor) ? "0.4vw solid #000000" : "0.4vw solid #ffffff")
@@ -786,9 +786,9 @@ const colors = ${data};
           bottom: 0,
           left: 0,
           width: "100%",
-          height: "7vw",
+          height: "10vw",
           display: "grid",
-          gridTemplateColumns: "7vw 1fr 7vw",
+          gridTemplateColumns: "10vw 1fr 10vw",
           background: "#fefefe",
           borderTop: "0.2vw solid #000000",
           zIndex: 100
@@ -801,15 +801,15 @@ const colors = ${data};
               }
             }}
             style={{
-              width: "7w",
-              height: "7vw",
+              width: "10vw",
+              height: "10vw",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               background: "#fefefe",
               borderRight: "0.2vw solid #000000",
               cursor: "pointer",
-              fontSize: "4vw",
+              fontSize: "5vw",
               userSelect: "none"
             }}
           >
@@ -820,7 +820,7 @@ const colors = ${data};
           <div 
             style={{
               width: "100%",
-              height: "7vw",
+              height: "10vw",
               background: "#fefefe",
               position: "relative",
               padding: "1vw",
@@ -852,7 +852,7 @@ const colors = ${data};
               onPointerLeave={() => setIsDraggingSlider(false)}
               style={{
                 width: "100%",
-                height: "5.5vw",
+                height: "8vw",
                 background: "#ffffff",
                 border: "0.2vw solid #000000",
                 position: "relative",
@@ -865,8 +865,8 @@ const colors = ${data};
                 position: "absolute",
                 left: `calc(${gridRef.current ? Math.min(88, Math.max(0, (scrollPosition / (gridRef.current.scrollWidth - gridRef.current.clientWidth)) * 100)) : 0}% - 0px)`,
                 top: "0",
-                width: "4vw",
-                height: "5.5vw",
+                width: "6vw",
+                height: "8vw",
                 background: "#000000",
                 pointerEvents: "none"
               }} />
@@ -881,15 +881,15 @@ const colors = ${data};
               }
             }}
             style={{
-              width: "7vw",
-              height: "7vw",
+              width: "10vw",
+              height: "10vw",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               background: "#fefefe",
               borderLeft: "0.2vw solid #000000",
               cursor: "pointer",
-              fontSize: "4vw",
+              fontSize: "5vw",
               userSelect: "none"
             }}
           >
