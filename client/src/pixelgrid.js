@@ -636,7 +636,7 @@ const colors = ${data};
         background: "#fefefe",
         position: "relative",
         display: "inline-flex",
-        width: "5.2vw",
+        width: "7.5vw",
         flexDirection: "column",
         gap: "1vw",
         alignItems: "center",
@@ -681,8 +681,8 @@ const colors = ${data};
                   }
                 }}
                 style={{
-                  width: "4vw",
-                  height: "4vw",
+                  width: "6vw",
+                  height: "6vw",
                   background: primaryColor,
                   border: activeTool === "primary" 
                     ? (isLightColor(primaryColor) ? "0.4vw solid #000000" : "0.4vw solid #ffffff")
@@ -709,8 +709,8 @@ const colors = ${data};
                   }
                 }}
                 style={{
-                  width: "4vw",
-                  height: "4vw",
+                  width: "6vw",
+                  height: "6vw",
                   background: secondaryColor,
                   border: activeTool === "secondary" 
                     ? (isLightColor(secondaryColor) ? "0.4vw solid #000000" : "0.4vw solid #ffffff")
