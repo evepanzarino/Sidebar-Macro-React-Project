@@ -1,5 +1,49 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, memo } from "react";
 import "./pixelgrid.css";
+
+// Memoized pixel component to prevent unnecessary re-renders
+const DrawingPixel = memo(({ 
+  color, 
+  index, 
+  isHovered, 
+  isLineStart, 
+  isCurveEnd, 
+  isInLinePreview, 
+  isDrawing,
+  zoomFactor,
+  activeDrawingTool,
+  onPointerDown,
+  onPointerEnter,
+  onPointerMove,
+  onPointerLeave
+}) => {
+  // Simplified border logic
+  let borderStyle = '';
+  if (isCurveEnd || isLineStart || isInLinePreview) {
+    borderStyle = `${0.3 * zoomFactor}vw solid ${color === '#ffffff' ? '#000000' : '#ffffff'}`;
+  } else if (isHovered && !isDrawing) {
+    borderStyle = `${0.2 * zoomFactor}vw solid ${color === '#ffffff' ? '#000000' : '#ffffff'}`;
+  } else {
+    borderStyle = `${0.1 * zoomFactor}vw solid transparent`;
+  }
+  
+  return (
+    <div
+      style={{ 
+        background: color, 
+        boxSizing: 'border-box',
+        border: borderStyle,
+        position: 'relative'
+      }}
+      onPointerDown={onPointerDown}
+      onPointerUp={() => {}}
+      onClick={() => {}}
+      onPointerEnter={onPointerEnter}
+      onPointerMove={onPointerMove}
+      onPointerLeave={onPointerLeave}
+    />
+  );
+});
 
 export default function PixelGrid() {
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight });
@@ -140,14 +184,26 @@ export default function PixelGrid() {
   });
 
   const fileInputRef = useRef(null);
+  const saveTimerRef = useRef(null);
   
-  // Save pixelColors to localStorage whenever it changes
+  // Debounced save to localStorage (only save after 500ms of no changes)
   useEffect(() => {
-    try {
-      localStorage.setItem("pixelgrid_pixelColors", JSON.stringify(pixelColors));
-    } catch (error) {
-      console.error("Failed to save pixel colors:", error);
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
     }
+    saveTimerRef.current = setTimeout(() => {
+      try {
+        localStorage.setItem("pixelgrid_pixelColors", JSON.stringify(pixelColors));
+      } catch (error) {
+        console.error("Failed to save pixel colors:", error);
+      }
+    }, 500);
+    
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+      }
+    };
   }, [pixelColors]);
   
   // Save groups and pixelGroups to localStorage
@@ -221,7 +277,10 @@ export default function PixelGrid() {
   }, [activeDrawingTool]);
 
   function paintPixel(e, index) {
+    // Always immediate update for responsive feel
     setPixelColors((prev) => {
+      // Skip if color is already the same
+      if (prev[index] === color) return prev;
       const copy = [...prev];
       copy[index] = color;
       return copy;
@@ -1520,9 +1579,9 @@ const savedData = ${dataString};
           gridTemplateColumns: `repeat(200, ${displayPixelSize}vw)`,
           gridTemplateRows: `repeat(${rows}, ${displayPixelSize}vw)`,
           userSelect: "none",
-          touchAction: "none",
           flex: 1,
-          overflow: "auto"
+          overflow: "auto",
+          willChange: "transform"
         }}>
         {(pixelColors || []).map((c, i) => {
           // Completely isolate drawing mode from layer calculations for performance
@@ -1544,25 +1603,18 @@ const savedData = ${dataString};
               }
             }
             
-            // Simplified border logic - avoid expensive color calculations
-            let borderStyle = '';
-            if (isCurveEnd || isLineStart || isInLinePreview) {
-              borderStyle = `${0.3 * zoomFactor}vw solid ${c === '#ffffff' ? '#000000' : '#ffffff'}`;
-            } else if (isHovered && !isDrawing) {
-              borderStyle = `${0.2 * zoomFactor}vw solid ${c === '#ffffff' ? '#000000' : '#ffffff'}`;
-            } else {
-              borderStyle = `${0.1 * zoomFactor}vw solid transparent`;
-            }
-            
             return (
-              <div
+              <DrawingPixel
                 key={i}
-                style={{ 
-                  background: c, 
-                  boxSizing: 'border-box',
-                  border: borderStyle,
-                  position: 'relative'
-                }}
+                color={c}
+                index={i}
+                isHovered={isHovered}
+                isLineStart={isLineStart}
+                isCurveEnd={isCurveEnd}
+                isInLinePreview={isInLinePreview}
+                isDrawing={isDrawing}
+                zoomFactor={zoomFactor}
+                activeDrawingTool={activeDrawingTool}
                 onPointerDown={(e) => {
                   if (activeDrawingTool === "pencil") {
                     setIsDrawing(true);
@@ -1588,8 +1640,6 @@ const savedData = ${dataString};
                     }
                   }
                 }}
-                onPointerUp={() => {}}
-                onClick={() => {}}
                 onPointerEnter={() => {
                   if (isDrawing && activeDrawingTool === "pencil") {
                     paintPixel(null, i);
@@ -1597,7 +1647,6 @@ const savedData = ${dataString};
                   setHoveredPixel(i);
                 }}
                 onPointerMove={() => {
-                  // Only update hover if it's actually different
                   if (hoveredPixel !== i) {
                     setHoveredPixel(i);
                   }
@@ -2344,7 +2393,7 @@ const savedData = ${dataString};
                               padding: "0.4vw 0.8vw",
                               cursor: "pointer",
                               fontSize: "1vw",
-                              fontWeight: "bold",
+                              fontWeight: "900",
                               borderRadius: "0.3vw"
                             }}
                             title="Move left"
@@ -2362,7 +2411,7 @@ const savedData = ${dataString};
                               padding: "0.4vw 0.8vw",
                               cursor: "pointer",
                               fontSize: "1vw",
-                              fontWeight: "bold",
+                              fontWeight: "900",
                               borderRadius: "0.3vw"
                             }}
                             title="Move up"
@@ -2380,7 +2429,7 @@ const savedData = ${dataString};
                               padding: "0.4vw 0.8vw",
                               cursor: "pointer",
                               fontSize: "1vw",
-                              fontWeight: "bold",
+                              fontWeight: "900",
                               borderRadius: "0.3vw"
                             }}
                             title="Move down"
@@ -2398,7 +2447,7 @@ const savedData = ${dataString};
                               padding: "0.4vw 0.8vw",
                               cursor: "pointer",
                               fontSize: "1vw",
-                              fontWeight: "bold",
+                              fontWeight: "900",
                               borderRadius: "0.3vw"
                             }}
                             title="Move right"
