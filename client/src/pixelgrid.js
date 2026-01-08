@@ -635,7 +635,7 @@ const colors = ${data};
         background: "#fefefe",
         position: "relative",
         display: "inline-flex",
-        width: size.w > 1650 ? "7vw" : "7.5vw",
+        width: "7vw",
         flexDirection: "column",
         gap: "1vw",
         alignItems: "center",
