@@ -18,6 +18,7 @@ export default function PixelGrid() {
   const [lineStartPixel, setLineStartPixel] = useState(null); // For line tool: first click position
   const [lineControlPoint, setLineControlPoint] = useState(null); // For bezier curve control point
   const [isDraggingControlPoint, setIsDraggingControlPoint] = useState(false);
+  const [hasDrawnCurve, setHasDrawnCurve] = useState(false); // Flag to prevent click after curve draw
   
   const color = activeTool === "primary" ? primaryColor : secondaryColor;
   const gridRef = useRef(null);
@@ -86,6 +87,9 @@ export default function PixelGrid() {
         drawCurve(lineStartPixel, hoveredPixel, lineControlPoint);
         setLineStartPixel(null);
         setLineControlPoint(null);
+        setHasDrawnCurve(true);
+        // Reset flag after a short delay to allow click event to be blocked
+        setTimeout(() => setHasDrawnCurve(false), 100);
       }
       setIsDraggingControlPoint(false);
     };
@@ -220,7 +224,7 @@ export default function PixelGrid() {
       if (lineStartPixel === null) {
         // First click: set start point
         setLineStartPixel(index);
-      } else if (!isDraggingControlPoint) {
+      } else if (!isDraggingControlPoint && !hasDrawnCurve) {
         // Second click without dragging: draw straight line and reset
         drawLine(lineStartPixel, index);
         setLineStartPixel(null);
