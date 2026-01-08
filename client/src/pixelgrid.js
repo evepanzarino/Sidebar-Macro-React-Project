@@ -51,7 +51,8 @@ export default function PixelGrid() {
   });
   
   const [activeGroup, setActiveGroup] = useState(null); // Currently selected group for moving
-  const [groupDragStart, setGroupDragStart] = useState(null); // { pixelIndex, offsetRow, offsetCol }
+  const [groupDragStart, setGroupDragStart] = useState(null); // { pixelIndex, startRow, startCol }
+  const [groupDragCurrent, setGroupDragCurrent] = useState(null); // Current hover position during drag
   
   // Layer drag-and-drop state
   const [draggedLayer, setDraggedLayer] = useState(null);
@@ -1494,6 +1495,19 @@ const savedData = ${dataString};
           const isInActiveGroup = viewMode === "layers" && pixelGroup && pixelGroup.group === activeGroup;
           const isMoveGroupHover = viewMode === "layers" && activeDrawingTool === "movegroup" && pixelGroup && hoveredPixel === i;
           
+          // Calculate preview position during group drag
+          let isInDragPreview = false;
+          if (viewMode === "layers" && groupDragStart !== null && groupDragCurrent !== null && activeGroup !== null && isDrawing) {
+            const deltaRow = groupDragCurrent.row - groupDragStart.startRow;
+            const deltaCol = groupDragCurrent.col - groupDragStart.startCol;
+            const currentRow = Math.floor(i / 200);
+            const currentCol = i % 200;
+            const sourceRow = currentRow - deltaRow;
+            const sourceCol = currentCol - deltaCol;
+            const sourceIndex = sourceRow * 200 + sourceCol;
+            isInDragPreview = pixelGroups[sourceIndex]?.group === activeGroup;
+          }
+          
           // Show straight line preview or curve preview (only in drawing mode for performance)
           let isInLinePreview = false;
           if (viewMode === "drawing") {
@@ -1509,8 +1523,19 @@ const savedData = ${dataString};
           let borderColor = 'transparent';
           let borderWidth = `${0.1 * zoomFactor}vw`;
           let boxShadow = 'none';
+          let opacity = 1;
           
-          if (isMoveGroupHover) {
+          // Dim original position during drag preview
+          if (isInActiveGroup && groupDragStart !== null && groupDragCurrent !== null && isDrawing) {
+            opacity = 0.3;
+          }
+          
+          // Show preview at new position
+          if (isInDragPreview) {
+            borderColor = '#9C27B0';
+            borderWidth = `${0.3 * zoomFactor}vw`;
+            boxShadow = `0 0 ${0.5 * zoomFactor}vw ${0.2 * zoomFactor}vw #9C27B0`;
+          } else if (isMoveGroupHover) {
             borderColor = '#9C27B0';
             borderWidth = `${0.3 * zoomFactor}vw`;
             boxShadow = `0 0 ${0.5 * zoomFactor}vw ${0.2 * zoomFactor}vw #9C27B0`;
@@ -1532,25 +1557,41 @@ const savedData = ${dataString};
             borderWidth = `${0.2 * zoomFactor}vw`;
           }
           
+          // Get the display color (either current pixel or preview from dragged group)
+          let displayColor = c;
+          if (isInDragPreview) {
+            const deltaRow = groupDragCurrent.row - groupDragStart.startRow;
+            const deltaCol = groupDragCurrent.col - groupDragStart.startCol;
+            const currentRow = Math.floor(i / 200);
+            const currentCol = i % 200;
+            const sourceRow = currentRow - deltaRow;
+            const sourceCol = currentCol - deltaCol;
+            const sourceIndex = sourceRow * 200 + sourceCol;
+            displayColor = pixelColors[sourceIndex] || c;
+          }
+          
           return (
             <div
               key={i}
               style={{ 
-                background: c, 
+                background: displayColor, 
                 boxSizing: 'border-box',
                 border: `${borderWidth} solid ${borderColor}`,
                 boxShadow,
                 position: 'relative',
-                zIndex: pixelGroup ? pixelGroup.zIndex : 0
+                zIndex: pixelGroup ? pixelGroup.zIndex : 0,
+                opacity
               }}
               onPointerDown={(e) => {
                 // Check if clicking on a grouped pixel with movegroup tool
                 if (viewMode === "layers" && activeDrawingTool === "movegroup" && pixelGroup) {
                   setActiveGroup(pixelGroup.group);
-                  setGroupDragStart({ pixelIndex: i, offsetRow: 0, offsetCol: 0 });
+                  setGroupDragStart({ pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200 });
+                  setIsDrawing(true);
                 } else if (viewMode === "layers" && pixelGroup && !activeDrawingTool.match(/select|movegroup/)) {
                   setActiveGroup(pixelGroup.group);
-                  setGroupDragStart({ pixelIndex: i, offsetRow: 0, offsetCol: 0 });
+                  setGroupDragStart({ pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200 });
+                  setIsDrawing(true);
                 } else if (activeDrawingTool === "pencil") {
                   setIsDrawing(true);
                   paintPixel(e, i);
@@ -1594,9 +1635,21 @@ const savedData = ${dataString};
                   setSelectionStart(null);
                   setSelectionEnd(null);
                   setIsDrawing(false);
-                } else if (groupDragStart !== null) {
-                  // Stop dragging group
+                } else if (groupDragStart !== null && activeGroup !== null) {
+                  // Finalize group move
+                  const currentRow = Math.floor(i / 200);
+                  const currentCol = i % 200;
+                  const deltaRow = currentRow - groupDragStart.startRow;
+                  const deltaCol = currentCol - groupDragStart.startCol;
+                  
+                  if (deltaRow !== 0 || deltaCol !== 0) {
+                    moveGroup(activeGroup, deltaRow, deltaCol);
+                  }
+                  
                   setGroupDragStart(null);
+                  setGroupDragCurrent(null);
+                  setActiveGroup(null);
+                  setIsDrawing(false);
                 }
               }}
               onClick={(e) => {
@@ -1628,19 +1681,12 @@ const savedData = ${dataString};
                   setHoveredPixel(i);
                 }
                 
-                // Handle group dragging (layers mode only)
-                if (viewMode === "layers" && groupDragStart !== null && activeGroup !== null) {
-                  const startRow = Math.floor(groupDragStart.pixelIndex / 200);
-                  const startCol = groupDragStart.pixelIndex % 200;
+                // Track current drag position for visual feedback (no actual move yet)
+                if (viewMode === "layers" && groupDragStart !== null && activeGroup !== null && isDrawing) {
                   const currentRow = Math.floor(i / 200);
                   const currentCol = i % 200;
-                  const deltaRow = currentRow - startRow;
-                  const deltaCol = currentCol - startCol;
-                  
-                  if (deltaRow !== 0 || deltaCol !== 0) {
-                    moveGroup(activeGroup, deltaRow, deltaCol);
-                    setGroupDragStart({ pixelIndex: i, offsetRow: 0, offsetCol: 0 });
-                  }
+                  setGroupDragCurrent({ row: currentRow, col: currentCol });
+                  setHoveredPixel(i);
                 }
               }}
               onPointerLeave={() => {
