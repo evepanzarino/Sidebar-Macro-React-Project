@@ -1525,21 +1525,113 @@ const savedData = ${dataString};
           overflow: "auto"
         }}>
         {(pixelColors || []).map((c, i) => {
-          // In drawing mode, skip expensive layer calculations
-          const pixelGroup = viewMode === "layers" ? pixelGroups[i] : null;
+          // Completely isolate drawing mode from layer calculations for performance
+          if (viewMode === "drawing") {
+            // DRAWING MODE - Minimal calculations for maximum performance
+            const isHovered = !isDrawing && hoveredPixel === i;
+            const isLineStart = (activeDrawingTool === "line" || activeDrawingTool === "curve") && lineStartPixel === i;
+            const isCurveEnd = activeDrawingTool === "curve" && curveEndPixel === i;
+            
+            // Line preview calculations
+            let isInLinePreview = false;
+            if (activeDrawingTool === "line" && lineStartPixel !== null && hoveredPixel !== null) {
+              isInLinePreview = getLinePixels(lineStartPixel, hoveredPixel).includes(i);
+            } else if (activeDrawingTool === "curve" && lineStartPixel !== null && curveEndPixel === null && hoveredPixel !== null) {
+              isInLinePreview = getLinePixels(lineStartPixel, hoveredPixel).includes(i);
+            } else if (activeDrawingTool === "curve" && lineStartPixel !== null && curveEndPixel !== null) {
+              isInLinePreview = getQuadraticBezierPixels(lineStartPixel, curveEndPixel, curveCurveAmount).includes(i);
+            }
+            
+            let borderColor = 'transparent';
+            let borderWidth = `${0.1 * zoomFactor}vw`;
+            let boxShadow = 'none';
+            
+            if (isCurveEnd) {
+              borderColor = getContrastBorderColor(c);
+              borderWidth = `${0.3 * zoomFactor}vw`;
+            } else if (isLineStart || isInLinePreview) {
+              borderColor = getContrastBorderColor(c);
+              borderWidth = `${0.2 * zoomFactor}vw`;
+            } else if (isHovered) {
+              borderColor = getContrastBorderColor(c);
+              borderWidth = `${0.2 * zoomFactor}vw`;
+            }
+            
+            return (
+              <div
+                key={i}
+                style={{ 
+                  background: c, 
+                  boxSizing: 'border-box',
+                  border: `${borderWidth} solid ${borderColor}`,
+                  boxShadow,
+                  position: 'relative',
+                  zIndex: 0
+                }}
+                onPointerDown={(e) => {
+                  if (activeDrawingTool === "pencil") {
+                    setIsDrawing(true);
+                    paintPixel(e, i);
+                  } else if (activeDrawingTool === "bucket") {
+                    paintBucket(i);
+                  } else if (activeDrawingTool === "line") {
+                    if (lineStartPixel === null) {
+                      setLineStartPixel(i);
+                    } else if (lineStartPixel === i) {
+                      setLineStartPixel(null);
+                    } else {
+                      drawLine(lineStartPixel, i);
+                      setLineStartPixel(null);
+                    }
+                  } else if (activeDrawingTool === "curve") {
+                    if (lineStartPixel === null) {
+                      setLineStartPixel(i);
+                    } else if (lineStartPixel === i) {
+                      setLineStartPixel(null);
+                    } else {
+                      setCurveEndPixel(i);
+                    }
+                  }
+                }}
+                onPointerUp={() => {
+                  // No complex logic needed in drawing mode
+                }}
+                onClick={() => {}}
+                onPointerEnter={() => {
+                  if (isDrawing && activeDrawingTool === "pencil") {
+                    paintPixel(null, i);
+                  }
+                  setHoveredPixel(i);
+                }}
+                onPointerMove={() => {
+                  if (activeDrawingTool === "line" || activeDrawingTool === "curve") {
+                    setHoveredPixel(i);
+                  }
+                }}
+                onPointerLeave={() => {
+                  if (!isDrawing && !(activeDrawingTool === "line" && lineStartPixel !== null)) {
+                    setHoveredPixel(null);
+                  }
+                }}
+              />
+            );
+          }
+          
+          // LAYERS MODE - Full layer functionality
+          const pixelGroup = pixelGroups[i];
           const isHovered = !isDrawing && hoveredPixel === i;
           const isLineStart = (activeDrawingTool === "line" || activeDrawingTool === "curve") && lineStartPixel === i;
           const isCurveEnd = activeDrawingTool === "curve" && curveEndPixel === i;
           
           // Only calculate these in layers mode
-          const isSelected = viewMode === "layers" ? selectedPixels.includes(i) : false;
-          const isInSelectionRect = viewMode === "layers" && activeDrawingTool === "select" && selectionStart !== null && selectionEnd !== null && isDrawing && getSelectionRectangle(selectionStart, selectionEnd).includes(i);
-          const isInActiveGroup = viewMode === "layers" && ((pixelGroup && pixelGroup.group === activeGroup) || (activeGroup === "__selected__" && selectedPixels.includes(i)));
-          const isMoveGroupHover = viewMode === "layers" && activeDrawingTool === "movegroup" && (pixelGroup || selectedPixels.includes(i)) && hoveredPixel === i;
+          const isSelected = selectedPixels.includes(i);
+          const isInSelectionRect = activeDrawingTool === "select" && selectionStart !== null && selectionEnd !== null && isDrawing && getSelectionRectangle(selectionStart, selectionEnd).includes(i);
+          const isInActiveGroup = (pixelGroup && pixelGroup.group === activeGroup) || (activeGroup === "__selected__" && selectedPixels.includes(i));
+          const isMoveGroupHover = activeDrawingTool === "movegroup" && (pixelGroup || selectedPixels.includes(i)) && hoveredPixel === i;
           
           // Calculate preview position during group drag
           let isInDragPreview = false;
-          if (viewMode === "layers" && groupDragStart !== null && groupDragCurrent !== null && activeGroup !== null && isDrawing) {
+          if (groupDragStart !== null && groupDragCurrent !== null && activeGroup !== null && isDrawing) {
             const deltaRow = groupDragCurrent.row - groupDragStart.startRow;
             const deltaCol = groupDragCurrent.col - groupDragStart.startCol;
             const currentRow = Math.floor(i / 200);
@@ -1556,14 +1648,12 @@ const savedData = ${dataString};
           
           // Show straight line preview or curve preview (only in drawing mode for performance)
           let isInLinePreview = false;
-          if (viewMode === "drawing") {
-            if (activeDrawingTool === "line" && lineStartPixel !== null && hoveredPixel !== null) {
-              isInLinePreview = getLinePixels(lineStartPixel, hoveredPixel).includes(i);
-            } else if (activeDrawingTool === "curve" && lineStartPixel !== null && curveEndPixel === null && hoveredPixel !== null) {
-              isInLinePreview = getLinePixels(lineStartPixel, hoveredPixel).includes(i);
-            } else if (activeDrawingTool === "curve" && lineStartPixel !== null && curveEndPixel !== null) {
-              isInLinePreview = getQuadraticBezierPixels(lineStartPixel, curveEndPixel, curveCurveAmount).includes(i);
-            }
+          if (activeDrawingTool === "line" && lineStartPixel !== null && hoveredPixel !== null) {
+            isInLinePreview = getLinePixels(lineStartPixel, hoveredPixel).includes(i);
+          } else if (activeDrawingTool === "curve" && lineStartPixel !== null && curveEndPixel === null && hoveredPixel !== null) {
+            isInLinePreview = getLinePixels(lineStartPixel, hoveredPixel).includes(i);
+          } else if (activeDrawingTool === "curve" && lineStartPixel !== null && curveEndPixel !== null) {
+            isInLinePreview = getQuadraticBezierPixels(lineStartPixel, curveEndPixel, curveCurveAmount).includes(i);
           }
           
           let borderColor = 'transparent';
@@ -1598,9 +1688,6 @@ const savedData = ${dataString};
           } else if (isLineStart || isInLinePreview) {
             borderColor = getContrastBorderColor(c);
             borderWidth = `${0.2 * zoomFactor}vw`;
-          } else if (isHovered && viewMode === "drawing") {
-            borderColor = getContrastBorderColor(c);
-            borderWidth = `${0.2 * zoomFactor}vw`;
           }
           
           // Get the display color (either current pixel or preview from dragged group)
@@ -1630,24 +1717,19 @@ const savedData = ${dataString};
               }}
               onPointerDown={(e) => {
                 // Check if clicking on a grouped pixel with movegroup tool
-                if (viewMode === "layers" && activeDrawingTool === "movegroup" && pixelGroup) {
+                if (activeDrawingTool === "movegroup" && pixelGroup) {
                   setActiveGroup(pixelGroup.group);
                   setGroupDragStart({ pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200 });
                   setIsDrawing(true);
-                } else if (viewMode === "layers" && activeDrawingTool === "movegroup" && selectedPixels.includes(i)) {
+                } else if (activeDrawingTool === "movegroup" && selectedPixels.includes(i)) {
                   // Moving selected pixels (not in a group yet)
                   setActiveGroup("__selected__");
                   setGroupDragStart({ pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200 });
                   setIsDrawing(true);
-                } else if (viewMode === "layers" && pixelGroup && !activeDrawingTool.match(/select|movegroup/)) {
+                } else if (pixelGroup && !activeDrawingTool.match(/select|movegroup/)) {
                   setActiveGroup(pixelGroup.group);
                   setGroupDragStart({ pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200 });
                   setIsDrawing(true);
-                } else if (activeDrawingTool === "pencil") {
-                  setIsDrawing(true);
-                  paintPixel(e, i);
-                } else if (activeDrawingTool === "bucket") {
-                  paintBucket(i);
                 } else if (activeDrawingTool === "select") {
                   // Start rectangle selection
                   setSelectionStart(i);
@@ -1713,31 +1795,21 @@ const savedData = ${dataString};
                 }
               }}
               onPointerEnter={() => {
-                if (isDrawing && activeDrawingTool === "pencil") {
-                  paintPixel(null, i);
-                } else if (isDrawing && activeDrawingTool === "select") {
+                if (isDrawing && activeDrawingTool === "select") {
                   setSelectionEnd(i);
                 }
-                // Update hover in drawing mode for performance, or in layers mode for movegroup tool
-                if (viewMode === "drawing") {
-                  setHoveredPixel(i);
-                } else if (viewMode === "layers" && activeDrawingTool === "movegroup") {
+                if (activeDrawingTool === "movegroup") {
                   setHoveredPixel(i);
                 }
               }}
               onPointerMove={(e) => {
-                // Update hovered pixel for line preview only when needed
-                if (viewMode === "drawing" && (activeDrawingTool === "line" || activeDrawingTool === "curve")) {
-                  setHoveredPixel(i);
-                }
-                
-                // Update hover for movegroup tool in layers mode
-                if (viewMode === "layers" && activeDrawingTool === "movegroup") {
+                // Update hover for movegroup tool
+                if (activeDrawingTool === "movegroup") {
                   setHoveredPixel(i);
                 }
                 
                 // Track current drag position for visual feedback (no actual move yet)
-                if (viewMode === "layers" && groupDragStart !== null && activeGroup !== null && isDrawing) {
+                if (groupDragStart !== null && activeGroup !== null && isDrawing) {
                   const currentRow = Math.floor(i / 200);
                   const currentCol = i % 200;
                   setGroupDragCurrent({ row: currentRow, col: currentCol });
@@ -1745,10 +1817,7 @@ const savedData = ${dataString};
                 }
               }}
               onPointerLeave={() => {
-                // Only clear hover in drawing mode
-                if (viewMode === "drawing" && !isDrawing && !(activeDrawingTool === "line" && lineStartPixel !== null)) {
-                  setHoveredPixel(null);
-                }
+                // Layers mode - no special hover clear needed
               }}
             />
           );
