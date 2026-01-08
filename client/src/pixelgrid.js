@@ -1372,7 +1372,6 @@ const savedData = ${dataString};
                   setLineStartPixel(null);
                   setSelectionStart(null);
                   setSelectionEnd(null);
-                  setActiveGroup(null);
                   setGroupDragStart(null);
                 }}
                 style={{
