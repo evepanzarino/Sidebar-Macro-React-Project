@@ -1641,7 +1641,7 @@ const colors = ${data};
           </div>
           <input
             type="text"
-            placeholder="Group name (e.g., group-1)"
+            placeholder="Group name"
             autoFocus
             onKeyDown={(e) => {
               if (e.key === "Enter" && e.target.value.trim()) {
