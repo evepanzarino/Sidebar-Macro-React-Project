@@ -1343,6 +1343,9 @@ const savedData = ${dataString};
                   alignItems: "center",
                   justifyContent: "center",
                   boxShadow: activeDrawingTool === "movegroup" ? "0px 0px .2vw .2vw #000000" : "none",
+                  position: "relative",
+                  zIndex: 10,
+                  pointerEvents: "auto",
                 }}
                 title="Click and drag to move a group"
               >
