@@ -2377,10 +2377,10 @@ const savedData = ${dataString};
                     <button
                       onClick={() => {
                         setActiveGroup(group.name);
-                        setActiveDrawingTool("select");
+                        setActiveDrawingTool("movegroup");
                       }}
                       style={{
-                        background: activeGroup === group.name && activeDrawingTool === "select" ? "#9C27B0" : "#555",
+                        background: activeGroup === group.name && activeDrawingTool === "movegroup" ? "#9C27B0" : "#555",
                         color: "white",
                         border: "0.2vw solid #000",
                         padding: "0.5vw 1vw",
