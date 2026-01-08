@@ -923,10 +923,13 @@ const colors = ${data};
           let isInLinePreview = false;
           if (activeDrawingTool === "line" && lineStartPixel !== null && hoveredPixel !== null) {
             if (isCurveMode && lineControlPoint !== null) {
-              // Show curve preview
+              // Show curve preview from start to hovered, using control point
               isInLinePreview = getQuadraticBezierPixels(lineStartPixel, hoveredPixel, lineControlPoint).includes(i);
-            } else if (!isCurveMode) {
-              // Show straight line preview (only when not in curve mode)
+            } else if (isCurveMode && lineControlPoint === null) {
+              // In curve mode but no control point yet - show straight line to where control point will be
+              isInLinePreview = getLinePixels(lineStartPixel, hoveredPixel).includes(i);
+            } else {
+              // Normal mode: always show straight line preview to hovered pixel
               isInLinePreview = getLinePixels(lineStartPixel, hoveredPixel).includes(i);
             }
           }
