@@ -289,7 +289,7 @@ export default function PixelGrid() {
     });
   }
 
-  // Get pixels in selection rectangle
+  // Get pixels in selection rectangle (only colored pixels or grouped pixels)
   function getSelectionPixels(start, end) {
     if (start === null || end === null) return [];
     
@@ -306,7 +306,13 @@ export default function PixelGrid() {
     const pixels = [];
     for (let row = minRow; row <= maxRow; row++) {
       for (let col = minCol; col <= maxCol; col++) {
-        pixels.push(row * 200 + col);
+        const pixelIndex = row * 200 + col;
+        // Include pixels that:
+        // 1. Are not white (have been painted with a color)
+        // 2. OR are already part of a group (even if white)
+        if (pixelColors[pixelIndex] !== "#ffffff" || pixelGroups[pixelIndex]) {
+          pixels.push(pixelIndex);
+        }
       }
     }
     return pixels;
@@ -1204,7 +1210,7 @@ const colors = ${data};
           return (
             <div
               key={`${i}-${c}`}
-              className={pixelGroup ? pixelGroup.group : ''}
+              id={pixelGroup ? pixelGroup.group : undefined}
               style={{ 
                 background: c, 
                 boxSizing: 'border-box',
