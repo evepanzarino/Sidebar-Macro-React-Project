@@ -28,7 +28,7 @@ export default function PixelGrid() {
 
   // Logo and title pixel size based on screen size
   const getLogoPixelSize = () => {
-    if (size.w > 1650) return 1; // Desktop: 7vw / 7 = 1vw per cell
+    if (size.w > 1650) return 1.075; // Desktop: 7vw / 7 = 1vw per cell
     if (size.w <= 1024) return 1.075; // Mobile/Tablet: 7.5vw / 7 = 1.07vw
     return 1; // Mid-range
   };
