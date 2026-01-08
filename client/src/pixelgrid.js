@@ -81,7 +81,11 @@ export default function PixelGrid() {
     }
     const stopDrawing = () => {
       setIsDrawing(false);
-      setHoveredPixel(null);
+      
+      // Don't clear hoveredPixel if we're in line mode waiting for second click
+      if (!(activeDrawingTool === "line" && lineStartPixel !== null && !isCurveMode)) {
+        setHoveredPixel(null);
+      }
       
       // Clear hold timer if exists
       if (lineHoldTimer) {
@@ -95,6 +99,7 @@ export default function PixelGrid() {
         setLineStartPixel(null);
         setLineControlPoint(null);
         setIsCurveMode(false);
+        setHoveredPixel(null);
       }
       setIsDraggingControlPoint(false);
     };
@@ -799,12 +804,10 @@ const colors = ${data};
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: "0.5vw",
                 boxShadow: activeDrawingTool === "line" ? "0px 0px .2vw .2vw #000000" : "none",
               }}
             >
               <i className="fas fa-slash"></i>
-              <i className="fas fa-pen-nib"></i>
             </button>
           </div>
         </div>
