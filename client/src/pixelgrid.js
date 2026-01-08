@@ -183,50 +183,6 @@ export default function PixelGrid() {
     });
   }
 
-  function getBezierPoints(p0, p1, p2, p3) {
-    // Cubic Bezier curve
-    const points = [];
-    const steps = 100;
-    for (let t = 0; t <= steps; t++) {
-      const u = t / steps;
-      const u2 = u * u;
-      const u3 = u2 * u;
-      const mu = 1 - u;
-      const mu2 = mu * mu;
-      const mu3 = mu2 * mu;
-      
-      const x = Math.round(mu3 * p0.x + 3 * mu2 * u * p1.x + 3 * mu * u2 * p2.x + u3 * p3.x);
-      const y = Math.round(mu3 * p0.y + 3 * mu2 * u * p1.y + 3 * mu * u2 * p2.y + u3 * p3.y);
-      
-      const index = y * cols + x;
-      if (index >= 0 && index < pixelColors.length && !points.includes(index)) {
-        points.push(index);
-      }
-    }
-    return points;
-  }
-
-  function getQuadraticBezierPoints(p0, p1, p2) {
-    // Quadratic Bezier curve
-    const points = [];
-    const steps = 50;
-    for (let t = 0; t <= steps; t++) {
-      const u = t / steps;
-      const u2 = u * u;
-      const mu = 1 - u;
-      const mu2 = mu * mu;
-      
-      const x = Math.round(mu2 * p0.x + 2 * mu * u * p1.x + u2 * p2.x);
-      const y = Math.round(mu2 * p0.y + 2 * mu * u * p1.y + u2 * p2.y);
-      
-      const index = y * cols + x;
-      if (index >= 0 && index < pixelColors.length && !points.includes(index)) {
-        points.push(index);
-      }
-    }
-    return points;
-  }
-
   function drawPenPath() {
     if (penPath.length < 2) return;
     
