@@ -144,14 +144,14 @@ const colors = ${data};
         borderBottomColor: "rgb(0, 0, 0)",
         display: "grid",
         alignItems: "center",
-        gridTemplateColumns: "5.25vw 3vw 1.5vw 3vw 3vw 2.25vw 3.75vw 3vw 1.5vw 3vw .75vw auto auto auto auto",
+        gridTemplateColumns: "10vw 3vw 1.5vw 3vw 3vw 2.25vw 3.75vw 3vw 1.5vw 3vw .75vw auto auto auto auto",
         zIndex: 20
       }}>
         <div className="logo" style={{
           display: "grid",
           position: "relative",
-          gridTemplateColumns: "repeat(7, .75vw)",
-          gridTemplateRows: "repeat(7, .75vw)",
+          gridTemplateColumns: "repeat(7, 1.43vw)",
+          gridTemplateRows: "repeat(7, 1.43vw)",
         }}>
 <div className="logo-pixels"></div>
 <div className="logo-pixels"></div>
