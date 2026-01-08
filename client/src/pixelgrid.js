@@ -786,7 +786,7 @@ const colors = ${data};
           bottom: 0,
           left: 0,
           width: "100%",
-          height: "7.5vw",
+          height: "7vw",
           display: "grid",
           gridTemplateColumns: "7.5vw 1fr 7.5vw",
           background: "#fefefe",
@@ -801,8 +801,8 @@ const colors = ${data};
               }
             }}
             style={{
-              width: "7.5vw",
-              height: "7.5vw",
+              width: "7w",
+              height: "7vw",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -820,7 +820,7 @@ const colors = ${data};
           <div 
             style={{
               width: "100%",
-              height: "7.5vw",
+              height: "7vw",
               background: "#fefefe",
               position: "relative",
               padding: "1vw",
@@ -881,8 +881,8 @@ const colors = ${data};
               }
             }}
             style={{
-              width: "7.5vw",
-              height: "7.5vw",
+              width: "7vw",
+              height: "7vw",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
