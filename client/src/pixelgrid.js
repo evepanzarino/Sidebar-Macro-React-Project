@@ -22,14 +22,14 @@ export default function PixelGrid() {
   const getZoomFactor = () => {
     if (size.w <= 768) return  2.75; // Mobile
     if (size.w <= 1024) return 1.75; // Tablet
-    if (size.w <= 1750) return 1.25;
+    if (size.w <= 1650) return 1.25;
     return 1; // Desktop
   };
 
   // Logo and title pixel size based on screen size
   const getTitlePixelSize = () => {
     if (size.w > 1650) return 0.75; // Desktop: smaller
-    if (size.w <= 1024) return 2.14; // Mobile/Tablet scrollbar size: 15vw / 7 pixels = 2.14vw per pixel
+    if (size.w <= 1024) return 1.43; // Mobile/Tablet: medium size
     return 1; // Mid-range
   };
 
