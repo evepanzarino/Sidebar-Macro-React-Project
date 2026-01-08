@@ -20,6 +20,8 @@ export default function PixelGrid() {
   const [activeTool, setActiveTool] = useState("primary"); // "primary" or "secondary"
   const [showColorMenu, setShowColorMenu] = useState(true);
   const [showFileMenu, setShowFileMenu] = useState(false);
+  const [showViewMenu, setShowViewMenu] = useState(false);
+  const [viewMode, setViewMode] = useState("drawing"); // "drawing" or "layers"
   const [showColorEditor, setShowColorEditor] = useState(false);
   const [editingColor, setEditingColor] = useState(null); // "primary" or "secondary"
   const [hoveredPixel, setHoveredPixel] = useState(null);
@@ -1097,6 +1099,75 @@ const savedData = ${dataString};
             </div>
           )}
         </div>
+        
+        {/* VIEW BUTTON */}
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={() => setShowViewMenu(v => !v)}
+            style={{
+              background: "#222",
+              color: "white",
+              width: "100%",
+              cursor: "pointer",
+              fontSize: "2vw"
+            }}
+          >
+            View
+          </button>
+
+          {showViewMenu && (
+            <div style={{
+              position: "absolute",
+              top: "100%",
+              left: 0,
+              background: "#222",
+              display: "grid",
+              width: "100%",
+              boxShadow: "0 0.6vw 2vw rgba(0,0,0,0.5)",
+              zIndex: 30
+            }}>
+              <div
+                onClick={() => {
+                  setViewMode("drawing");
+                  setShowViewMenu(false);
+                  setShowGroupDialog(false);
+                  setActiveDrawingTool("pencil");
+                }}
+                style={{
+                  cursor: "pointer",
+                  color: viewMode === "drawing" ? "#4CAF50" : "white",
+                  textAlign: "center",
+                  fontSize: ".9vw",
+                  borderBottom: "0.2vw solid #333",
+                  padding: "0.5vw",
+                  fontWeight: viewMode === "drawing" ? "bold" : "normal"
+                }}
+              >
+                ✓ Drawing Mode
+              </div>
+
+              <div
+                onClick={() => {
+                  setViewMode("layers");
+                  setShowViewMenu(false);
+                  setActiveDrawingTool("select");
+                  setShowGroupDialog(true);
+                }}
+                style={{
+                  cursor: "pointer",
+                  color: viewMode === "layers" ? "#4CAF50" : "white",
+                  textAlign: "center",
+                  fontSize: ".9vw",
+                  padding: "0.5vw",
+                  fontWeight: viewMode === "layers" ? "bold" : "normal"
+                }}
+              >
+                ✓ Layers & Grouping
+              </div>
+            </div>
+          )}
+        </div>
+        
         {/* hidden file input used by Load action */}
         <input
           ref={fileInputRef}
@@ -1130,125 +1201,131 @@ const savedData = ${dataString};
         <div style={{ width: "100%", textAlign: "center", paddingTop: "1vw" }}>
           <div style={{ color: "#000000", fontSize: "1.5vw", marginBottom: "0.5vw" }}><b>Tools</b></div>
           <div style={{ display: "flex", gap: "0.5vw", justifyContent: "center", flexWrap: "wrap", padding: "0 0.5vw" }}>
-            <button
-              onClick={() => {
-                setActiveDrawingTool("pencil");
-                setLineStartPixel(null);
-              }}
-              style={{
-                width: size.w <= 1024 ? "8vw" : "6vw",
-                height: size.w <= 1024 ? "8vw" : "6vw",
-                background: activeDrawingTool === "pencil" ? "#333" : "#fefefe",
-                color: activeDrawingTool === "pencil" ? "#fff" : "#000",
-                border: "0.3vw solid #000000",
-                cursor: "pointer",
-                fontSize: size.w <= 1024 ? "4vw" : "3vw",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: activeDrawingTool === "pencil" ? "0px 0px .2vw .2vw #000000" : "none",
-              }}
-            >
-              <i className="fas fa-paintbrush"></i>
-            </button>
-            <button
-              onClick={async () => {
-                await loadTool("line");
-                setActiveDrawingTool("line");
-                setLineStartPixel(null);
-              }}
-              style={{
-                width: size.w <= 1024 ? "8vw" : "6vw",
-                height: size.w <= 1024 ? "8vw" : "6vw",
-                background: activeDrawingTool === "line" ? "#333" : "#fefefe",
-                color: activeDrawingTool === "line" ? "#fff" : "#000",
-                border: "0.3vw solid #000000",
-                cursor: "pointer",
-                fontSize: size.w <= 1024 ? "4vw" : "3vw",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: activeDrawingTool === "line" ? "0px 0px .2vw .2vw #000000" : "none",
-              }}
-            >
-              <i className="fas fa-slash"></i>
-            </button>
-            <button
-              onClick={async () => {
-                await loadTool("curve");
-                setActiveDrawingTool("curve");
-                setLineStartPixel(null);
-                setCurveEndPixel(null);
-                setCurveCurveAmount(0);
-              }}
-              style={{
-                width: size.w <= 1024 ? "8vw" : "6vw",
-                height: size.w <= 1024 ? "8vw" : "6vw",
-                background: activeDrawingTool === "curve" ? "#333" : "#fefefe",
-                color: activeDrawingTool === "curve" ? "#fff" : "#000",
-                border: "0.3vw solid #000000",
-                cursor: "pointer",
-                fontSize: size.w <= 1024 ? "4vw" : "3vw",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: activeDrawingTool === "curve" ? "0px 0px .2vw .2vw #000000" : "none",
-              }}
-            >
-              <i className="fas fa-bezier-curve"></i>
-            </button>
-            <button
-              onClick={async () => {
-                await loadTool("bucket");
-                setActiveDrawingTool("bucket");
-                setLineStartPixel(null);
-              }}
-              style={{
-                width: size.w <= 1024 ? "8vw" : "6vw",
-                height: size.w <= 1024 ? "8vw" : "6vw",
-                background: activeDrawingTool === "bucket" ? "#333" : "#fefefe",
-                color: activeDrawingTool === "bucket" ? "#fff" : "#000",
-                border: "0.3vw solid #000000",
-                cursor: "pointer",
-                fontSize: size.w <= 1024 ? "4vw" : "3vw",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: activeDrawingTool === "bucket" ? "0px 0px .2vw .2vw #000000" : "none",
-              }}
-            >
-              <i className="fas fa-fill-drip"></i>
-            </button>
-            <button
-              onClick={async () => {
-                await loadTool("select");
-                setActiveDrawingTool("select");
-                setLineStartPixel(null);
-                setSelectionStart(null);
-                setSelectionEnd(null);
-                setShowGroupDialog(true);
-              }}
-              style={{
-                width: size.w <= 1024 ? "8vw" : "6vw",
-                height: size.w <= 1024 ? "8vw" : "6vw",
-                background: activeDrawingTool === "select" ? "#333" : "#fefefe",
-                color: activeDrawingTool === "select" ? "#fff" : "#000",
-                border: "0.3vw solid #000000",
-                cursor: "pointer",
-                fontSize: size.w <= 1024 ? "4vw" : "3vw",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: activeDrawingTool === "select" ? "0px 0px .2vw .2vw #000000" : "none",
-              }}
-            >
-              <i className="fas fa-vector-square"></i>
-            </button>
+            {viewMode === "drawing" && (
+              <>
+                <button
+                  onClick={() => {
+                    setActiveDrawingTool("pencil");
+                    setLineStartPixel(null);
+                  }}
+                  style={{
+                    width: size.w <= 1024 ? "8vw" : "6vw",
+                    height: size.w <= 1024 ? "8vw" : "6vw",
+                    background: activeDrawingTool === "pencil" ? "#333" : "#fefefe",
+                    color: activeDrawingTool === "pencil" ? "#fff" : "#000",
+                    border: "0.3vw solid #000000",
+                    cursor: "pointer",
+                    fontSize: size.w <= 1024 ? "4vw" : "3vw",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: activeDrawingTool === "pencil" ? "0px 0px .2vw .2vw #000000" : "none",
+                  }}
+                >
+                  <i className="fas fa-paintbrush"></i>
+                </button>
+                <button
+                  onClick={async () => {
+                    await loadTool("line");
+                    setActiveDrawingTool("line");
+                    setLineStartPixel(null);
+                  }}
+                  style={{
+                    width: size.w <= 1024 ? "8vw" : "6vw",
+                    height: size.w <= 1024 ? "8vw" : "6vw",
+                    background: activeDrawingTool === "line" ? "#333" : "#fefefe",
+                    color: activeDrawingTool === "line" ? "#fff" : "#000",
+                    border: "0.3vw solid #000000",
+                    cursor: "pointer",
+                    fontSize: size.w <= 1024 ? "4vw" : "3vw",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: activeDrawingTool === "line" ? "0px 0px .2vw .2vw #000000" : "none",
+                  }}
+                >
+                  <i className="fas fa-slash"></i>
+                </button>
+                <button
+                  onClick={async () => {
+                    await loadTool("curve");
+                    setActiveDrawingTool("curve");
+                    setLineStartPixel(null);
+                    setCurveEndPixel(null);
+                    setCurveCurveAmount(0);
+                  }}
+                  style={{
+                    width: size.w <= 1024 ? "8vw" : "6vw",
+                    height: size.w <= 1024 ? "8vw" : "6vw",
+                    background: activeDrawingTool === "curve" ? "#333" : "#fefefe",
+                    color: activeDrawingTool === "curve" ? "#fff" : "#000",
+                    border: "0.3vw solid #000000",
+                    cursor: "pointer",
+                    fontSize: size.w <= 1024 ? "4vw" : "3vw",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: activeDrawingTool === "curve" ? "0px 0px .2vw .2vw #000000" : "none",
+                  }}
+                >
+                  <i className="fas fa-bezier-curve"></i>
+                </button>
+                <button
+                  onClick={async () => {
+                    await loadTool("bucket");
+                    setActiveDrawingTool("bucket");
+                    setLineStartPixel(null);
+                  }}
+                  style={{
+                    width: size.w <= 1024 ? "8vw" : "6vw",
+                    height: size.w <= 1024 ? "8vw" : "6vw",
+                    background: activeDrawingTool === "bucket" ? "#333" : "#fefefe",
+                    color: activeDrawingTool === "bucket" ? "#fff" : "#000",
+                    border: "0.3vw solid #000000",
+                    cursor: "pointer",
+                    fontSize: size.w <= 1024 ? "4vw" : "3vw",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: activeDrawingTool === "bucket" ? "0px 0px .2vw .2vw #000000" : "none",
+                  }}
+                >
+                  <i className="fas fa-fill-drip"></i>
+                </button>
+              </>
+            )}
+            {viewMode === "layers" && (
+              <button
+                onClick={async () => {
+                  await loadTool("select");
+                  setActiveDrawingTool("select");
+                  setLineStartPixel(null);
+                  setSelectionStart(null);
+                  setSelectionEnd(null);
+                  setShowGroupDialog(true);
+                }}
+                style={{
+                  width: size.w <= 1024 ? "8vw" : "6vw",
+                  height: size.w <= 1024 ? "8vw" : "6vw",
+                  background: activeDrawingTool === "select" ? "#333" : "#fefefe",
+                  color: activeDrawingTool === "select" ? "#fff" : "#000",
+                  border: "0.3vw solid #000000",
+                  cursor: "pointer",
+                  fontSize: size.w <= 1024 ? "4vw" : "3vw",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: activeDrawingTool === "select" ? "0px 0px .2vw .2vw #000000" : "none",
+                }}
+              >
+                <i className="fas fa-vector-square"></i>
+              </button>
+            )}
           </div>
         </div>
 
         {/* GROUP SELECTED PIXELS BUTTON */}
-        {selectedPixels.length > 0 && (
+        {viewMode === "layers" && selectedPixels.length > 0 && (
           <div style={{ width: "100%", padding: "1vw" }}>
             <button
               onClick={() => setShowGroupDialog(true)}
@@ -1377,11 +1454,11 @@ const savedData = ${dataString};
           const isHovered = !isDrawing && hoveredPixel === i;
           const isLineStart = (activeDrawingTool === "line" || activeDrawingTool === "curve") && lineStartPixel === i;
           const isCurveEnd = activeDrawingTool === "curve" && curveEndPixel === i;
-          const isSelected = selectedPixels.includes(i);
+          const isSelected = viewMode === "layers" && selectedPixels.includes(i);
           // Show rectangle preview during drag, but final selection is only colored pixels
-          const isInSelectionRect = activeDrawingTool === "select" && selectionStart !== null && selectionEnd !== null && isDrawing && getSelectionRectangle(selectionStart, selectionEnd).includes(i);
+          const isInSelectionRect = viewMode === "layers" && activeDrawingTool === "select" && selectionStart !== null && selectionEnd !== null && isDrawing && getSelectionRectangle(selectionStart, selectionEnd).includes(i);
           const pixelGroup = pixelGroups[i];
-          const isInActiveGroup = pixelGroup && pixelGroup.group === activeGroup;
+          const isInActiveGroup = viewMode === "layers" && pixelGroup && pixelGroup.group === activeGroup;
           
           // Show straight line preview or curve preview
           let isInLinePreview = false;
@@ -1431,8 +1508,8 @@ const savedData = ${dataString};
                 zIndex: pixelGroup ? pixelGroup.zIndex : 0
               }}
               onPointerDown={(e) => {
-                // Check if clicking on a grouped pixel first
-                if (pixelGroup && !activeDrawingTool.match(/select/)) {
+                // Check if clicking on a grouped pixel first (only in layers mode)
+                if (viewMode === "layers" && pixelGroup && !activeDrawingTool.match(/select/)) {
                   setActiveGroup(pixelGroup.group);
                   setGroupDragStart({ pixelIndex: i, offsetRow: 0, offsetCol: 0 });
                 } else if (activeDrawingTool === "pencil") {
@@ -1835,8 +1912,8 @@ const savedData = ${dataString};
         </div>
       )}
 
-      {/* GROUP DIALOG AND LAYERS PANEL IN BOTTOM BAR */}
-      {showGroupDialog && (
+      {/* GROUP DIALOG AND LAYERS PANEL IN BOTTOM BAR - Only in Layers Mode */}
+      {viewMode === "layers" && showGroupDialog && (
         <div style={{
           position: "fixed",
           bottom: "5vh",
@@ -1943,7 +2020,7 @@ const savedData = ${dataString};
               
               <div style={{
                 display: "grid",
-                gridTemplateColumns: "auto 1fr auto auto auto auto",
+                gridTemplateColumns: "auto 1fr auto auto auto auto auto",
                 gap: "0.5vw",
                 alignItems: "center",
                 background: "#1a1a1a",
@@ -1954,6 +2031,7 @@ const savedData = ${dataString};
                 <div style={{ fontSize: "1.1vw", fontWeight: "bold", padding: "0.5vw" }}>Z</div>
                 <div style={{ fontSize: "1.1vw", fontWeight: "bold", padding: "0.5vw" }}>Layer Name</div>
                 <div style={{ fontSize: "1.1vw", fontWeight: "bold", padding: "0.5vw" }}>Edit</div>
+                <div style={{ fontSize: "1.1vw", fontWeight: "bold", padding: "0.5vw" }}>Move</div>
                 <div style={{ fontSize: "1.1vw", fontWeight: "bold", padding: "0.5vw" }}>Up</div>
                 <div style={{ fontSize: "1.1vw", fontWeight: "bold", padding: "0.5vw" }}>Down</div>
                 <div style={{ fontSize: "1.1vw", fontWeight: "bold", padding: "0.5vw" }}>Del</div>
@@ -2062,6 +2140,27 @@ const savedData = ${dataString};
                       }}
                     >
                       {activeGroup === group.name ? "✓" : "✎"}
+                    </button>
+                    
+                    {/* Move Layer Button */}
+                    <button
+                      onClick={() => {
+                        setActiveGroup(group.name);
+                        setActiveDrawingTool("select");
+                      }}
+                      style={{
+                        background: activeGroup === group.name && activeDrawingTool === "select" ? "#9C27B0" : "#555",
+                        color: "white",
+                        border: "0.2vw solid #000",
+                        padding: "0.5vw 1vw",
+                        cursor: "pointer",
+                        fontSize: "1.2vw",
+                        fontWeight: "bold",
+                        borderRadius: "0.3vw"
+                      }}
+                      title="Click to enable move mode, then drag pixels on canvas"
+                    >
+                      ☩
                     </button>
                     
                     {/* Move Up Button */}
