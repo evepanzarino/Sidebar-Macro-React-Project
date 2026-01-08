@@ -34,9 +34,7 @@ export default function PixelGrid() {
   };
 
   const getTitlePixelSize = () => {
-    if (size.w > 1650) return 0.75; // Desktop: smaller
-    if (size.w <= 1024) return 0.75; // Mobile/Tablet: scaled down
-    return 1.07; // Mid-range
+    return 0.75; // Same size on all screen sizes
   };
 
   const zoomFactor = getZoomFactor();
