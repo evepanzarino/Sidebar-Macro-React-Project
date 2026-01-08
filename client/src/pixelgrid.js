@@ -16,10 +16,6 @@ export default function PixelGrid() {
   const [isDraggingSlider, setIsDraggingSlider] = useState(false);
   const [activeDrawingTool, setActiveDrawingTool] = useState("pencil"); // "pencil", "line", or future tools like "bucket"
   const [lineStartPixel, setLineStartPixel] = useState(null); // For line tool: first click position
-  const [lineControlPoint, setLineControlPoint] = useState(null); // For bezier curve control point
-  const [isDraggingControlPoint, setIsDraggingControlPoint] = useState(false);
-  const [lineHoldTimer, setLineHoldTimer] = useState(null); // Timer for 1-second hold detection
-  const [isCurveMode, setIsCurveMode] = useState(false); // Whether we're in curve selection mode
   
   const color = activeTool === "primary" ? primaryColor : secondaryColor;
   const gridRef = useRef(null);
@@ -83,25 +79,9 @@ export default function PixelGrid() {
       setIsDrawing(false);
       
       // Don't clear hoveredPixel if we're in line mode waiting for second click
-      if (!(activeDrawingTool === "line" && lineStartPixel !== null && !isCurveMode)) {
+      if (!(activeDrawingTool === "line" && lineStartPixel !== null)) {
         setHoveredPixel(null);
       }
-      
-      // Clear hold timer if exists
-      if (lineHoldTimer) {
-        clearTimeout(lineHoldTimer);
-        setLineHoldTimer(null);
-      }
-      
-      // Handle curve drawing on release
-      if (isCurveMode && lineControlPoint !== null && lineStartPixel !== null && hoveredPixel !== null) {
-        drawCurve(lineStartPixel, hoveredPixel, lineControlPoint);
-        setLineStartPixel(null);
-        setLineControlPoint(null);
-        setIsCurveMode(false);
-        setHoveredPixel(null);
-      }
-      setIsDraggingControlPoint(false);
     };
 
     window.addEventListener("resize", handleResize);
@@ -111,7 +91,7 @@ export default function PixelGrid() {
       window.removeEventListener("pointerup", stopDrawing);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeDrawingTool, isDraggingControlPoint, lineStartPixel, hoveredPixel, lineControlPoint, lineHoldTimer, isCurveMode]);
+  }, [activeDrawingTool]);
 
   function paintPixel(e, index) {
     setPixelColors((prev) => {
@@ -179,50 +159,11 @@ export default function PixelGrid() {
     return pixels;
   }
 
-  function getQuadraticBezierPixels(startIndex, endIndex, controlIndex) {
-    const x0 = startIndex % cols;
-    const y0 = Math.floor(startIndex / cols);
-    const x1 = controlIndex % cols;
-    const y1 = Math.floor(controlIndex / cols);
-    const x2 = endIndex % cols;
-    const y2 = Math.floor(endIndex / cols);
-    
-    const pixels = [];
-    const steps = 100;
-    
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps;
-      const u = 1 - t;
-      
-      // Quadratic bezier formula: B(t) = (1-t)^2 * P0 + 2(1-t)t * P1 + t^2 * P2
-      const x = Math.round(u * u * x0 + 2 * u * t * x1 + t * t * x2);
-      const y = Math.round(u * u * y0 + 2 * u * t * y1 + t * t * y2);
-      
-      const index = y * cols + x;
-      if (!pixels.includes(index)) {
-        pixels.push(index);
-      }
-    }
-    
-    return pixels;
-  }
-
   function drawLine(startIndex, endIndex) {
     const linePixels = getLinePixels(startIndex, endIndex);
     setPixelColors((prev) => {
       const copy = [...prev];
       linePixels.forEach(i => {
-        copy[i] = color;
-      });
-      return copy;
-    });
-  }
-
-  function drawCurve(startIndex, endIndex, controlIndex) {
-    const curvePixels = getQuadraticBezierPixels(startIndex, endIndex, controlIndex);
-    setPixelColors((prev) => {
-      const copy = [...prev];
-      curvePixels.forEach(i => {
         copy[i] = color;
       });
       return copy;
@@ -769,7 +710,6 @@ const colors = ${data};
               onClick={() => {
                 setActiveDrawingTool("pencil");
                 setLineStartPixel(null);
-                setLineControlPoint(null);
               }}
               style={{
                 width: size.w <= 1024 ? "8vw" : "6vw",
@@ -791,7 +731,6 @@ const colors = ${data};
               onClick={() => {
                 setActiveDrawingTool("line");
                 setLineStartPixel(null);
-                setLineControlPoint(null);
               }}
               style={{
                 width: size.w <= 1024 ? "8vw" : "6vw",
@@ -920,30 +859,17 @@ const colors = ${data};
         {(pixelColors || []).map((c, i) => {
           const isHovered = !isDrawing && hoveredPixel === i;
           const isLineStart = activeDrawingTool === "line" && lineStartPixel === i;
-          const isControlPoint = activeDrawingTool === "line" && isCurveMode && lineControlPoint === i;
           
-          // Check if showing straight line preview or curve preview
+          // Show straight line preview
           let isInLinePreview = false;
           if (activeDrawingTool === "line" && lineStartPixel !== null && hoveredPixel !== null) {
-            if (isCurveMode && lineControlPoint !== null) {
-              // Show curve preview from start to hovered, using control point
-              isInLinePreview = getQuadraticBezierPixels(lineStartPixel, hoveredPixel, lineControlPoint).includes(i);
-            } else if (isCurveMode && lineControlPoint === null) {
-              // In curve mode but no control point yet - show straight line to where control point will be
-              isInLinePreview = getLinePixels(lineStartPixel, hoveredPixel).includes(i);
-            } else {
-              // Normal mode: always show straight line preview to hovered pixel
-              isInLinePreview = getLinePixels(lineStartPixel, hoveredPixel).includes(i);
-            }
+            isInLinePreview = getLinePixels(lineStartPixel, hoveredPixel).includes(i);
           }
           
           let borderColor = 'transparent';
           let borderWidth = `${0.1 * zoomFactor}vw`;
           
-          if (isControlPoint) {
-            borderColor = getContrastBorderColor(c);
-            borderWidth = `${0.3 * zoomFactor}vw`;
-          } else if (isLineStart || isInLinePreview) {
+          if (isLineStart || isInLinePreview) {
             borderColor = getContrastBorderColor(c);
             borderWidth = `${0.2 * zoomFactor}vw`;
           } else if (isHovered) {
@@ -965,38 +891,21 @@ const colors = ${data};
                   paintPixel(e, i);
                 } else if (activeDrawingTool === "line") {
                   if (lineStartPixel === null) {
-                    // First click: set start point and start hold timer
+                    // First click: set start point
                     setLineStartPixel(i);
-                    const timer = setTimeout(() => {
-                      // After 1 second, enter curve mode
-                      setIsCurveMode(true);
-                    }, 1000);
-                    setLineHoldTimer(timer);
-                  } else if (isCurveMode && lineControlPoint === null) {
-                    // In curve mode: clicking sets the control point
-                    setLineControlPoint(i);
-                  } else if (isCurveMode && lineControlPoint !== null) {
-                    // Third click in curve mode: draw curve to end point
-                    drawCurve(lineStartPixel, i, lineControlPoint);
-                    setLineStartPixel(null);
-                    setLineControlPoint(null);
-                    setIsCurveMode(false);
-                    setHoveredPixel(null);
-                  } else if (!isCurveMode && lineStartPixel !== null) {
-                    // Second click in normal mode: draw straight line
+                  } else if (lineStartPixel === i) {
+                    // Clicking same pixel - ignore
+                    return;
+                  } else {
+                    // Second click: draw straight line
                     drawLine(lineStartPixel, i);
                     setLineStartPixel(null);
-                    setLineControlPoint(null);
                     setHoveredPixel(null);
                   }
                 }
               }}
               onPointerUp={(e) => {
-                // Clear timer on pointer up
-                if (lineHoldTimer) {
-                  clearTimeout(lineHoldTimer);
-                  setLineHoldTimer(null);
-                }
+                // Nothing needed here for line tool
               }}
               onClick={(e) => {
                 if (activeDrawingTool === "pencil") {
