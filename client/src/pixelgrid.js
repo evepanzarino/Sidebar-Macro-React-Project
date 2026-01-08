@@ -224,47 +224,49 @@ export default function PixelGrid() {
       const queue = [startIndex];
       const visited = new Set([startIndex]);
       
-      // Helper to check if a pixel should block the fill
-      const isBlocking = (index) => {
+      // Helper to check if we should stop spreading in this direction
+      const shouldStop = (index, direction) => {
         if (index < 0 || index >= copy.length) return true;
-        const pixelColor = copy[index];
+        if (copy[index] === targetColor) return false;
         
-        // If it's the target color, it's not blocking
-        if (pixelColor === targetColor) return false;
-        
-        // If it's a different color, check if it's part of a "line"
-        // by seeing if it has neighbors of the same non-target color
+        // Check if there's a "wall" - at least 2 colored pixels in line with direction
         const row = Math.floor(index / 200);
         const col = index % 200;
-        let sameColorNeighbors = 0;
+        const pixelColor = copy[index];
         
-        // Check all 8 surrounding pixels for same color
-        const checkPositions = [
-          { r: row - 1, c: col, valid: row > 0 },
-          { r: row + 1, c: col, valid: row < Math.floor(copy.length / 200) - 1 },
-          { r: row, c: col - 1, valid: col > 0 },
-          { r: row, c: col + 1, valid: col < 199 },
-          { r: row - 1, c: col - 1, valid: row > 0 && col > 0 },
-          { r: row - 1, c: col + 1, valid: row > 0 && col < 199 },
-          { r: row + 1, c: col - 1, valid: row < Math.floor(copy.length / 200) - 1 && col > 0 },
-          { r: row + 1, c: col + 1, valid: row < Math.floor(copy.length / 200) - 1 && col < 199 },
-        ];
+        // Check pixels perpendicular to movement direction for wall continuity
+        let wallStrength = 0;
         
-        for (const pos of checkPositions) {
-          if (pos.valid) {
-            const neighborIndex = pos.r * 200 + pos.c;
-            if (copy[neighborIndex] === pixelColor) {
-              sameColorNeighbors++;
-            }
+        if (direction === 'horizontal') {
+          // Moving left/right, check up/down for wall
+          if (row > 0 && copy[index - 200] === pixelColor) wallStrength++;
+          if (row < Math.floor(copy.length / 200) - 1 && copy[index + 200] === pixelColor) wallStrength++;
+        } else if (direction === 'vertical') {
+          // Moving up/down, check left/right for wall
+          if (col > 0 && copy[index - 1] === pixelColor) wallStrength++;
+          if (col < 199 && copy[index + 1] === pixelColor) wallStrength++;
+        } else {
+          // Diagonal or general check
+          const neighbors = [];
+          if (row > 0) neighbors.push(copy[index - 200]);
+          if (row < Math.floor(copy.length / 200) - 1) neighbors.push(copy[index + 200]);
+          if (col > 0) neighbors.push(copy[index - 1]);
+          if (col < 199) neighbors.push(copy[index + 1]);
+          
+          for (const n of neighbors) {
+            if (n === pixelColor) wallStrength++;
           }
         }
         
-        // A pixel blocks if it has at least 1 neighbor of the same color (forms a line/wall)
-        return sameColorNeighbors >= 1;
+        // Stop if wall strength is at least 1 (pixel is part of a line)
+        return wallStrength >= 1;
       };
       
       while (queue.length > 0) {
         const index = queue.shift();
+        
+        // Only fill pixels that match the target color
+        if (copy[index] !== targetColor) continue;
         
         // Fill this pixel
         copy[index] = fillColor;
@@ -272,25 +274,23 @@ export default function PixelGrid() {
         const row = Math.floor(index / 200);
         const col = index % 200;
         
-        // Check all 8 adjacent pixels
-        const neighbors = [];
-        if (row > 0) neighbors.push(index - 200);
-        if (row < Math.floor(copy.length / 200) - 1) neighbors.push(index + 200);
-        if (col > 0) neighbors.push(index - 1);
-        if (col < 199) neighbors.push(index + 1);
-        if (row > 0 && col > 0) neighbors.push(index - 200 - 1);
-        if (row > 0 && col < 199) neighbors.push(index - 200 + 1);
-        if (row < Math.floor(copy.length / 200) - 1 && col > 0) neighbors.push(index + 200 - 1);
-        if (row < Math.floor(copy.length / 200) - 1 && col < 199) neighbors.push(index + 200 + 1);
+        // Check adjacent pixels with directional awareness
+        const directions = [
+          { idx: index - 200, valid: row > 0, dir: 'vertical' }, // up
+          { idx: index + 200, valid: row < Math.floor(copy.length / 200) - 1, dir: 'vertical' }, // down
+          { idx: index - 1, valid: col > 0, dir: 'horizontal' }, // left
+          { idx: index + 1, valid: col < 199, dir: 'horizontal' }, // right
+          { idx: index - 200 - 1, valid: row > 0 && col > 0, dir: 'diagonal' }, // up-left
+          { idx: index - 200 + 1, valid: row > 0 && col < 199, dir: 'diagonal' }, // up-right
+          { idx: index + 200 - 1, valid: row < Math.floor(copy.length / 200) - 1 && col > 0, dir: 'diagonal' }, // down-left
+          { idx: index + 200 + 1, valid: row < Math.floor(copy.length / 200) - 1 && col < 199, dir: 'diagonal' }, // down-right
+        ];
         
-        for (const neighbor of neighbors) {
-          if (!visited.has(neighbor)) {
-            visited.add(neighbor);
-            if (copy[neighbor] === targetColor) {
-              queue.push(neighbor);
-            } else if (!isBlocking(neighbor)) {
-              // If it's not blocking (isolated pixel), we can pass through
-              queue.push(neighbor);
+        for (const d of directions) {
+          if (d.valid && !visited.has(d.idx)) {
+            visited.add(d.idx);
+            if (!shouldStop(d.idx, d.dir)) {
+              queue.push(d.idx);
             }
           }
         }
