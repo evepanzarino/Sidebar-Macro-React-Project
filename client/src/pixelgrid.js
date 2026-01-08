@@ -27,6 +27,12 @@ export default function PixelGrid() {
   };
 
   // Logo and title pixel size based on screen size
+  const getLogoPixelSize = () => {
+    if (size.w > 1650) return 0.75; // Desktop: smaller
+    if (size.w <= 1024) return 2.14; // Mobile/Tablet: 15vw / 7 = 2.14vw
+    return 1; // Mid-range
+  };
+
   const getTitlePixelSize = () => {
     if (size.w > 1650) return 0.75; // Desktop: smaller
     if (size.w <= 1024) return 1.43; // Mobile/Tablet: medium size
@@ -34,6 +40,7 @@ export default function PixelGrid() {
   };
 
   const zoomFactor = getZoomFactor();
+  const logoPixelSize = getLogoPixelSize();
   const titlePixelSize = getTitlePixelSize();
   const cols = 200; // Fixed 200 columns
   const basePixelSize = 0.75; // Base pixel size in vw
@@ -152,14 +159,14 @@ const colors = ${data};
         borderBottomColor: "rgb(0, 0, 0)",
         display: "grid",
         alignItems: "center",
-        gridTemplateColumns: `${titlePixelSize * 7}vw ${titlePixelSize * 4}vw ${titlePixelSize * 2}vw ${titlePixelSize * 4}vw ${titlePixelSize * 4}vw ${titlePixelSize * 3}vw ${titlePixelSize * 5}vw ${titlePixelSize * 4}vw ${titlePixelSize * 2}vw ${titlePixelSize * 4}vw .75vw auto auto auto auto`,
+        gridTemplateColumns: `${logoPixelSize * 7}vw ${titlePixelSize * 4}vw ${titlePixelSize * 2}vw ${titlePixelSize * 4}vw ${titlePixelSize * 4}vw ${titlePixelSize * 3}vw ${titlePixelSize * 5}vw ${titlePixelSize * 4}vw ${titlePixelSize * 2}vw ${titlePixelSize * 4}vw .75vw auto auto auto auto`,
         zIndex: 20
       }}>
         <div className="logo" style={{
           display: "grid",
           position: "relative",
-          gridTemplateColumns: `repeat(7, ${titlePixelSize}vw)`,
-          gridTemplateRows: `repeat(7, ${titlePixelSize}vw)`,
+          gridTemplateColumns: `repeat(7, ${logoPixelSize}vw)`,
+          gridTemplateRows: `repeat(7, ${logoPixelSize}vw)`,
         }}>
 <div className="logo-pixels"></div>
 <div className="logo-pixels"></div>
