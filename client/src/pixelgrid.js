@@ -212,6 +212,50 @@ export default function PixelGrid() {
     });
   }
 
+  // Build regions map: which region does each pixel belong to
+  function buildRegionsMap(colors) {
+    const totalPixels = colors.length;
+    const regionMap = new Array(totalPixels).fill(-1);
+    let regionId = 0;
+    
+    for (let i = 0; i < totalPixels; i++) {
+      if (regionMap[i] !== -1) continue; // Already assigned
+      
+      // Start a new region with BFS
+      const color = colors[i];
+      const queue = [i];
+      regionMap[i] = regionId;
+      
+      while (queue.length > 0) {
+        const idx = queue.shift();
+        const row = Math.floor(idx / 200);
+        const col = idx % 200;
+        
+        // Check 4-directional neighbors (not diagonal)
+        const neighbors = [
+          { idx: idx - 200, row: row - 1, col: col },     // up
+          { idx: idx + 200, row: row + 1, col: col },     // down
+          { idx: idx - 1, row: row, col: col - 1 },       // left
+          { idx: idx + 1, row: row, col: col + 1 }        // right
+        ];
+        
+        for (const n of neighbors) {
+          if (n.row < 0 || n.row >= Math.floor(totalPixels / 200)) continue;
+          if (n.col < 0 || n.col >= 200) continue;
+          if (regionMap[n.idx] !== -1) continue; // Already assigned
+          if (colors[n.idx] !== color) continue; // Different color
+          
+          regionMap[n.idx] = regionId;
+          queue.push(n.idx);
+        }
+      }
+      
+      regionId++;
+    }
+    
+    return regionMap;
+  }
+
   function paintBucket(startIndex) {
     setPixelColors((prev) => {
       const targetColor = prev[startIndex];
@@ -222,75 +266,15 @@ export default function PixelGrid() {
       
       const copy = [...prev];
       
-      // First pass: identify all boundary pixels (non-target colors)
-      const boundaries = new Set();
+      // Build region map to identify connected regions
+      const regionMap = buildRegionsMap(copy);
+      const targetRegion = regionMap[startIndex];
+      
+      // Fill all pixels in the same region
       for (let i = 0; i < copy.length; i++) {
-        if (copy[i] !== targetColor) {
-          boundaries.add(i);
+        if (regionMap[i] === targetRegion) {
+          copy[i] = fillColor;
         }
-      }
-      
-      // Second pass: flood fill but respect boundaries
-      const queue = [startIndex];
-      const visited = new Set([startIndex]);
-      let fillCount = 0;
-      const maxFill = 10000; // Safety limit
-      
-      while (queue.length > 0 && fillCount < maxFill) {
-        const index = queue.shift();
-        
-        // Skip if this is a boundary
-        if (boundaries.has(index)) continue;
-        
-        // Only fill pixels that match the target color
-        if (copy[index] !== targetColor) continue;
-        
-        // Fill this pixel
-        copy[index] = fillColor;
-        fillCount++;
-        
-        const row = Math.floor(index / 200);
-        const col = index % 200;
-        
-        // For each direction, check if we can pass through
-        const tryAdd = (idx, checkRow, checkCol) => {
-          if (checkRow < 0 || checkRow >= Math.floor(copy.length / 200)) return;
-          if (checkCol < 0 || checkCol >= 200) return;
-          if (visited.has(idx)) return;
-          
-          visited.add(idx);
-          
-          // If it's a boundary, don't add to queue
-          if (boundaries.has(idx)) {
-            // Check if this boundary pixel has enough neighbors to form a wall
-            let boundaryNeighbors = 0;
-            const bRow = Math.floor(idx / 200);
-            const bCol = idx % 200;
-            
-            // Count boundary neighbors
-            if (bRow > 0 && boundaries.has(idx - 200)) boundaryNeighbors++;
-            if (bRow < Math.floor(copy.length / 200) - 1 && boundaries.has(idx + 200)) boundaryNeighbors++;
-            if (bCol > 0 && boundaries.has(idx - 1)) boundaryNeighbors++;
-            if (bCol < 199 && boundaries.has(idx + 1)) boundaryNeighbors++;
-            
-            // If isolated boundary pixel (less than 2 neighbors), allow passing through
-            if (boundaryNeighbors < 2) {
-              queue.push(idx);
-            }
-          } else {
-            queue.push(idx);
-          }
-        };
-        
-        // Check all 8 directions
-        tryAdd(index - 200, row - 1, col); // up
-        tryAdd(index + 200, row + 1, col); // down
-        tryAdd(index - 1, row, col - 1); // left
-        tryAdd(index + 1, row, col + 1); // right
-        tryAdd(index - 200 - 1, row - 1, col - 1); // up-left
-        tryAdd(index - 200 + 1, row - 1, col + 1); // up-right
-        tryAdd(index + 200 - 1, row + 1, col - 1); // down-left
-        tryAdd(index + 200 + 1, row + 1, col + 1); // down-right
       }
       
       return copy;
