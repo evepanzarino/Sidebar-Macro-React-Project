@@ -26,7 +26,14 @@ export default function PixelGrid() {
     return 1; // Desktop
   };
 
+  // Logo and title pixel size based on screen size
+  const getTitlePixelSize = () => {
+    if (size.w > 1750) return 0.75; // Desktop: smaller
+    return 1.43; // Mobile/Tablet: larger
+  };
+
   const zoomFactor = getZoomFactor();
+  const titlePixelSize = getTitlePixelSize();
   const cols = 200; // Fixed 200 columns
   const basePixelSize = 0.75; // Base pixel size in vw
   const displayPixelSize = basePixelSize * zoomFactor;
@@ -144,14 +151,14 @@ const colors = ${data};
         borderBottomColor: "rgb(0, 0, 0)",
         display: "grid",
         alignItems: "center",
-        gridTemplateColumns: "10vw 5.72vw 2.86vw 5.72vw 5.72vw 4.29vw 7.15vw 5.72vw 2.86vw 5.72vw .75vw auto auto auto auto",
+        gridTemplateColumns: `${titlePixelSize * 7}vw ${titlePixelSize * 4}vw ${titlePixelSize * 2}vw ${titlePixelSize * 4}vw ${titlePixelSize * 4}vw ${titlePixelSize * 3}vw ${titlePixelSize * 5}vw ${titlePixelSize * 4}vw ${titlePixelSize * 2}vw ${titlePixelSize * 4}vw .75vw auto auto auto auto`,
         zIndex: 20
       }}>
         <div className="logo" style={{
           display: "grid",
           position: "relative",
-          gridTemplateColumns: "repeat(7, 1.43vw)",
-          gridTemplateRows: "repeat(7, 1.43vw)",
+          gridTemplateColumns: `repeat(7, ${titlePixelSize}vw)`,
+          gridTemplateRows: `repeat(7, ${titlePixelSize}vw)`,
         }}>
 <div className="logo-pixels"></div>
 <div className="logo-pixels"></div>
@@ -208,10 +215,10 @@ const colors = ${data};
         <div className="title-letter-1" style={{
           display: "grid",
           position: "relative",
-          gridTemplateColumns: "repeat(4, 1.43vw)",
-          gridTemplateRows: "repeat(7, 1.43vw)",
+          gridTemplateColumns: `repeat(4, ${titlePixelSize}vw)`,
+          gridTemplateRows: `repeat(7, ${titlePixelSize}vw)`,
           padding: 0,
-          width: "5.72vw"
+          width: `${titlePixelSize * 4}vw`
         }}>
 <div className="title-p"></div>
 <div className="title-p"></div>
@@ -246,9 +253,9 @@ const colors = ${data};
         <div className="title-letter-2" style={{
           display: "grid",
           position: "relative",
-          gridTemplateColumns: "repeat(2, 1.43vw)",
-          gridTemplateRows: "repeat(7, 1.43vw)",
-          width: "2.86vw"
+          gridTemplateColumns: `repeat(2, ${titlePixelSize}vw)`,
+          gridTemplateRows: `repeat(7, ${titlePixelSize}vw)`,
+          width: `${titlePixelSize * 2}vw`
         }}>
 <div className="title-i"></div>
 <div className="title-i"></div>
@@ -283,9 +290,9 @@ const colors = ${data};
                 <div className="title-letter-3" style={{
           display: "grid",
           position: "relative",
-          gridTemplateColumns: "repeat(4, 1.43vw)",
-          gridTemplateRows: "repeat(7, 1.43vw)",
-          width: "5.72vw"
+          gridTemplateColumns: `repeat(4, ${titlePixelSize}vw)`,
+          gridTemplateRows: `repeat(7, ${titlePixelSize}vw)`,
+          width: `${titlePixelSize * 4}vw`
         }}>
 <div className="title-x"></div>
 <div className="title-x"></div>
@@ -320,9 +327,9 @@ const colors = ${data};
         <div className="title-letter-4" style={{
           display: "grid",
           position: "relative",
-          gridTemplateColumns: "repeat(4, 1.43vw)",
-          gridTemplateRows: "repeat(7, 1.43vw)",
-          width: "5.72vw"
+          gridTemplateColumns: `repeat(4, ${titlePixelSize}vw)`,
+          gridTemplateRows: `repeat(7, ${titlePixelSize}vw)`,
+          width: `${titlePixelSize * 4}vw`
         }}>
 <div className="title-e"></div>
 <div className="title-e"></div>
@@ -357,9 +364,9 @@ const colors = ${data};
 <div className="title-letter-5" style={{
           display: "grid",
           position: "relative",
-          gridTemplateColumns: "repeat(3, 1.43vw)",
-          gridTemplateRows: "repeat(7, 1.43vw)",
-          width: "4.29vw"
+          gridTemplateColumns: `repeat(3, ${titlePixelSize}vw)`,
+          gridTemplateRows: `repeat(7, ${titlePixelSize}vw)`,
+          width: `${titlePixelSize * 3}vw`
         }}>
 <div className="title-l"></div>
 <div className="title-l"></div>
@@ -387,9 +394,9 @@ const colors = ${data};
  <div className="title-letter-6" style={{
           display: "grid",
           position: "relative",
-          gridTemplateColumns: "repeat(5, 1.43vw)",
-          gridTemplateRows: "repeat(7, 1.43vw)",
-          width: "7.15vw"
+          gridTemplateColumns: `repeat(5, ${titlePixelSize}vw)`,
+          gridTemplateRows: `repeat(7, ${titlePixelSize}vw)`,
+          width: `${titlePixelSize * 5}vw`
         }}>
 <div className="title-g"></div>
 <div className="title-g"></div>
@@ -430,9 +437,9 @@ const colors = ${data};
  <div className="title-letter-7" style={{
           display: "grid",
           position: "relative",
-          gridTemplateColumns: "repeat(4, 1.43vw)",
-          gridTemplateRows: "repeat(7, 1.43vw)",
-          width: "5.72vw"
+          gridTemplateColumns: `repeat(4, ${titlePixelSize}vw)`,
+          gridTemplateRows: `repeat(7, ${titlePixelSize}vw)`,
+          width: `${titlePixelSize * 4}vw`
         }}>
 <div className="title-r"></div>
 <div className="title-r"></div>
@@ -466,9 +473,9 @@ const colors = ${data};
 <div className="title-letter-8" style={{
           display: "grid",
           position: "relative",
-          gridTemplateColumns: "repeat(2, 1.43vw)",
-          gridTemplateRows: "repeat(7, 1.43vw)",
-          width: "2.86vw"
+          gridTemplateColumns: `repeat(2, ${titlePixelSize}vw)`,
+          gridTemplateRows: `repeat(7, ${titlePixelSize}vw)`,
+          width: `${titlePixelSize * 2}vw`
         }}>
 <div className="title-i"></div>
 <div className="title-i"></div>
@@ -503,9 +510,9 @@ const colors = ${data};
 <div className="title-letter-9" style={{
           display: "grid",
           position: "relative",
-          gridTemplateColumns: "repeat(4, 1.43vw)",
-          gridTemplateRows: "repeat(7, 1.43vw)",
-          width: "5.72vw"
+          gridTemplateColumns: `repeat(4, ${titlePixelSize}vw)`,
+          gridTemplateRows: `repeat(7, ${titlePixelSize}vw)`,
+          width: `${titlePixelSize * 4}vw`
         }}>
           <div className="title-d"></div>
 <div className="title-d"></div>
