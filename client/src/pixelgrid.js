@@ -1264,6 +1264,7 @@ const colors = ${data};
             max="100"
             value={lineCurveAmount}
             onChange={(e) => setLineCurveAmount(Math.min(100, Math.max(-100, Number(e.target.value))))}
+            autoFocus
             style={{
               width: "12vw",
               padding: "1vw",
@@ -1337,7 +1338,6 @@ const colors = ${data};
           </div>
         </div>
       )}
-      {/* LINE CURVE ADJUSTMENT OVERLAY */}
       {activeDrawingTool === "line" && lineStartPixel !== null && lineEndPixel !== null && (
         <div
           style={{
@@ -1361,6 +1361,7 @@ const colors = ${data};
             max="100"
             value={lineCurveAmount}
             onChange={(e) => setLineCurveAmount(Math.min(100, Math.max(-100, Number(e.target.value))))}
+            autoFocus
             style={{
               width: "12vw",
               padding: "1vw",
