@@ -14,14 +14,13 @@ function App() {
       e.stopPropagation();
     };
     
-    // Add to window and document to catch all wheel events
-    window.addEventListener('wheel', preventWheel, { passive: false, capture: true });
-    document.addEventListener('wheel', preventWheel, { passive: false, capture: true });
+    // Add to window with capture to catch all wheel events before they reach child elements
+    const options = { passive: false, capture: true };
+    window.addEventListener('wheel', preventWheel, options);
     
     // Cleanup
     return () => {
-      window.removeEventListener('wheel', preventWheel, { capture: true });
-      document.removeEventListener('wheel', preventWheel, { capture: true });
+      window.removeEventListener('wheel', preventWheel, options);
     };
   }, []);
 
