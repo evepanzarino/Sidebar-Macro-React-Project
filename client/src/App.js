@@ -8,13 +8,14 @@ function App() {
   const [currentPage, setCurrentPage] = useState('pixelgrid');
 
   useEffect(() => {
-    // Prevent mouse wheel scrolling (both horizontal and vertical) but allow scrollbar
+    // Prevent ALL mouse wheel scrolling globally
+    // Only the PixelGrid's internal scrollable div should scroll
     const preventWheel = (e) => {
       e.preventDefault();
       e.stopPropagation();
     };
     
-    // Add to window with capture to catch all wheel events before they reach child elements
+    // Block all wheel events at the window level
     const options = { passive: false, capture: true };
     window.addEventListener('wheel', preventWheel, options);
     
