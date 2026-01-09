@@ -7,8 +7,10 @@
 html, body {
   overflow: hidden;
   height: 100%;
-  position: fixed;
   width: 100%;
+  position: fixed;
+  touch-action: none;
+  overscroll-behavior: none;
 }
 
 body {
