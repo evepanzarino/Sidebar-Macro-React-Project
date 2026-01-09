@@ -8,16 +8,20 @@ function App() {
   const [currentPage, setCurrentPage] = useState('pixelgrid');
 
   useEffect(() => {
-    // Prevent mouse wheel scrolling but allow scrollbar
+    // Prevent mouse wheel scrolling (both horizontal and vertical) but allow scrollbar
     const preventWheel = (e) => {
       e.preventDefault();
+      e.stopPropagation();
     };
     
-    window.addEventListener('wheel', preventWheel, { passive: false });
+    // Add to window and document to catch all wheel events
+    window.addEventListener('wheel', preventWheel, { passive: false, capture: true });
+    document.addEventListener('wheel', preventWheel, { passive: false, capture: true });
     
     // Cleanup
     return () => {
-      window.removeEventListener('wheel', preventWheel);
+      window.removeEventListener('wheel', preventWheel, { capture: true });
+      document.removeEventListener('wheel', preventWheel, { capture: true });
     };
   }, []);
 
