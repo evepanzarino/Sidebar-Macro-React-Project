@@ -2312,11 +2312,8 @@ const savedData = ${dataString};
           // Only calculate these in layers mode
           const isSelected = selectedPixels.includes(i);
           const isInSelectionRect = (() => {
-            // Show selection rectangle preview for select tool during drag or mobile second click
-            if (activeDrawingTool === "select" && selectionStart !== null && selectionEnd !== null) {
-              return getSelectionRectangle(selectionStart, selectionEnd).includes(i);
-            }
-            // Show active group highlight for other tools
+            // Don't show individual pixel borders for select tool - overlay handles it
+            // Only show active group highlight for other tools
             return activeGroup !== null && activeGroup !== "__selected__" && 
               pixelGroup?.group === activeGroup;
           })();
