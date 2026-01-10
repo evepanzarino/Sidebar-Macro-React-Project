@@ -2061,7 +2061,8 @@ const savedData = ${dataString};
             pointerEvents: 'none',
             boxSizing: 'border-box',
             position: 'absolute',
-            zIndex: 100
+            zIndex: 100,
+            cursor: 'crosshair'
           }}
         />
         
@@ -2088,7 +2089,8 @@ const savedData = ${dataString};
             willChange: "transform",
             height: "100%",
             width: "100%",
-            background: "transparent"
+            background: "transparent",
+            cursor: activeDrawingTool === "select" ? "crosshair" : "default"
           }}>
         
         {(pixelColors || []).map((c, i) => {
