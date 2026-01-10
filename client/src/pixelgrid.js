@@ -2180,7 +2180,10 @@ const savedData = ${dataString};
               const sourceIndex = sourceRow * 200 + sourceCol;
               isInDragPreview = selectedPixels.includes(sourceIndex);
               if (isInDragPreview) {
-                dragPreviewColor = pixelColors[sourceIndex] || c;
+                // Use source pixel color, defaulting to white if null/undefined
+                dragPreviewColor = pixelColors[sourceIndex] !== null && pixelColors[sourceIndex] !== undefined 
+                  ? pixelColors[sourceIndex] 
+                  : '#ffffff';
               }
             }
             
