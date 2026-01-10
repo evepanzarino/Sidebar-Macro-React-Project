@@ -2277,6 +2277,11 @@ const savedData = ${dataString};
                 dragPreviewColor = pixelColors[sourceIndex] !== null && pixelColors[sourceIndex] !== undefined 
                   ? pixelColors[sourceIndex] 
                   : '#ffffff';
+                
+                // Debug: log first few preview pixels
+                if (i % 200 === 0 || i === sourceIndex) {
+                  console.log(`PREVIEW DEBUG: pixel ${i} (${currentRow},${currentCol}) shows source ${sourceIndex} (${sourceRow},${sourceCol}), delta=(${deltaRow},${deltaCol}), clickedAt=(${groupDragStart.startRow},${groupDragStart.startCol}), cursorAt=(${currentDragPos.row},${currentDragPos.col}), selectedPixels[0]=${selectedPixels[0]}`);
+                }
               }
             }
             
@@ -2312,6 +2317,14 @@ const savedData = ${dataString};
                         const startRow = Math.floor(i / 200);
                         const startCol = i % 200;
                         const dragState = { pixelIndex: i, startRow, startCol };
+                        
+                        console.log("DRAG INIT DEBUG:", { 
+                          clickedPixel: i, 
+                          startRow, 
+                          startCol, 
+                          selectedPixels: selectedPixels.slice(0, 5),
+                          selectedPixelsLength: selectedPixels.length
+                        });
                         
                         setActiveGroup("__selected__");
                         setGroupDragStart(dragState);
@@ -2368,6 +2381,14 @@ const savedData = ${dataString};
                           const startRow = Math.floor(i / 200);
                           const startCol = i % 200;
                           const dragState = { pixelIndex: i, startRow, startCol };
+                          
+                          console.log("DRAG INIT DEBUG (Desktop):", { 
+                            clickedPixel: i, 
+                            startRow, 
+                            startCol, 
+                            selectedPixels: selectedPixels.slice(0, 5),
+                            selectedPixelsLength: selectedPixels.length
+                          });
                           
                           setActiveGroup("__selected__");
                           setGroupDragStart(dragState);
