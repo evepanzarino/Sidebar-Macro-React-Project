@@ -2351,8 +2351,14 @@ const savedData = ${dataString};
                 console.log('groupDragCurrent:', dragState.groupDragCurrent);
                 console.log('currentDragPos:', currentDragPos);
                 console.log('delta:', { deltaRow, deltaCol });
-                console.log('selectedPixels:', dragState.selectedPixels.slice(0, 10));
+                console.log('selectedPixels (first 10):', dragState.selectedPixels.slice(0, 10));
                 console.log('selectedPixels.length:', dragState.selectedPixels.length);
+                console.log('IMPORTANT: startRow/Col from groupDragStart:', { 
+                  startRow: dragState.groupDragStart.startRow, 
+                  startCol: dragState.groupDragStart.startCol,
+                  currentRow: currentDragPos.row,
+                  currentCol: currentDragPos.col
+                });
               }
               
               if (isInDragPreview) {
