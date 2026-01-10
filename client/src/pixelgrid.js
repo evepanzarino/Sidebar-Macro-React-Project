@@ -2129,10 +2129,31 @@ const savedData = ${dataString};
                   setGroupDragStart({ pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200 });
                   setIsDrawing(true);
                 } else if (activeDrawingTool === "select") {
-                  // Start rectangle selection on non-grouped pixels
-                  setSelectionStart(i);
-                  setSelectionEnd(i);
-                  setIsDrawing(true);
+                  // Mobile two-click selection mode
+                  if (size.w <= 1024) {
+                    if (selectionStart === null) {
+                      // First click: set selection start
+                      console.log("Mobile first click - setting selection start to", i);
+                      setSelectionStart(i);
+                      setSelectionEnd(null);
+                      setSelectedPixels([]);
+                      // Don't set isDrawing for mobile mode
+                    } else {
+                      // Second click: finalize selection
+                      console.log("Mobile second click - finalizing selection from", selectionStart, "to", i);
+                      setSelectionEnd(i);
+                      const selected = getSelectionPixels(selectionStart, i);
+                      console.log("Selected pixels:", selected);
+                      setSelectedPixels(selected);
+                      setSelectionStart(null);
+                      setSelectionEnd(null);
+                    }
+                  } else {
+                    // Desktop drag selection mode
+                    setSelectionStart(i);
+                    setSelectionEnd(i);
+                    setIsDrawing(true);
+                  }
                 } else if (activeDrawingTool === "line") {
                   if (lineStartPixel === null) {
                     // First click: set start point
@@ -2159,13 +2180,16 @@ const savedData = ${dataString};
                 }
               }}
               onPointerUp={(e) => {
-                if (activeDrawingTool === "select" && selectionStart !== null) {
-                  // Finalize selection
-                  const selected = getSelectionPixels(selectionStart, selectionEnd || selectionStart);
-                  setSelectedPixels(selected);
-                  setSelectionStart(null);
-                  setSelectionEnd(null);
-                  setIsDrawing(false);
+                if (activeDrawingTool === "select") {
+                  // Desktop mode - finalize drag selection
+                  if (size.w > 1024 && selectionStart !== null) {
+                    const selected = getSelectionPixels(selectionStart, selectionEnd || selectionStart);
+                    setSelectedPixels(selected);
+                    setSelectionStart(null);
+                    setSelectionEnd(null);
+                    setIsDrawing(false);
+                  }
+                  // Mobile mode - selection is handled in onPointerDown
                 } else if (groupDragStart !== null && activeGroup !== null) {
                   // Finalize group move
                   const currentRow = Math.floor(i / 200);
@@ -2193,8 +2217,15 @@ const savedData = ${dataString};
                 }
               }}
               onPointerEnter={() => {
-                if (isDrawing && activeDrawingTool === "select") {
-                  setSelectionEnd(i);
+                if (activeDrawingTool === "select") {
+                  // Mobile preview - show rectangle when hovering after first click
+                  if (size.w <= 1024 && selectionStart !== null && selectionEnd === null) {
+                    setSelectionEnd(i);
+                  }
+                  // Desktop drag selection
+                  else if (size.w > 1024 && isDrawing) {
+                    setSelectionEnd(i);
+                  }
                 }
                 setHoveredPixel(i);
               }}
