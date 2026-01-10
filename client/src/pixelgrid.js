@@ -541,7 +541,9 @@ export default function PixelGrid() {
     previewContainer.style.opacity = '0.7';
     
     const rect = gridRef.current.getBoundingClientRect();
-    const pixelSize = rect.width / 200;
+    // Use larger pixel size for better visibility - minimum 8px
+    const gridPixelSize = rect.width / 200;
+    const pixelSize = Math.max(8, gridPixelSize);
     
     // Calculate bounds of selected pixels
     let minRow = Infinity, maxRow = -Infinity, minCol = Infinity, maxCol = -Infinity;
@@ -624,20 +626,15 @@ export default function PixelGrid() {
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         
-        // Calculate which pixel we're over
+        // Calculate which pixel we're over based on cursor position
         const pixelSize = rect.width / 200; // 200 columns
         const col = Math.floor(x / pixelSize);
         const row = Math.floor(y / pixelSize);
         
-        // Calculate rows dynamically from grid height
-        const currentRows = Math.round(rect.height / pixelSize);
-        
-        // Ensure we're within bounds
-        if (row >= 0 && row < currentRows && col >= 0 && col < 200) {
-          flushSync(() => {
-            setGroupDragCurrent({ row, col });
-          });
-        }
+        // Always update current position (even outside grid bounds for proper finalization)
+        flushSync(() => {
+          setGroupDragCurrent({ row, col });
+        });
       }
     };
     
@@ -657,18 +654,15 @@ export default function PixelGrid() {
         const x = touch.clientX - rect.left;
         const y = touch.clientY - rect.top;
         
-        // Calculate which pixel we're over
+        // Calculate which pixel we're over based on cursor position
         const pixelSize = rect.width / 200;
         const col = Math.floor(x / pixelSize);
         const row = Math.floor(y / pixelSize);
         
-        const currentRows = Math.round(rect.height / pixelSize);
-        
-        if (row >= 0 && row < currentRows && col >= 0 && col < 200) {
-          flushSync(() => {
-            setGroupDragCurrent({ row, col });
-          });
-        }
+        // Always update current position (even outside grid bounds for proper finalization)
+        flushSync(() => {
+          setGroupDragCurrent({ row, col });
+        });
       }
     };
     
