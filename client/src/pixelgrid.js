@@ -161,6 +161,37 @@ export default function PixelGrid() {
     }
   }, [activeDrawingTool, loadTool]);
 
+  // Handle scrollbar slider dragging with global pointer move
+  useEffect(() => {
+    if (!isDraggingSlider) return;
+
+    const handlePointerMove = (e) => {
+      if (!gridRef.current) return;
+      
+      // Get the slider track bounds
+      const scrollbarTrack = document.querySelector('[data-scrollbar-track="true"]');
+      if (!scrollbarTrack) return;
+      
+      const rect = scrollbarTrack.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const percent = Math.max(0, Math.min(1, x / rect.width));
+      const maxScroll = gridRef.current.scrollWidth - gridRef.current.clientWidth;
+      gridRef.current.scrollLeft = percent * maxScroll;
+    };
+
+    const handlePointerUp = () => {
+      setIsDraggingSlider(false);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove, { passive: false, capture: true });
+    window.addEventListener('pointerup', handlePointerUp, { capture: true });
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove, { capture: true });
+      window.removeEventListener('pointerup', handlePointerUp, { capture: true });
+    };
+  }, [isDraggingSlider]);
+
   // Zoom factor for drawing area based on screen size
   const getZoomFactor = () => {
     if (size.w <= 768) return  2.75; // Mobile
@@ -1983,6 +2014,7 @@ const savedData = ${dataString};
 
           {/* Slider track */}
           <div 
+            data-scrollbar-track="true"
             style={{
               width: "100%",
               height: "10vw",
@@ -1996,7 +2028,7 @@ const savedData = ${dataString};
             <div
               onPointerDown={(e) => {
                 setIsDraggingSlider(true);
-                const rect = e.currentTarget.getBoundingClientRect();
+                const rect = e.currentTarget.parentElement.getBoundingClientRect();
                 const x = e.clientX - rect.left;
                 const percent = x / rect.width;
                 const maxScroll = gridRef.current ? gridRef.current.scrollWidth - gridRef.current.clientWidth : 0;
@@ -2004,17 +2036,6 @@ const savedData = ${dataString};
                   gridRef.current.scrollLeft = percent * maxScroll;
                 }
               }}
-              onPointerMove={(e) => {
-                if (isDraggingSlider && gridRef.current) {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const x = e.clientX - rect.left;
-                  const percent = Math.max(0, Math.min(1, x / rect.width));
-                  const maxScroll = gridRef.current.scrollWidth - gridRef.current.clientWidth;
-                  gridRef.current.scrollLeft = percent * maxScroll;
-                }
-              }}
-              onPointerUp={() => setIsDraggingSlider(false)}
-              onPointerLeave={() => setIsDraggingSlider(false)}
               style={{
                 width: "100%",
                 height: "8vw",
