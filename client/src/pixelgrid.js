@@ -2216,6 +2216,40 @@ const savedData = ${dataString};
               setScrollPosition(e.target.scrollLeft);
             }
           }}
+          onPointerDown={(e) => {
+            // If click didn't hit a pixel directly (e.g., clicked on grid gap/border),
+            // find the pixel at this location and trigger its handler
+            if (!e.target.hasAttribute('data-pixel-index')) {
+              const rect = gridRef.current.getBoundingClientRect();
+              const x = e.clientX - rect.left + gridRef.current.scrollLeft;
+              const y = e.clientY - rect.top + gridRef.current.scrollTop;
+              
+              // Convert viewport units to pixels
+              const pixelSizeInPx = (displayPixelSize * window.innerWidth) / 100;
+              const col = Math.floor(x / pixelSizeInPx);
+              const row = Math.floor(y / pixelSizeInPx);
+              
+              if (row >= 0 && row < rows && col >= 0 && col < 200) {
+                const pixelIndex = row * 200 + col;
+                console.log("Grid click delegated to pixel:", pixelIndex, { row, col, x, y });
+                
+                // Find the actual pixel element and dispatch a pointer down event to it
+                const pixelElement = document.querySelector(`[data-pixel-index="${pixelIndex}"]`);
+                if (pixelElement) {
+                  // Create a new pointer event with the same properties
+                  const syntheticEvent = new PointerEvent('pointerdown', {
+                    bubbles: true,
+                    cancelable: true,
+                    clientX: e.clientX,
+                    clientY: e.clientY,
+                    pointerId: e.pointerId,
+                    pointerType: e.pointerType
+                  });
+                  pixelElement.dispatchEvent(syntheticEvent);
+                }
+              }
+            }
+          }}
           style={{
             display: "grid",
             gridTemplateColumns: `repeat(200, ${displayPixelSize}vw)`,
