@@ -210,6 +210,7 @@ export default function PixelGrid() {
   const [activeGroup, setActiveGroup] = useState(null); // Currently selected group for moving
   const [groupDragStart, setGroupDragStart] = useState(null); // { pixelIndex, startRow, startCol }
   const [groupDragCurrent, setGroupDragCurrent] = useState(null); // Current hover position during drag
+  const [renderTrigger, setRenderTrigger] = useState(0); // Force re-renders by incrementing
   
   // Layer drag-and-drop state
   const [draggedLayer, setDraggedLayer] = useState(null);
@@ -2298,9 +2299,9 @@ const savedData = ${dataString};
                       dragStateRef.current.groupDragCurrent = null;
                       dragStateRef.current.isDrawing = true;
                       
-                      // Force immediate render by setting groupDragCurrent in flushSync
+                      // Force immediate render by incrementing renderTrigger in flushSync
                       flushSync(() => {
-                        setGroupDragCurrent(null);
+                        setRenderTrigger(prev => prev + 1);
                       });
                       
                       console.log("Mobile drag initialized (delegated):", { startRow, startCol, activeGroup: "__selected__" });
@@ -2340,9 +2341,9 @@ const savedData = ${dataString};
                       dragStateRef.current.groupDragCurrent = null;
                       dragStateRef.current.isDrawing = true;
                       
-                      // Force immediate render by setting groupDragCurrent in flushSync
+                      // Force immediate render by incrementing renderTrigger in flushSync
                       flushSync(() => {
-                        setGroupDragCurrent(null);
+                        setRenderTrigger(prev => prev + 1);
                       });
                       
                       console.log(">>> IMMEDIATELY AFTER flushSync (desktop) - ref state:", dragStateRef.current);
