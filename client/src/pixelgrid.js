@@ -1797,58 +1797,57 @@ const savedData = ${dataString};
                 activeDrawingTool={activeDrawingTool}
                 onPointerDown={(e) => {
                   if (activeDrawingTool === "select") {
-                    // Ensure select tool is loaded
-                    if (!loadedTools.select) {
-                      loadTool("select").then(() => {
-                        // Tool will be loaded on next interaction
-                      });
-                    }
-                    
-                    // Use modular select tool with context
-                    const context = {
-                      pixelGroups,
-                      activeGroup,
-                      selectionStart,
-                      selectionEnd,
-                      selectedPixels,
-                      size,
-                      setActiveGroup,
-                      setGroupDragStart,
-                      setSelectionStart,
-                      setSelectionEnd,
-                      setSelectedPixels,
-                      setIsDrawing,
-                      getSelectionPixels: (start, end) => getSelectionPixels(start, end),
-                      getSelectionRectangle: (start, end) => getSelectionRectangle(start, end)
-                    };
-                    
-                    if (loadedTools.select) {
-                      loadedTools.select.onPointerDown(context, i);
-                    } else {
-                      // Fallback to inline logic for backwards compatibility
+                    // Check for mobile two-click mode first
+                    if (size.w <= 1024) {
                       if (selectedPixels.includes(i)) {
-                        // Select tool: clicking on a selected pixel enables drag-to-move
+                        // Clicking on already selected pixel - enable drag-to-move
                         setActiveGroup("__selected__");
                         setGroupDragStart({ pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200 });
                         setIsDrawing(true);
+                      } else if (selectionStart === null) {
+                        // First click: set selection start
+                        console.log("First click - setting selection start to", i);
+                        setSelectionStart(i);
+                        setSelectionEnd(null);
+                        setSelectedPixels([]);
                       } else {
-                        // Mobile two-click selection mode
-                        if (size.w <= 1024) {
-                          if (selectionStart === null) {
-                            // First click: set selection start
-                            setSelectionStart(i);
-                            setSelectionEnd(null);
-                            setSelectedPixels([]);
-                          } else {
-                            // Second click: finalize selection
-                            setSelectionEnd(i);
-                            const selected = getSelectionPixels(selectionStart, i);
-                            setSelectedPixels(selected);
-                            setSelectionStart(null);
-                            setSelectionEnd(null);
-                          }
+                        // Second click: finalize selection
+                        console.log("Second click - finalizing selection from", selectionStart, "to", i);
+                        setSelectionEnd(i);
+                        const selected = getSelectionPixels(selectionStart, i);
+                        console.log("Selected pixels:", selected);
+                        setSelectedPixels(selected);
+                        setSelectionStart(null);
+                        setSelectionEnd(null);
+                      }
+                    } else {
+                      // Desktop mode - use modular tool if available, otherwise fallback
+                      const context = {
+                        pixelGroups,
+                        activeGroup,
+                        selectionStart,
+                        selectionEnd,
+                        selectedPixels,
+                        size,
+                        setActiveGroup,
+                        setGroupDragStart,
+                        setSelectionStart,
+                        setSelectionEnd,
+                        setSelectedPixels,
+                        setIsDrawing,
+                        getSelectionPixels: (start, end) => getSelectionPixels(start, end),
+                        getSelectionRectangle: (start, end) => getSelectionRectangle(start, end)
+                      };
+                      
+                      if (loadedTools.select) {
+                        loadedTools.select.onPointerDown(context, i);
+                      } else {
+                        // Desktop fallback
+                        if (selectedPixels.includes(i)) {
+                          setActiveGroup("__selected__");
+                          setGroupDragStart({ pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200 });
+                          setIsDrawing(true);
                         } else {
-                          // Desktop drag selection mode
                           setSelectionStart(i);
                           setSelectionEnd(i);
                           setSelectedPixels([]);
@@ -1887,31 +1886,34 @@ const savedData = ${dataString};
                 }}
                 onPointerUp={() => {
                   if (activeDrawingTool === "select") {
-                    // Use modular select tool with context
-                    const context = {
-                      selectionStart,
-                      selectionEnd,
-                      size,
-                      getSelectionPixels: (start, end) => getSelectionPixels(start, end),
-                      setSelectedPixels,
-                      setSelectionStart,
-                      setSelectionEnd,
-                      setGroupDragStart
-                    };
-                    
-                    if (loadedTools.select) {
-                      loadedTools.select.onPointerUp(context);
-                    } else {
-                      // Fallback logic for desktop only
-                      if (size.w > 1024 && selectionStart !== null) {
-                        const selected = getSelectionPixels(selectionStart, selectionEnd || selectionStart);
-                        setSelectedPixels(selected);
-                        setSelectionStart(null);
-                        setSelectionEnd(null);
+                    // Desktop mode - finalize drag selection
+                    if (size.w > 1024) {
+                      const context = {
+                        selectionStart,
+                        selectionEnd,
+                        size,
+                        getSelectionPixels: (start, end) => getSelectionPixels(start, end),
+                        setSelectedPixels,
+                        setSelectionStart,
+                        setSelectionEnd,
+                        setGroupDragStart
+                      };
+                      
+                      if (loadedTools.select) {
+                        loadedTools.select.onPointerUp(context);
+                      } else {
+                        // Desktop fallback
+                        if (selectionStart !== null && selectionEnd !== null) {
+                          const selected = getSelectionPixels(selectionStart, selectionEnd);
+                          setSelectedPixels(selected);
+                          setSelectionStart(null);
+                          setSelectionEnd(null);
+                        }
+                        setGroupDragStart(null);
                       }
-                      setGroupDragStart(null);
+                      setIsDrawing(false);
                     }
-                    setIsDrawing(false);
+                    // Mobile mode - selection is handled in onPointerDown
                   } else if (groupDragStart !== null && activeGroup === "__selected__") {
                     // Finalize selected pixels move
                     const currentRow = Math.floor(i / 200);
@@ -1931,28 +1933,31 @@ const savedData = ${dataString};
                 }}
                 onPointerEnter={() => {
                   if (activeDrawingTool === "select") {
-                    // Use modular select tool with context
-                    const context = {
-                      isDrawing,
-                      selectionStart,
-                      selectionEnd,
-                      groupDragStart,
-                      activeGroup,
-                      size,
-                      setSelectionEnd,
-                      moveGroup,
-                      setGroupDragStart
-                    };
-                    
-                    if (loadedTools.select) {
-                      loadedTools.select.onPointerEnter(context, i);
-                    } else {
-                      // Fallback logic
-                      if (isDrawing && size.w > 1024) {
-                        setSelectionEnd(i);
-                      } else if (size.w <= 1024 && selectionStart !== null) {
-                        // Mobile preview
-                        setSelectionEnd(i);
+                    // Mobile preview - show rectangle when hovering after first click
+                    if (size.w <= 1024 && selectionStart !== null && selectionEnd === null) {
+                      setSelectionEnd(i);
+                    }
+                    // Desktop mode
+                    else if (size.w > 1024) {
+                      const context = {
+                        isDrawing,
+                        selectionStart,
+                        selectionEnd,
+                        groupDragStart,
+                        activeGroup,
+                        size,
+                        setSelectionEnd,
+                        moveGroup,
+                        setGroupDragStart
+                      };
+                      
+                      if (loadedTools.select) {
+                        loadedTools.select.onPointerEnter(context, i);
+                      } else {
+                        // Desktop fallback
+                        if (isDrawing) {
+                          setSelectionEnd(i);
+                        }
                       }
                     }
                   } else if (isDrawing && activeDrawingTool === "pencil") {
