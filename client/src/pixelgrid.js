@@ -2189,18 +2189,19 @@ const savedData = ${dataString};
                     if (size.w <= 1024) {
                       if (selectedPixels.includes(i)) {
                         // Clicking on already selected pixel - enable drag-to-move
+                        console.log("Mobile: Starting drag on selected pixel", i);
                         setActiveGroup("__selected__");
                         setGroupDragStart({ pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200 });
                         setIsDrawing(true);
                       } else if (selectionStart === null) {
                         // First click: set selection start
-                        console.log("First click - setting selection start to", i);
+                        console.log("Mobile first click - setting selection start to", i);
                         setSelectionStart(i);
                         setSelectionEnd(null);
                         setSelectedPixels([]);
                       } else {
                         // Second click: finalize selection
-                        console.log("Second click - finalizing selection from", selectionStart, "to", i);
+                        console.log("Mobile second click - finalizing selection from", selectionStart, "to", i);
                         setSelectionEnd(i);
                         const selected = getSelectionPixels(selectionStart, i);
                         console.log("Selected pixels:", selected);
@@ -2346,6 +2347,7 @@ const savedData = ${dataString};
                   if (groupDragStart !== null && activeGroup === "__selected__" && isDrawing) {
                     const currentRow = Math.floor(i / 200);
                     const currentCol = i % 200;
+                    console.log("Setting groupDragCurrent:", { row: currentRow, col: currentCol });
                     setGroupDragCurrent({ row: currentRow, col: currentCol });
                   }
                   
