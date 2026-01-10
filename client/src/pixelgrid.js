@@ -42,7 +42,7 @@ const DrawingPixel = memo(({
   // Show preview at new position
   if (isInDragPreview) {
     borderColor = '#9C27B0';
-    borderWidth = `${0.3 * zoomFactor}vw`;
+    borderWidth = `${0.15 * zoomFactor}vw`;
     boxShadow = `0 0 ${0.5 * zoomFactor}vw ${0.2 * zoomFactor}vw #9C27B0`;
   } else if (isSelectionStartPoint) {
     // Use same contrast detection as line/curve previews
@@ -55,8 +55,8 @@ const DrawingPixel = memo(({
       const brightness = (r + g + b) / 3;
       return brightness > 127;
     })();
-    borderColor = isLight ? '#000000' : '#ffffff';
-    borderWidth = `${0.4 * zoomFactor}vw`;
+    borderColor = isLight ? '#000000' : '#888888';
+    borderWidth = `${0.15 * zoomFactor}vw`;
     boxShadow = `0 0 ${0.6 * zoomFactor}vw ${0.3 * zoomFactor}vw ${borderColor}`;
   } else if (isInSelectionRect) {
     // Use same contrast detection as line/curve previews
@@ -69,8 +69,8 @@ const DrawingPixel = memo(({
       const brightness = (r + g + b) / 3;
       return brightness > 127;
     })();
-    borderColor = isLight ? '#000000' : '#ffffff';
-    borderWidth = `${0.2 * zoomFactor}vw`;
+    borderColor = isLight ? '#000000' : '#888888';
+    borderWidth = `${0.15 * zoomFactor}vw`;
   } else if (isSelected) {
     // Use same contrast detection as line/curve previews
     const isLight = (() => {
@@ -82,8 +82,8 @@ const DrawingPixel = memo(({
       const brightness = (r + g + b) / 3;
       return brightness > 127;
     })();
-    borderColor = isLight ? '#000000' : '#ffffff';
-    borderWidth = `${0.3 * zoomFactor}vw`;
+    borderColor = isLight ? '#000000' : '#888888';
+    borderWidth = `${0.15 * zoomFactor}vw`;
   } else if (isCurveEnd || isLineStart || isInLinePreview) {
     // Use proper contrast detection for line/curve previews
     const isLight = (() => {
@@ -95,8 +95,8 @@ const DrawingPixel = memo(({
       const brightness = (r + g + b) / 3;
       return brightness > 127;
     })();
-    borderColor = isLight ? '#000000' : '#ffffff';
-    borderWidth = `${0.3 * zoomFactor}vw`;
+    borderColor = isLight ? '#000000' : '#888888';
+    borderWidth = `${0.15 * zoomFactor}vw`;
   } else if (isHovered && !isDrawing) {
     // Use proper contrast detection for hover
     const isLight = (() => {
@@ -108,8 +108,8 @@ const DrawingPixel = memo(({
       const brightness = (r + g + b) / 3;
       return brightness > 127;
     })();
-    borderColor = isLight ? '#000000' : '#ffffff';
-    borderWidth = `${0.2 * zoomFactor}vw`;
+    borderColor = isLight ? '#000000' : '#888888';
+    borderWidth = `${0.15 * zoomFactor}vw`;
   }
   
   borderStyle = `${borderWidth} solid ${borderColor}`;
@@ -2339,7 +2339,7 @@ const savedData = ${dataString};
           // Show preview at new position
           if (isInDragPreview) {
             borderColor = '#9C27B0';
-            borderWidth = `${0.3 * zoomFactor}vw`;
+            borderWidth = `${0.15 * zoomFactor}vw`;
             boxShadow = `0 0 ${0.5 * zoomFactor}vw ${0.2 * zoomFactor}vw #9C27B0`;
           } else if (isSelectionStartPoint) {
             // Use same contrast detection as line/curve previews
@@ -2352,12 +2352,12 @@ const savedData = ${dataString};
               const brightness = (r + g + b) / 3;
               return brightness > 127;
             })();
-            borderColor = isLight ? '#000000' : '#ffffff';
-            borderWidth = `${0.4 * zoomFactor}vw`;
+            borderColor = isLight ? '#000000' : '#888888';
+            borderWidth = `${0.15 * zoomFactor}vw`;
             boxShadow = `0 0 ${0.6 * zoomFactor}vw ${0.3 * zoomFactor}vw ${borderColor}`;
           } else if (isMoveGroupHover || isSelectGroupHover) {
             borderColor = '#9C27B0';
-            borderWidth = `${0.3 * zoomFactor}vw`;
+            borderWidth = `${0.15 * zoomFactor}vw`;
             boxShadow = `0 0 ${0.5 * zoomFactor}vw ${0.2 * zoomFactor}vw #9C27B0`;
           } else if (isInActiveGroup) {
             // Use same contrast detection as line/curve previews
@@ -2370,8 +2370,8 @@ const savedData = ${dataString};
               const brightness = (r + g + b) / 3;
               return brightness > 127;
             })();
-            borderColor = isLight ? '#000000' : '#ffffff';
-            borderWidth = `${0.3 * zoomFactor}vw`;
+            borderColor = isLight ? '#000000' : '#888888';
+            borderWidth = `${0.15 * zoomFactor}vw`;
             boxShadow = `0 0 0.5vw ${borderColor}`;
           } else if (isSelected || isInSelectionRect) {
             // Use same contrast detection as line/curve previews
@@ -2384,14 +2384,14 @@ const savedData = ${dataString};
               const brightness = (r + g + b) / 3;
               return brightness > 127;
             })();
-            borderColor = isLight ? '#000000' : '#ffffff';
-            borderWidth = `${0.3 * zoomFactor}vw`;
+            borderColor = isLight ? '#000000' : '#888888';
+            borderWidth = `${0.15 * zoomFactor}vw`;
           } else if (isCurveEnd) {
             borderColor = getContrastBorderColor(c);
-            borderWidth = `${0.3 * zoomFactor}vw`;
+            borderWidth = `${0.15 * zoomFactor}vw`;
           } else if (isLineStart || isInLinePreview) {
             borderColor = getContrastBorderColor(c);
-            borderWidth = `${0.2 * zoomFactor}vw`;
+            borderWidth = `${0.15 * zoomFactor}vw`;
           }
           
           // Get the display color (either current pixel or preview from dragged group)
