@@ -597,7 +597,7 @@ export default function PixelGrid() {
         
         if (deltaRow !== 0 || deltaCol !== 0) {
           console.log("Calling moveSelectedPixels with selectedPixels:", state.selectedPixels.length);
-          moveSelectedPixels(deltaRow, deltaCol);
+          moveSelectedPixels(deltaRow, deltaCol, state.selectedPixels);
         }
         
         // Clear drag state
@@ -957,9 +957,10 @@ export default function PixelGrid() {
   }
 
   // Move selected pixels (not in a group)
-  function moveSelectedPixels(deltaRow, deltaCol) {
-    console.log("moveSelectedPixels called:", { deltaRow, deltaCol, selectedPixelsCount: selectedPixels.length });
-    if (selectedPixels.length === 0) {
+  function moveSelectedPixels(deltaRow, deltaCol, pixelsToMove = null) {
+    const selectedPixelsArray = pixelsToMove || selectedPixels;
+    console.log("moveSelectedPixels called:", { deltaRow, deltaCol, selectedPixelsCount: selectedPixelsArray.length });
+    if (selectedPixelsArray.length === 0) {
       console.log("No selected pixels, returning early");
       return;
     }
@@ -970,7 +971,7 @@ export default function PixelGrid() {
       const copy = [...prev];
       
       // Get colors and positions of selected pixels from current state
-      const pixelData = selectedPixels.map(idx => ({
+      const pixelData = selectedPixelsArray.map(idx => ({
         oldIndex: idx,
         color: prev[idx],
         row: Math.floor(idx / 200),
@@ -1004,7 +1005,7 @@ export default function PixelGrid() {
     
     console.log("Updating selected pixels...");
     // Update selected pixels to new positions
-    const newSelectedPixels = selectedPixels.map(idx => {
+    const newSelectedPixels = selectedPixelsArray.map(idx => {
       const row = Math.floor(idx / 200);
       const col = idx % 200;
       const newRow = row + deltaRow;
