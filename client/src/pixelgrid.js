@@ -47,6 +47,7 @@ const DrawingPixel = memo(({
       const g = parseInt(color.substring(3, 5), 16);
       const b = parseInt(color.substring(5, 7), 16);
       const brightness = (r + g + b) / 3;
+      console.log(`Selection start pixel ${index}: color=${color}, r=${r}, g=${g}, b=${b}, brightness=${brightness}, isLight=${brightness > 127}`);
       return brightness > 127;
     })();
     borderColor = isLight ? '#000000' : '#ffffff';
@@ -60,6 +61,7 @@ const DrawingPixel = memo(({
       const g = parseInt(color.substring(3, 5), 16);
       const b = parseInt(color.substring(5, 7), 16);
       const brightness = (r + g + b) / 3;
+      console.log(`Selection rect pixel ${index}: color=${color}, r=${r}, g=${g}, b=${b}, brightness=${brightness}, isLight=${brightness > 127}`);
       return brightness > 127;
     })();
     borderColor = isLight ? '#000000' : '#ffffff';
