@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback, memo } from "react";
+import { flushSync } from "react-dom";
 import "./pixelgrid.css";
 
 // Memoized pixel component to prevent unnecessary re-renders
@@ -546,7 +547,9 @@ export default function PixelGrid() {
         // Ensure we're within bounds
         if (row >= 0 && row < currentRows && col >= 0 && col < 200) {
           console.log("Global pointermove: Setting groupDragCurrent:", { row, col, x, y, pixelSize });
-          setGroupDragCurrent({ row, col });
+          flushSync(() => {
+            setGroupDragCurrent({ row, col });
+          });
         }
       }
     };
@@ -573,7 +576,9 @@ export default function PixelGrid() {
         
         if (row >= 0 && row < currentRows && col >= 0 && col < 200) {
           console.log("Touch move: Setting groupDragCurrent:", { row, col, x, y });
-          setGroupDragCurrent({ row, col });
+          flushSync(() => {
+            setGroupDragCurrent({ row, col });
+          });
         }
       }
     };
