@@ -872,22 +872,24 @@ export default function PixelGrid() {
     console.log("moveSelectedPixels called:", { deltaRow, deltaCol, selectedPixelsCount: selectedPixels.length });
     if (selectedPixels.length === 0) return;
     
-    // Get colors and positions of selected pixels
-    const pixelData = selectedPixels.map(idx => ({
-      oldIndex: idx,
-      color: pixelColors[idx],
-      row: Math.floor(idx / 200),
-      col: idx % 200
-    }));
-    
-    console.log("Moving pixels:", pixelData.slice(0, 3), "...");
-    
     setPixelColors(prev => {
       const copy = [...prev];
+      
+      // Get colors and positions of selected pixels from current state
+      const pixelData = selectedPixels.map(idx => ({
+        oldIndex: idx,
+        color: prev[idx],
+        row: Math.floor(idx / 200),
+        col: idx % 200
+      }));
+      
+      console.log("Moving pixels:", pixelData.slice(0, 3), "...");
+      
       // Clear old positions
       pixelData.forEach(p => {
         copy[p.oldIndex] = "#ffffff";
       });
+      
       // Set new positions
       pixelData.forEach(p => {
         const newRow = p.row + deltaRow;
@@ -897,13 +899,16 @@ export default function PixelGrid() {
           copy[newIndex] = p.color;
         }
       });
+      
       return copy;
     });
     
     // Update selected pixels to new positions
-    const newSelectedPixels = pixelData.map(p => {
-      const newRow = p.row + deltaRow;
-      const newCol = p.col + deltaCol;
+    const newSelectedPixels = selectedPixels.map(idx => {
+      const row = Math.floor(idx / 200);
+      const col = idx % 200;
+      const newRow = row + deltaRow;
+      const newCol = col + deltaCol;
       if (newRow >= 0 && newRow < rows && newCol >= 0 && newCol < 200) {
         return newRow * 200 + newCol;
       }
