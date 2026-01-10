@@ -623,17 +623,30 @@ export default function PixelGrid() {
       }
     };
 
+    const debugPointerDown = (e) => {
+      const target = e.target;
+      console.log("=== GLOBAL POINTER DOWN ===", {
+        tagName: target.tagName,
+        hasPixelIndex: target.hasAttribute('data-pixel-index'),
+        pixelIndex: target.getAttribute('data-pixel-index'),
+        classList: Array.from(target.classList),
+        id: target.id
+      });
+    };
+
     window.addEventListener("resize", handleResize);
     window.addEventListener("pointermove", handlePointerMove, { passive: false });
     window.addEventListener("touchmove", handleTouchMove, { passive: false });
     window.addEventListener("pointerup", stopDrawing);
     window.addEventListener("touchend", stopDrawing);
+    window.addEventListener("pointerdown", debugPointerDown, { capture: true });
     return () => {
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("pointerup", stopDrawing);
       window.removeEventListener("touchend", stopDrawing);
+      window.removeEventListener("pointerdown", debugPointerDown, { capture: true });
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeDrawingTool]);
