@@ -2332,10 +2332,25 @@ const savedData = ${dataString};
                         setGroupDragStart(null);
                       }
                       setIsDrawing(false);
+                    } else {
+                      // Mobile mode - handle selected pixel move finalization
+                      if (groupDragStart !== null && activeGroup === "__selected__" && groupDragCurrent !== null) {
+                        const deltaRow = groupDragCurrent.row - groupDragStart.startRow;
+                        const deltaCol = groupDragCurrent.col - groupDragStart.startCol;
+                        console.log("Mobile: Finalizing move on pointerUp", { deltaRow, deltaCol });
+                        
+                        if (deltaRow !== 0 || deltaCol !== 0) {
+                          moveSelectedPixels(deltaRow, deltaCol);
+                        }
+                        
+                        setGroupDragStart(null);
+                        setGroupDragCurrent(null);
+                        setActiveGroup(null);
+                      }
+                      setIsDrawing(false);
                     }
-                    // Mobile mode - selection is handled in onPointerDown
                   }
-                  // Note: Selected pixels move finalization is handled in the global stopDrawing handler
+                  // Note: Global stopDrawing handler also handles move finalization as backup
                   // to ensure it works even when releasing outside a pixel
                 }}
                 onPointerEnter={() => {
@@ -2389,11 +2404,18 @@ const savedData = ${dataString};
                     setHoveredPixel(i);
                   }
                   
-                  // Track current drag position for visual feedback
+                  // Track current drag position for visual feedback and mobile support
+                  // On mobile, onPointerEnter doesn't fire reliably during touch drag
                   if (groupDragStart !== null && activeGroup === "__selected__" && isDrawing) {
                     const currentRow = Math.floor(i / 200);
                     const currentCol = i % 200;
+                    console.log("onPointerMove: Setting groupDragCurrent:", { row: currentRow, col: currentCol });
                     setGroupDragCurrent({ row: currentRow, col: currentCol });
+                  }
+                  
+                  // Mobile-specific: update selection rectangle during drag
+                  if (activeDrawingTool === "select" && size.w <= 1024 && isDrawing && selectionStart !== null && activeGroup !== "__selected__") {
+                    setSelectionEnd(i);
                   }
                 }}
                 onPointerLeave={() => {
