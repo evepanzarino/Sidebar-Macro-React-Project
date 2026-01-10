@@ -1017,7 +1017,8 @@ const savedData = ${dataString};
   // Update selection overlay position when selection changes
   useEffect(() => {
     const overlayEl = selectionOverlayRef.current;
-    if (!overlayEl) return;
+    const gridEl = gridRef.current;
+    if (!overlayEl || !gridEl) return;
     
     if (activeDrawingTool === "select" && selectionStart !== null && selectionEnd !== null) {
       const startRow = Math.floor(selectionStart / 200);
@@ -1030,17 +1031,26 @@ const savedData = ${dataString};
       const minCol = Math.min(startCol, endCol);
       const maxCol = Math.max(startCol, endCol);
       
-      // Position overlay using CSS grid positioning (1-indexed)
-      overlayEl.style.gridRowStart = String(minRow + 1);
-      overlayEl.style.gridRowEnd = String(maxRow + 2);
-      overlayEl.style.gridColumnStart = String(minCol + 1);
-      overlayEl.style.gridColumnEnd = String(maxCol + 2);
+      // Calculate pixel positions for absolute positioning (accounting for scroll)
+      const scrollTop = gridEl.scrollTop;
+      const scrollLeft = gridEl.scrollLeft;
+      const top = minRow * displayPixelSize - (scrollTop / window.innerWidth * 100);
+      const left = minCol * displayPixelSize - (scrollLeft / window.innerWidth * 100);
+      const width = (maxCol - minCol + 1) * displayPixelSize;
+      const height = (maxRow - minRow + 1) * displayPixelSize;
+      
+      // Position overlay using absolute positioning
+      overlayEl.style.position = 'absolute';
+      overlayEl.style.top = `${top}vw`;
+      overlayEl.style.left = `${left}vw`;
+      overlayEl.style.width = `${width}vw`;
+      overlayEl.style.height = `${height}vw`;
       overlayEl.style.border = `${0.2 * zoomFactor}vw dashed ${selectionBorderColorRef.current}`;
       overlayEl.style.display = 'block';
     } else {
       overlayEl.style.display = 'none';
     }
-  }, [selectionStart, selectionEnd, activeDrawingTool, zoomFactor]);
+  }, [selectionStart, selectionEnd, activeDrawingTool, zoomFactor, displayPixelSize]);
 
   return (
     <div className="pixelgrid-container" style={{ width: "100vw", overflow: "hidden" }}>
@@ -2040,6 +2050,18 @@ const savedData = ${dataString};
           </div>
         )}
         
+        {/* Selection overlay - absolute positioned outside grid */}
+        <div 
+          ref={selectionOverlayRef}
+          style={{
+            display: 'none',
+            pointerEvents: 'none',
+            boxSizing: 'border-box',
+            position: 'absolute',
+            zIndex: 100
+          }}
+        />
+        
         {/* GRID - Scrollable with transparent background */}
         <div 
           ref={gridRef}
@@ -2065,16 +2087,6 @@ const savedData = ${dataString};
             width: "100%",
             background: "transparent"
           }}>
-        {/* Selection rectangle overlay - single div positioned via CSS grid */}
-        <div 
-          ref={selectionOverlayRef}
-          style={{
-            display: 'none',
-            pointerEvents: 'none',
-            boxSizing: 'border-box',
-            zIndex: 10
-          }}
-        />
         
         {(pixelColors || []).map((c, i) => {
           // Completely isolate drawing mode from layer calculations for performance
