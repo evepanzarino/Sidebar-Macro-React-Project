@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback, memo } from "react";
+import { useEffect, useState, useRef, useCallback, memo, useMemo } from "react";
 import "./pixelgrid.css";
 
 // Memoized pixel component to prevent unnecessary re-renders
@@ -966,15 +966,10 @@ const savedData = ${dataString};
     setBackgroundImage(null);
   }
 
-  // Track selection rectangle for overlay rendering
-  const selectionOverlayRef = useRef(null);
-  
-  // Update selection overlay using CSS grid positioning
-  useEffect(() => {
-    const overlayEl = selectionOverlayRef.current;
-    if (!overlayEl) return;
-    
-    if (activeDrawingTool === "select" && selectionStart !== null && selectionEnd !== null && viewMode === "drawing") {
+  // Memoize selection rectangle for performance
+  const selectionRectSet = useMemo(() => {
+    const set = new Set();
+    if (activeDrawingTool === "select" && selectionStart !== null && selectionEnd !== null) {
       const startRow = Math.floor(selectionStart / 200);
       const startCol = selectionStart % 200;
       const endRow = Math.floor(selectionEnd / 200);
@@ -985,20 +980,14 @@ const savedData = ${dataString};
       const minCol = Math.min(startCol, endCol);
       const maxCol = Math.max(startCol, endCol);
       
-      // Position overlay using CSS grid
-      overlayEl.style.gridRowStart = minRow + 1;
-      overlayEl.style.gridRowEnd = maxRow + 2;
-      overlayEl.style.gridColumnStart = minCol + 1;
-      overlayEl.style.gridColumnEnd = maxCol + 2;
-      overlayEl.style.display = 'block';
-      overlayEl.style.border = '0.2vw solid #2196F3';
-      overlayEl.style.pointerEvents = 'none';
-      overlayEl.style.zIndex = '10';
-      overlayEl.style.boxSizing = 'border-box';
-    } else {
-      overlayEl.style.display = 'none';
+      for (let row = minRow; row <= maxRow; row++) {
+        for (let col = minCol; col <= maxCol; col++) {
+          set.add(row * 200 + col);
+        }
+      }
     }
-  }, [selectionStart, selectionEnd, activeDrawingTool, viewMode]);
+    return set;
+  }, [activeDrawingTool, selectionStart, selectionEnd]);
 
   return (
     <div className="pixelgrid-container" style={{ width: "100vw", overflow: "hidden" }}>
