@@ -227,6 +227,27 @@ export default function PixelGrid() {
     };
   }, [isDrawing, activeDrawingTool, hoveredPixel, color]);
 
+  // Ensure line/curve preview updates even when hovering over UI overlays
+  useEffect(() => {
+    if (lineStartPixel === null) return;
+    if (!(activeDrawingTool === "line" || activeDrawingTool === "curve")) return;
+
+    const handlePointerMove = (e) => {
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      if (el && el.hasAttribute('data-pixel-index')) {
+        const idx = parseInt(el.getAttribute('data-pixel-index'), 10);
+        if (!Number.isNaN(idx) && idx !== hoveredPixel) {
+          setHoveredPixel(idx);
+        }
+      }
+    };
+
+    window.addEventListener('pointermove', handlePointerMove, { passive: true });
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+    };
+  }, [lineStartPixel, activeDrawingTool, hoveredPixel]);
+
   // Zoom factor for drawing area based on screen size
   const getZoomFactor = () => {
     if (size.w <= 768) return  2.75; // Mobile
