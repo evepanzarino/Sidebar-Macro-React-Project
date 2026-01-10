@@ -1573,6 +1573,7 @@ const savedData = ${dataString};
                 onClick={async () => {
                   await loadTool("select");
                   setActiveDrawingTool("select");
+                  setActiveGroup(null);
                   setLineStartPixel(null);
                   setSelectionStart(null);
                   setSelectionEnd(null);
