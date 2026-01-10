@@ -1757,7 +1757,7 @@ const savedData = ${dataString};
             const isCurveEnd = activeDrawingTool === "curve" && curveEndPixel === i;
             const isSelected = selectedPixels.includes(i);
             const isInSelectionRect = activeDrawingTool === "select" && selectionStart !== null && selectionEnd !== null && 
-              ((isDrawing && size.w > 1024) || (size.w <= 1024 && selectionEnd !== selectionStart && selectedPixels.length === 0)) && 
+              isDrawing && size.w > 1024 && 
               getSelectionRectangle(selectionStart, selectionEnd).includes(i);
             const isSelectionStartPoint = activeDrawingTool === "select" && selectionStart === i && selectionEnd === null && size.w <= 1024;
             
@@ -2022,7 +2022,7 @@ const savedData = ${dataString};
           // Only calculate these in layers mode
           const isSelected = selectedPixels.includes(i);
           const isInSelectionRect = activeDrawingTool === "select" && selectionStart !== null && selectionEnd !== null && 
-            ((isDrawing && size.w > 1024) || (size.w <= 1024 && selectionEnd !== selectionStart && selectedPixels.length === 0)) && 
+            isDrawing && size.w > 1024 && 
             getSelectionRectangle(selectionStart, selectionEnd).includes(i);
           const isSelectionStartPoint = activeDrawingTool === "select" && selectionStart === i && selectionEnd === null && size.w <= 1024;
           const isInActiveGroup = (pixelGroup && pixelGroup.group === activeGroup) || (activeGroup === "__selected__" && selectedPixels.includes(i));
