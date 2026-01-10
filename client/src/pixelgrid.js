@@ -2220,6 +2220,17 @@ const savedData = ${dataString};
             // If click didn't hit a pixel directly (e.g., clicked on grid gap/border),
             // find the pixel at this location and trigger its handler
             if (!e.target.hasAttribute('data-pixel-index')) {
+              console.log("=== GRID DELEGATION START ===", { 
+                hasGridRef: !!gridRef.current, 
+                target: e.target.tagName,
+                targetHasIndex: e.target.hasAttribute('data-pixel-index')
+              });
+              
+              if (!gridRef.current) {
+                console.error("Grid ref is null!");
+                return;
+              }
+              
               const rect = gridRef.current.getBoundingClientRect();
               const x = e.clientX - rect.left + gridRef.current.scrollLeft;
               const y = e.clientY - rect.top + gridRef.current.scrollTop;
@@ -2229,12 +2240,15 @@ const savedData = ${dataString};
               const col = Math.floor(x / pixelSizeInPx);
               const row = Math.floor(y / pixelSizeInPx);
               
+              console.log("Calculated position:", { row, col, x, y, pixelSizeInPx, displayPixelSize });
+              
               if (row >= 0 && row < rows && col >= 0 && col < 200) {
                 const pixelIndex = row * 200 + col;
                 console.log("Grid click delegated to pixel:", pixelIndex, { row, col, x, y });
                 
                 // Find the actual pixel element and dispatch a pointer down event to it
                 const pixelElement = document.querySelector(`[data-pixel-index="${pixelIndex}"]`);
+                console.log("Found pixel element:", !!pixelElement);
                 if (pixelElement) {
                   // Create a new pointer event with the same properties
                   const syntheticEvent = new PointerEvent('pointerdown', {
@@ -2246,8 +2260,13 @@ const savedData = ${dataString};
                     pointerType: e.pointerType
                   });
                   pixelElement.dispatchEvent(syntheticEvent);
+                  console.log("Dispatched synthetic event to pixel", pixelIndex);
                 }
+              } else {
+                console.log("Click outside grid bounds:", { row, col, rows, maxRow: rows - 1 });
               }
+            } else {
+              console.log("Click hit pixel directly:", e.target.getAttribute('data-pixel-index'));
             }
           }}
           style={{
