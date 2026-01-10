@@ -227,13 +227,14 @@ export default function PixelGrid() {
     };
   }, [isDrawing, activeDrawingTool, hoveredPixel, color]);
 
-  // Ensure line/curve preview updates even when hovering over UI overlays
+  // Ensure line/curve preview updates even when pointer is over overlays (desktop & mobile)
   useEffect(() => {
     if (lineStartPixel === null) return;
     if (!(activeDrawingTool === "line" || activeDrawingTool === "curve")) return;
 
-    const handlePointerMove = (e) => {
-      const el = document.elementFromPoint(e.clientX, e.clientY);
+    const handleMove = (e) => {
+      const point = e.touches && e.touches.length ? e.touches[0] : e;
+      const el = document.elementFromPoint(point.clientX, point.clientY);
       if (el && el.hasAttribute('data-pixel-index')) {
         const idx = parseInt(el.getAttribute('data-pixel-index'), 10);
         if (!Number.isNaN(idx) && idx !== hoveredPixel) {
@@ -242,9 +243,11 @@ export default function PixelGrid() {
       }
     };
 
-    window.addEventListener('pointermove', handlePointerMove, { passive: true });
+    window.addEventListener('pointermove', handleMove, { passive: true });
+    window.addEventListener('touchmove', handleMove, { passive: true });
     return () => {
-      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointermove', handleMove);
+      window.removeEventListener('touchmove', handleMove);
     };
   }, [lineStartPixel, activeDrawingTool, hoveredPixel]);
 
@@ -1814,7 +1817,10 @@ const savedData = ${dataString};
                   }
                 }}
                 onPointerLeave={() => {
-                  setHoveredPixel(null);
+                  // For line/curve preview, keep hover when leaving individual pixel
+                  if (!(activeDrawingTool === "line" || activeDrawingTool === "curve") || lineStartPixel === null) {
+                    setHoveredPixel(null);
+                  }
                 }}
               />
             );
