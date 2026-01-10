@@ -439,8 +439,10 @@ export default function PixelGrid() {
     const r = parseInt(hex.substring(1, 3), 16);
     const g = parseInt(hex.substring(3, 5), 16);
     const b = parseInt(hex.substring(5, 7), 16);
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    return luminance > 0.5;
+    // Simple brightness calculation - sum of RGB values
+    // Higher threshold for better contrast detection
+    const brightness = (r + g + b) / 3;
+    return brightness > 127; // Mid-point of 0-255 range
   }
 
   function getContrastBorderColor(bgColor) {
