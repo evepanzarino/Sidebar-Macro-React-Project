@@ -2229,6 +2229,21 @@ const savedData = ${dataString};
           // Completely isolate drawing mode from layer calculations for performance
           if (viewMode === "drawing") {
             // DRAWING MODE - Minimal calculations for maximum performance
+            
+            // Debug: Log ref state on first pixel of each render
+            if (i === 0) {
+              const dragState = dragStateRef.current;
+              if (dragState.groupDragStart !== null || dragState.isDrawing) {
+                console.log('=== RENDER DEBUG (pixel 0) ===', {
+                  groupDragStart: dragState.groupDragStart,
+                  activeGroup: dragState.activeGroup,
+                  isDrawing: dragState.isDrawing,
+                  groupDragCurrent: dragState.groupDragCurrent,
+                  selectedPixelsLength: dragState.selectedPixels.length
+                });
+              }
+            }
+            
             const isHovered = hoveredPixel === i;
             const isLineStart = (activeDrawingTool === "line" || activeDrawingTool === "curve") && lineStartPixel === i;
             const isCurveEnd = activeDrawingTool === "curve" && curveEndPixel === i;
