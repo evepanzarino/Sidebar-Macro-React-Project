@@ -2300,7 +2300,7 @@ const savedData = ${dataString};
                         setGroupDragStart(dragState);
                         setGroupDragCurrent(null);
                         setIsDrawing(true);
-                        setPixelColors(prev => [...prev]); // Forces immediate render
+                        setRenderTrigger(prev => prev + 1); // Forces immediate render
                       });
                       
                       console.log("Mobile drag initialized (delegated):", { startRow, startCol, activeGroup: "__selected__" });
@@ -2341,7 +2341,7 @@ const savedData = ${dataString};
                         setGroupDragStart(dragState);
                         setGroupDragCurrent(null);
                         setIsDrawing(true);
-                        setPixelColors(prev => [...prev]); // Forces immediate render
+                        setRenderTrigger(prev => prev + 1); // Forces immediate render
                       });
                       
                       console.log(">>> IMMEDIATELY AFTER flushSync (desktop) - ref state:", dragStateRef.current);
