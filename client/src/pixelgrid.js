@@ -221,6 +221,32 @@ export default function PixelGrid() {
   const color = activeTool === "primary" ? primaryColor : secondaryColor;
   const gridRef = useRef(null);
   
+  // Refs to hold current values for event handlers without causing re-renders
+  const dragStateRef = useRef({
+    groupDragStart: null,
+    activeGroup: null,
+    groupDragCurrent: null,
+    isDrawing: false,
+    selectedPixels: [],
+    lineStartPixel: null,
+    lineEndPixel: null,
+    curveEndPixel: null
+  });
+  
+  // Update refs whenever state changes
+  useEffect(() => {
+    dragStateRef.current = {
+      groupDragStart,
+      activeGroup,
+      groupDragCurrent,
+      isDrawing,
+      selectedPixels,
+      lineStartPixel,
+      lineEndPixel,
+      curveEndPixel
+    };
+  }, [groupDragStart, activeGroup, groupDragCurrent, isDrawing, selectedPixels, lineStartPixel, lineEndPixel, curveEndPixel]);
+  
   // Lazy load tool module when needed
   const loadTool = useCallback(async (toolName) => {
     if (loadedTools[toolName] || toolsLoading[toolName]) return;
@@ -500,8 +526,9 @@ export default function PixelGrid() {
     }
     
     const handlePointerMove = (e) => {
+      const state = dragStateRef.current;
       // Track drag position for selected pixels move on mobile/desktop
-      if (groupDragStart !== null && activeGroup === "__selected__" && isDrawing && gridRef.current) {
+      if (state.groupDragStart !== null && state.activeGroup === "__selected__" && state.isDrawing && gridRef.current) {
         const rect = gridRef.current.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
@@ -511,28 +538,32 @@ export default function PixelGrid() {
         const col = Math.floor(x / pixelSize);
         const row = Math.floor(y / pixelSize);
         
+        // Calculate rows dynamically from grid height
+        const currentRows = Math.round(rect.height / pixelSize);
+        
         // Ensure we're within bounds
-        if (row >= 0 && row < rows && col >= 0 && col < 200) {
-          console.log("Global pointermove: Setting groupDragCurrent:", { row, col });
+        if (row >= 0 && row < currentRows && col >= 0 && col < 200) {
+          console.log("Global pointermove: Setting groupDragCurrent:", { row, col, isDrawing: state.isDrawing });
           setGroupDragCurrent({ row, col });
         }
       }
     };
     
     const stopDrawing = () => {
+      const state = dragStateRef.current;
       console.log("stopDrawing called", { 
-        groupDragStart, 
-        activeGroup, 
-        groupDragCurrent, 
-        selectedPixelsLength: selectedPixels.length,
-        isDrawing
+        groupDragStart: state.groupDragStart, 
+        activeGroup: state.activeGroup, 
+        groupDragCurrent: state.groupDragCurrent, 
+        selectedPixelsLength: state.selectedPixels.length,
+        isDrawing: state.isDrawing
       });
       
       // Finalize selected pixels move if dragging
-      if (groupDragStart !== null && activeGroup === "__selected__" && groupDragCurrent !== null) {
-        console.log("Finalizing move:", { groupDragStart, groupDragCurrent });
-        const deltaRow = groupDragCurrent.row - groupDragStart.startRow;
-        const deltaCol = groupDragCurrent.col - groupDragStart.startCol;
+      if (state.groupDragStart !== null && state.activeGroup === "__selected__" && state.groupDragCurrent !== null) {
+        console.log("Finalizing move:", { groupDragStart: state.groupDragStart, groupDragCurrent: state.groupDragCurrent });
+        const deltaRow = state.groupDragCurrent.row - state.groupDragStart.startRow;
+        const deltaCol = state.groupDragCurrent.col - state.groupDragStart.startCol;
         console.log("Delta:", { deltaRow, deltaCol });
         
         if (deltaRow !== 0 || deltaCol !== 0) {
@@ -549,8 +580,8 @@ export default function PixelGrid() {
       setIsDrawing(false);
       
       // Don't clear hoveredPixel if we're in line/curve mode with points selected
-      const lineToolActive = activeDrawingTool === "line" && (lineStartPixel !== null || lineEndPixel !== null);
-      const curveToolActive = activeDrawingTool === "curve" && (lineStartPixel !== null || curveEndPixel !== null);
+      const lineToolActive = activeDrawingTool === "line" && (state.lineStartPixel !== null || state.lineEndPixel !== null);
+      const curveToolActive = activeDrawingTool === "curve" && (state.lineStartPixel !== null || state.curveEndPixel !== null);
       
       if (!(lineToolActive || curveToolActive)) {
         setHoveredPixel(null);
@@ -566,7 +597,7 @@ export default function PixelGrid() {
       window.removeEventListener("pointerup", stopDrawing);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeDrawingTool, groupDragStart, activeGroup, groupDragCurrent, selectedPixels, lineStartPixel, lineEndPixel, curveEndPixel, isDrawing]);
+  }, [activeDrawingTool]);
 
   function paintPixel(e, index) {
     // Always immediate update for responsive feel
