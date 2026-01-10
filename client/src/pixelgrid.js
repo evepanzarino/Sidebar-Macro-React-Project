@@ -2259,29 +2259,31 @@ const savedData = ${dataString};
             }
             
             // Calculate preview position during selected pixels drag
+            // Use ref values to get immediate updates, not state (which updates async)
+            const dragState = dragStateRef.current;
             let isInDragPreview = false;
             let dragPreviewColor = c;
-            if (groupDragStart !== null && activeGroup === "__selected__" && isDrawing) {
+            if (dragState.groupDragStart !== null && dragState.activeGroup === "__selected__" && dragState.isDrawing) {
               // Show preview immediately when drag starts, using delta (0,0) until cursor moves
-              const currentDragPos = groupDragCurrent || { row: groupDragStart.startRow, col: groupDragStart.startCol };
-              const deltaRow = currentDragPos.row - groupDragStart.startRow;
-              const deltaCol = currentDragPos.col - groupDragStart.startCol;
+              const currentDragPos = dragState.groupDragCurrent || { row: dragState.groupDragStart.startRow, col: dragState.groupDragStart.startCol };
+              const deltaRow = currentDragPos.row - dragState.groupDragStart.startRow;
+              const deltaCol = currentDragPos.col - dragState.groupDragStart.startCol;
               const currentRow = Math.floor(i / 200);
               const currentCol = i % 200;
               const sourceRow = currentRow - deltaRow;
               const sourceCol = currentCol - deltaCol;
               const sourceIndex = sourceRow * 200 + sourceCol;
-              isInDragPreview = selectedPixels.includes(sourceIndex);
+              isInDragPreview = dragState.selectedPixels.includes(sourceIndex);
               
               // Comprehensive debug logging on first render
-              if (i === 0 && groupDragStart) {
+              if (i === 0 && dragState.groupDragStart) {
                 console.log('=== PREVIEW CALCULATION DEBUG ===');
-                console.log('groupDragStart:', groupDragStart);
-                console.log('groupDragCurrent:', groupDragCurrent);
+                console.log('groupDragStart:', dragState.groupDragStart);
+                console.log('groupDragCurrent:', dragState.groupDragCurrent);
                 console.log('currentDragPos:', currentDragPos);
                 console.log('delta:', { deltaRow, deltaCol });
-                console.log('selectedPixels:', selectedPixels.slice(0, 10));
-                console.log('selectedPixels.length:', selectedPixels.length);
+                console.log('selectedPixels:', dragState.selectedPixels.slice(0, 10));
+                console.log('selectedPixels.length:', dragState.selectedPixels.length);
               }
               
               if (isInDragPreview) {
