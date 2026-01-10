@@ -2277,7 +2277,11 @@ const savedData = ${dataString};
                       setActiveGroup("__selected__");
                       setGroupDragStart(dragState);
                       setGroupDragCurrent(null);
-                      setIsDrawing(true);
+                      
+                      // Force immediate render to show preview at drag start
+                      flushSync(() => {
+                        setIsDrawing(true);
+                      });
                       
                       // Also update ref immediately for event handlers
                       dragStateRef.current.activeGroup = "__selected__";
@@ -2312,7 +2316,11 @@ const savedData = ${dataString};
                       setActiveGroup("__selected__");
                       setGroupDragStart(dragState);
                       setGroupDragCurrent(null);
-                      setIsDrawing(true);
+                      
+                      // Force immediate render to show preview at drag start
+                      flushSync(() => {
+                        setIsDrawing(true);
+                      });
                       
                       // Also update ref immediately for event handlers
                       dragStateRef.current.activeGroup = "__selected__";
