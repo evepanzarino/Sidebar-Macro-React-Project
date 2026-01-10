@@ -2849,7 +2849,12 @@ const savedData = ${dataString};
                     {/* Layer Name */}
                     <div style={{ display: "flex", flexDirection: "column", gap: "0.2vw", flex: 1 }}>
                       <div
-                        onClick={() => setActiveGroup(activeGroup === group.name ? null : group.name)}
+                        onClick={() => {
+                          setActiveGroup(activeGroup === group.name ? null : group.name);
+                          setSelectedPixels([]); // Clear green selection preview
+                          setSelectionStart(null); // Clear selection state
+                          setSelectionEnd(null);
+                        }}
                         style={{
                           fontSize: "0.8vw",
                           padding: "0.3vw",
