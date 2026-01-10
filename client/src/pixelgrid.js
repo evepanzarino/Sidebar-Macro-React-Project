@@ -499,6 +499,20 @@ export default function PixelGrid() {
       setSize({ w: window.innerWidth, h: window.innerHeight });
     }
     const stopDrawing = () => {
+      // Finalize selected pixels move if dragging
+      if (groupDragStart !== null && activeGroup === "__selected__" && groupDragCurrent !== null) {
+        const deltaRow = groupDragCurrent.row - groupDragStart.startRow;
+        const deltaCol = groupDragCurrent.col - groupDragStart.startCol;
+        
+        if (deltaRow !== 0 || deltaCol !== 0) {
+          moveSelectedPixels(deltaRow, deltaCol);
+        }
+        
+        setGroupDragStart(null);
+        setGroupDragCurrent(null);
+        setActiveGroup(null);
+      }
+      
       // Don't clear isDrawing immediately - let the onPointerUp handlers finish first
       // The individual pixel handlers will clear isDrawing after processing
       setTimeout(() => {
