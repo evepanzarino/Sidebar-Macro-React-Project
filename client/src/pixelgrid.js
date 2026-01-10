@@ -42,12 +42,12 @@ const DrawingPixel = memo(({
   } else if (isSelectionStartPoint) {
     // Use same contrast detection as line/curve previews
     const isLight = (() => {
-      if (!color || color.length < 7) return false;
+      // If no color is set, pixel appears white, so treat as light
+      if (!color || color.length < 7) return true;
       const r = parseInt(color.substring(1, 3), 16);
       const g = parseInt(color.substring(3, 5), 16);
       const b = parseInt(color.substring(5, 7), 16);
       const brightness = (r + g + b) / 3;
-      console.log(`Selection start pixel ${index}: color=${color}, r=${r}, g=${g}, b=${b}, brightness=${brightness}, isLight=${brightness > 127}`);
       return brightness > 127;
     })();
     borderColor = isLight ? '#000000' : '#ffffff';
@@ -56,12 +56,12 @@ const DrawingPixel = memo(({
   } else if (isInSelectionRect) {
     // Use same contrast detection as line/curve previews
     const isLight = (() => {
-      if (!color || color.length < 7) return false;
+      // If no color is set, pixel appears white, so treat as light
+      if (!color || color.length < 7) return true;
       const r = parseInt(color.substring(1, 3), 16);
       const g = parseInt(color.substring(3, 5), 16);
       const b = parseInt(color.substring(5, 7), 16);
       const brightness = (r + g + b) / 3;
-      console.log(`Selection rect pixel ${index}: color=${color}, r=${r}, g=${g}, b=${b}, brightness=${brightness}, isLight=${brightness > 127}`);
       return brightness > 127;
     })();
     borderColor = isLight ? '#000000' : '#ffffff';
@@ -69,7 +69,8 @@ const DrawingPixel = memo(({
   } else if (isSelected) {
     // Use same contrast detection as line/curve previews
     const isLight = (() => {
-      if (!color || color.length < 7) return false;
+      // If no color is set, pixel appears white, so treat as light
+      if (!color || color.length < 7) return true;
       const r = parseInt(color.substring(1, 3), 16);
       const g = parseInt(color.substring(3, 5), 16);
       const b = parseInt(color.substring(5, 7), 16);
@@ -81,7 +82,8 @@ const DrawingPixel = memo(({
   } else if (isCurveEnd || isLineStart || isInLinePreview) {
     // Use proper contrast detection for line/curve previews
     const isLight = (() => {
-      if (!color || color.length < 7) return false;
+      // If no color is set, pixel appears white, so treat as light
+      if (!color || color.length < 7) return true;
       const r = parseInt(color.substring(1, 3), 16);
       const g = parseInt(color.substring(3, 5), 16);
       const b = parseInt(color.substring(5, 7), 16);
@@ -93,7 +95,8 @@ const DrawingPixel = memo(({
   } else if (isHovered && !isDrawing) {
     // Use proper contrast detection for hover
     const isLight = (() => {
-      if (!color || color.length < 7) return false;
+      // If no color is set, pixel appears white, so treat as light
+      if (!color || color.length < 7) return true;
       const r = parseInt(color.substring(1, 3), 16);
       const g = parseInt(color.substring(3, 5), 16);
       const b = parseInt(color.substring(5, 7), 16);
@@ -2115,7 +2118,8 @@ const savedData = ${dataString};
           } else if (isSelectionStartPoint) {
             // Use same contrast detection as line/curve previews
             const isLight = (() => {
-              if (!c || c.length < 7) return false;
+              // If no color is set, pixel appears white, so treat as light
+              if (!c || c.length < 7) return true;
               const r = parseInt(c.substring(1, 3), 16);
               const g = parseInt(c.substring(3, 5), 16);
               const b = parseInt(c.substring(5, 7), 16);
@@ -2132,7 +2136,8 @@ const savedData = ${dataString};
           } else if (isInActiveGroup) {
             // Use same contrast detection as line/curve previews
             const isLight = (() => {
-              if (!c || c.length < 7) return false;
+              // If no color is set, pixel appears white, so treat as light
+              if (!c || c.length < 7) return true;
               const r = parseInt(c.substring(1, 3), 16);
               const g = parseInt(c.substring(3, 5), 16);
               const b = parseInt(c.substring(5, 7), 16);
@@ -2145,7 +2150,8 @@ const savedData = ${dataString};
           } else if (isSelected || isInSelectionRect) {
             // Use same contrast detection as line/curve previews
             const isLight = (() => {
-              if (!c || c.length < 7) return false;
+              // If no color is set, pixel appears white, so treat as light
+              if (!c || c.length < 7) return true;
               const r = parseInt(c.substring(1, 3), 16);
               const g = parseInt(c.substring(3, 5), 16);
               const b = parseInt(c.substring(5, 7), 16);
