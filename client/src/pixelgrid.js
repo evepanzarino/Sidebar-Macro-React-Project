@@ -2208,6 +2208,7 @@ const savedData = ${dataString};
                   if (activeDrawingTool === "select") {
                     // Check for mobile two-click mode first
                     if (size.w <= 1024) {
+                      console.log("Clicked pixel", i, "isSelected:", selectedPixels.includes(i), "selectedPixels.length:", selectedPixels.length);
                       if (selectedPixels.includes(i)) {
                         // Clicking on already selected pixel - enable drag-to-move
                         console.log("Mobile: Starting drag on selected pixel", i);
