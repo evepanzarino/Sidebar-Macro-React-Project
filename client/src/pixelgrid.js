@@ -175,7 +175,7 @@ export default function PixelGrid() {
   const [selectionEnd, setSelectionEnd] = useState(null); // Rectangle selection end (during drag)
   const [selectedPixels, setSelectedPixels] = useState([]); // Array of selected pixel indices
   const [showGroupDialog, setShowGroupDialog] = useState(false); // Show group assignment dialog
-  const [selectAllPixels, setSelectAllPixels] = useState(false); // Toggle: select all pixels vs only colored pixels
+  const [selectAllPixels, setSelectAllPixels] = useState(true); // Toggle: select all pixels vs only colored pixels (defaults to true)
   
   // Background image state
   const [backgroundImage, setBackgroundImage] = useState(() => {
@@ -498,7 +498,11 @@ export default function PixelGrid() {
       setSize({ w: window.innerWidth, h: window.innerHeight });
     }
     const stopDrawing = () => {
-      setIsDrawing(false);
+      // Don't clear isDrawing immediately - let the onPointerUp handlers finish first
+      // The individual pixel handlers will clear isDrawing after processing
+      setTimeout(() => {
+        setIsDrawing(false);
+      }, 0);
       
       // Don't clear hoveredPixel if we're in line/curve mode with points selected
       const lineToolActive = activeDrawingTool === "line" && (lineStartPixel !== null || lineEndPixel !== null);
