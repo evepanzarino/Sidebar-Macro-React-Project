@@ -2483,13 +2483,8 @@ const savedData = ${dataString};
                     paintPixel(null, i);
                   }
                   
-                  // Track current drag position for selected pixels move
-                  if (groupDragStart !== null && activeGroup === "__selected__" && isDrawing) {
-                    const currentRow = Math.floor(i / 200);
-                    const currentCol = i % 200;
-                    console.log("Setting groupDragCurrent:", { row: currentRow, col: currentCol });
-                    setGroupDragCurrent({ row: currentRow, col: currentCol });
-                  }
+                  // Note: groupDragCurrent for selected pixels move is now handled by global pointermove handler
+                  // for more accurate cursor-to-pixel mapping
                   
                   setHoveredPixel(i);
                 }}
