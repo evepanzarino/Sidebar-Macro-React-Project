@@ -1020,11 +1020,16 @@ const savedData = ${dataString};
     const gridEl = gridRef.current;
     if (!overlayEl || !gridEl) return;
     
-    if (activeDrawingTool === "select" && selectionStart !== null && selectionEnd !== null) {
+    // Use hoveredPixel if actively selecting, otherwise use selectionEnd
+    const effectiveEnd = (activeDrawingTool === "select" && isDrawing && hoveredPixel !== null) 
+      ? hoveredPixel 
+      : selectionEnd;
+    
+    if (activeDrawingTool === "select" && selectionStart !== null && effectiveEnd !== null) {
       const startRow = Math.floor(selectionStart / 200);
       const startCol = selectionStart % 200;
-      const endRow = Math.floor(selectionEnd / 200);
-      const endCol = selectionEnd % 200;
+      const endRow = Math.floor(effectiveEnd / 200);
+      const endCol = effectiveEnd % 200;
       
       const minRow = Math.min(startRow, endRow);
       const maxRow = Math.max(startRow, endRow);
@@ -1050,7 +1055,7 @@ const savedData = ${dataString};
     } else {
       overlayEl.style.display = 'none';
     }
-  }, [selectionStart, selectionEnd, activeDrawingTool, zoomFactor, displayPixelSize]);
+  }, [selectionStart, selectionEnd, hoveredPixel, activeDrawingTool, isDrawing, zoomFactor, displayPixelSize]);
 
   return (
     <div className="pixelgrid-container" style={{ width: "100vw", overflow: "hidden" }}>
