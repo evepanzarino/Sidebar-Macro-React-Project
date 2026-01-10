@@ -511,9 +511,12 @@ export default function PixelGrid() {
           moveSelectedPixels(deltaRow, deltaCol);
         }
         
-        setGroupDragStart(null);
-        setGroupDragCurrent(null);
-        setActiveGroup(null);
+        // Clear drag state after a small delay to ensure move completes
+        setTimeout(() => {
+          setGroupDragStart(null);
+          setGroupDragCurrent(null);
+          setActiveGroup(null);
+        }, 0);
       }
       
       // Don't clear isDrawing immediately - let the onPointerUp handlers finish first
