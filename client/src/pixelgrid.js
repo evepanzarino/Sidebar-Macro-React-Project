@@ -2288,20 +2288,19 @@ const savedData = ${dataString};
                         selectedPixelsLength: selectedPixels.length
                       });
                       
-                      // Set drag state
-                      setActiveGroup("__selected__");
-                      setGroupDragStart(dragState);
-                      setIsDrawing(true);
-                      
-                      // Update ref immediately
+                      // Update ref immediately BEFORE flushSync
                       dragStateRef.current.activeGroup = "__selected__";
                       dragStateRef.current.groupDragStart = dragState;
                       dragStateRef.current.groupDragCurrent = null;
                       dragStateRef.current.isDrawing = true;
                       
-                      // Force immediate render by creating new pixelColors reference in flushSync
+                      // Set all drag state AND force render in single flushSync block
                       flushSync(() => {
-                        setPixelColors(prev => [...prev]); // Shallow copy forces new reference
+                        setActiveGroup("__selected__");
+                        setGroupDragStart(dragState);
+                        setGroupDragCurrent(null);
+                        setIsDrawing(true);
+                        setPixelColors(prev => [...prev]); // Forces immediate render
                       });
                       
                       console.log("Mobile drag initialized (delegated):", { startRow, startCol, activeGroup: "__selected__" });
@@ -2330,20 +2329,19 @@ const savedData = ${dataString};
                         selectedPixelsLength: selectedPixels.length
                       });
                       
-                      // Set drag state
-                      setActiveGroup("__selected__");
-                      setGroupDragStart(dragState);
-                      setIsDrawing(true);
-                      
-                      // Update ref immediately
+                      // Update ref immediately BEFORE flushSync
                       dragStateRef.current.activeGroup = "__selected__";
                       dragStateRef.current.groupDragStart = dragState;
                       dragStateRef.current.groupDragCurrent = null;
                       dragStateRef.current.isDrawing = true;
                       
-                      // Force immediate render by creating new pixelColors reference in flushSync
+                      // Set all drag state AND force render in single flushSync block
                       flushSync(() => {
-                        setPixelColors(prev => [...prev]); // Shallow copy forces new reference
+                        setActiveGroup("__selected__");
+                        setGroupDragStart(dragState);
+                        setGroupDragCurrent(null);
+                        setIsDrawing(true);
+                        setPixelColors(prev => [...prev]); // Forces immediate render
                       });
                       
                       console.log(">>> IMMEDIATELY AFTER flushSync (desktop) - ref state:", dragStateRef.current);
