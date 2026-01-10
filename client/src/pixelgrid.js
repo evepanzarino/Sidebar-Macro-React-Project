@@ -1607,7 +1607,6 @@ const savedData = ${dataString};
       {/* GRID */}
       <div 
         ref={gridRef}
-        data-is-grid="true"
         onScroll={(e) => {
           if (size.w <= 1024) {
             setScrollPosition(e.target.scrollLeft);
@@ -1623,6 +1622,7 @@ const savedData = ${dataString};
           scrollBehavior: "auto",
           msOverflowStyle: "none",
           scrollbarWidth: "none",
+          touchAction: "none",
           willChange: "transform"
         }}>
         {(pixelColors || []).map((c, i) => {
@@ -1980,7 +1980,20 @@ const savedData = ${dataString};
       
       {/* MOBILE/TABLET BOTTOM SCROLLBAR */}
       {size.w <= 1024 && (
-        <div style={{
+        <div 
+          onWheel={(e) => {
+            // Allow wheel scrolling when over the scrollbar
+            e.stopPropagation();
+            if (gridRef.current) {
+              const newScrollLeft = Math.max(0, Math.min(
+                gridRef.current.scrollWidth - gridRef.current.clientWidth,
+                scrollPosition + e.deltaY
+              ));
+              gridRef.current.scrollLeft = newScrollLeft;
+              setScrollPosition(newScrollLeft);
+            }
+          }}
+          style={{
           position: "fixed",
           bottom: 0,
           left: 0,
@@ -1996,7 +2009,9 @@ const savedData = ${dataString};
           <div 
             onPointerDown={() => {
               if (gridRef.current) {
-                gridRef.current.scrollLeft = Math.max(0, scrollPosition - 100);
+                const newScrollLeft = Math.max(0, scrollPosition - 100);
+                gridRef.current.scrollLeft = newScrollLeft;
+                setScrollPosition(newScrollLeft);
               }
             }}
             style={{
@@ -2068,7 +2083,12 @@ const savedData = ${dataString};
           <div 
             onPointerDown={() => {
               if (gridRef.current) {
-                gridRef.current.scrollLeft = scrollPosition + 100;
+                const newScrollLeft = Math.min(
+                  gridRef.current.scrollWidth - gridRef.current.clientWidth,
+                  scrollPosition + 100
+                );
+                gridRef.current.scrollLeft = newScrollLeft;
+                setScrollPosition(newScrollLeft);
               }
             }}
             style={{
