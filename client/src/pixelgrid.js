@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback, memo } from "react";
+import { useEffect, useState, useRef, useCallback, memo, useMemo } from "react";
 import "./pixelgrid.css";
 
 // Memoized pixel component to prevent unnecessary re-renders
@@ -128,8 +128,7 @@ const DrawingPixel = memo(({
         border: borderStyle,
         boxShadow,
         opacity,
-        position: 'relative',
-        transition: 'border 0.05s ease-out, box-shadow 0.05s ease-out'
+        position: 'relative'
       }}
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
@@ -966,6 +965,16 @@ const savedData = ${dataString};
   function removeBackgroundImage() {
     setBackgroundImage(null);
   }
+
+  // Memoize selection rectangle for O(1) lookups to prevent re-calculating for every pixel
+  const selectionRectSet = useMemo(() => {
+    const set = new Set();
+    if (activeDrawingTool === "select" && selectionStart !== null && selectionEnd !== null) {
+      const rectPixels = getSelectionRectangle(selectionStart, selectionEnd);
+      rectPixels.forEach(idx => set.add(idx));
+    }
+    return set;
+  }, [activeDrawingTool, selectionStart, selectionEnd]);
 
   return (
     <div className="pixelgrid-container" style={{ width: "100vw", overflow: "hidden" }}>
@@ -2001,7 +2010,7 @@ const savedData = ${dataString};
             const isInSelectionRect = (() => {
               // Show selection rectangle preview for select tool during drag or mobile second click
               if (activeDrawingTool === "select" && selectionStart !== null && selectionEnd !== null) {
-                const inRect = getSelectionRectangle(selectionStart, selectionEnd).includes(i);
+                const inRect = selectionRectSet.has(i);
                 // Debug logging for selection rectangle
                 if (c === '#ffffff' || !c || c.length < 7) {
                   console.log(`Uncolored pixel ${i}: inRect=${inRect}, color="${c}", selectionStart=${selectionStart}, selectionEnd=${selectionEnd}`);
@@ -2424,8 +2433,7 @@ const savedData = ${dataString};
                 boxShadow,
                 position: 'relative',
                 zIndex: pixelGroup ? pixelGroup.zIndex : 0,
-                opacity,
-                transition: 'border 0.05s ease-out, box-shadow 0.05s ease-out'
+                opacity
               }}
               onPointerDown={(e) => {
                 // Check if clicking on a grouped pixel with movegroup tool and group is already selected
