@@ -2230,18 +2230,16 @@ const savedData = ${dataString};
           if (viewMode === "drawing") {
             // DRAWING MODE - Minimal calculations for maximum performance
             
-            // Debug: Log ref state on first pixel of each render
+            // Debug: Log ref state on EVERY render of first pixel
             if (i === 0) {
               const dragState = dragStateRef.current;
-              if (dragState.groupDragStart !== null || dragState.isDrawing) {
-                console.log('=== RENDER DEBUG (pixel 0) ===', {
-                  groupDragStart: dragState.groupDragStart,
-                  activeGroup: dragState.activeGroup,
-                  isDrawing: dragState.isDrawing,
-                  groupDragCurrent: dragState.groupDragCurrent,
-                  selectedPixelsLength: dragState.selectedPixels.length
-                });
-              }
+              console.log('=== RENDER (pixel 0) ===', {
+                groupDragStart: dragState.groupDragStart,
+                activeGroup: dragState.activeGroup,
+                isDrawing: dragState.isDrawing,
+                groupDragCurrent: dragState.groupDragCurrent,
+                selectedPixelsLength: dragState.selectedPixels.length
+              });
             }
             
             const isHovered = hoveredPixel === i;
