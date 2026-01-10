@@ -541,7 +541,7 @@ export default function PixelGrid() {
       window.removeEventListener("pointerup", stopDrawing);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeDrawingTool]);
+  }, [activeDrawingTool, groupDragStart, activeGroup, groupDragCurrent, selectedPixels, lineStartPixel, lineEndPixel, curveEndPixel]);
 
   function paintPixel(e, index) {
     // Always immediate update for responsive feel
