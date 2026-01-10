@@ -208,7 +208,13 @@ export default function PixelGrid() {
           const pixelIndex = parseInt(element.getAttribute('data-pixel-index'), 10);
           if (!isNaN(pixelIndex) && pixelIndex !== hoveredPixel) {
             setHoveredPixel(pixelIndex);
-            paintPixel(null, pixelIndex);
+            // Paint directly by updating pixel colors
+            setPixelColors((prev) => {
+              if (prev[pixelIndex] === color) return prev;
+              const copy = [...prev];
+              copy[pixelIndex] = color;
+              return copy;
+            });
           }
         }
       }
@@ -219,7 +225,7 @@ export default function PixelGrid() {
     return () => {
       window.removeEventListener('touchmove', handleTouchMove);
     };
-  }, [isDrawing, activeDrawingTool, hoveredPixel]);
+  }, [isDrawing, activeDrawingTool, hoveredPixel, color]);
 
   // Zoom factor for drawing area based on screen size
   const getZoomFactor = () => {
