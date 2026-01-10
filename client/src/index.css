@@ -20,6 +20,9 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #f5f5f5;
+  overflow: hidden; /* Disable all page-level scrolling */
+  overscroll-behavior: none; /* Prevent bounce/overscroll */
+  touch-action: none; /* Disable touch scrolling */
 }
 
 code {
