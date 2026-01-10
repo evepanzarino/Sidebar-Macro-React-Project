@@ -2338,6 +2338,7 @@ const savedData = ${dataString};
                 zoomFactor={zoomFactor}
                 activeDrawingTool={activeDrawingTool}
                 onPointerDown={(e) => {
+                  console.log("=== POINTER DOWN ===", { pixel: i, tool: activeDrawingTool, width: size.w, isSelected: selectedPixels.includes(i) });
                   if (activeDrawingTool === "select") {
                     // Check for mobile two-click mode first
                     if (size.w <= 1024) {
