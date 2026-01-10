@@ -130,6 +130,19 @@ export default function PixelGrid() {
   // Layer drag-and-drop state
   const [draggedLayer, setDraggedLayer] = useState(null);
   const [dragOverLayer, setDragOverLayer] = useState(null);
+
+  // Lock page scrolling while PixelGrid is mounted so only the custom bar controls movement
+  useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, []);
   
   // Lazy-loaded tool modules
   const [loadedTools, setLoadedTools] = useState({});
@@ -187,6 +200,12 @@ export default function PixelGrid() {
   const cols = 200; // Fixed 200 columns
   const basePixelSize = 0.75; // Base pixel size in vw
   const displayPixelSize = basePixelSize * zoomFactor;
+  const isMobile = size.w <= 1024;
+  const scrollBarHeight = isMobile ? "10vw" : "56px";
+  const scrollButtonWidth = isMobile ? "10vw" : "56px";
+  const scrollThumbWidth = isMobile ? "20vw" : "140px";
+  const scrollFontSize = isMobile ? "5vw" : "28px";
+  const scrollPadding = isMobile ? "1vw" : "12px";
   
   // Calculate rows needed to fill the screen height
   const pixelSizeInPx = (displayPixelSize / 100) * size.w; // Convert vw to px
@@ -727,7 +746,17 @@ const savedData = ${dataString};
   }
 
   return (
-    <div className="pixelgrid-container" style={{ width: "100vw", overflow: "hidden" }}>
+    <div
+      className="pixelgrid-container"
+      style={{
+        width: "100vw",
+        height: "100vh",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        overscrollBehavior: "none"
+      }}
+    >
 
       {/* TOP BAR */}
       <div style={{
@@ -1317,7 +1346,7 @@ const savedData = ${dataString};
 
       {/* SIDEBAR */}
 
-<div className="grid-sidebar-wrapper" style={{display: "flex"}}>
+<div className="grid-sidebar-wrapper" style={{display: "flex", flex: 1, minHeight: 0, overflow: "hidden"}}>
 
       <div style={{
         background: "#fefefe",
@@ -1575,9 +1604,11 @@ const savedData = ${dataString};
       <div 
         ref={gridRef}
         onScroll={(e) => {
-          if (size.w <= 1024) {
-            setScrollPosition(e.target.scrollLeft);
-          }
+          setScrollPosition(e.target.scrollLeft);
+        }}
+        onWheel={(e) => {
+          // Block native scrolling so the custom bar is the only scroll control
+          e.preventDefault();
         }}
         style={{
           display: "grid",
@@ -1585,8 +1616,9 @@ const savedData = ${dataString};
           gridTemplateRows: `repeat(${rows}, ${displayPixelSize}vw)`,
           userSelect: "none",
           flex: 1,
-          overflow: "auto",
-          willChange: "transform"
+          overflow: "hidden",
+          willChange: "transform",
+          touchAction: "none"
         }}>
         {(pixelColors || []).map((c, i) => {
           // Completely isolate drawing mode from layer calculations for performance
@@ -1941,16 +1973,15 @@ const savedData = ${dataString};
       </div>
       </div>
       
-      {/* MOBILE/TABLET BOTTOM SCROLLBAR */}
-      {size.w <= 1024 && (
+      {/* Custom bottom scrollbar (only scrolling mechanism) */}
         <div style={{
           position: "fixed",
           bottom: 0,
           left: 0,
           width: "100%",
-          height: "10vw",
+          height: scrollBarHeight,
           display: "grid",
-          gridTemplateColumns: "10vw 1fr 10vw",
+          gridTemplateColumns: `${scrollButtonWidth} 1fr ${scrollButtonWidth}`,
           background: "#fefefe",
           borderTop: "0.2vw solid #000000",
           zIndex: 100
@@ -1963,15 +1994,15 @@ const savedData = ${dataString};
               }
             }}
             style={{
-              width: "10vw",
-              height: "10vw",
+              width: scrollButtonWidth,
+              height: scrollBarHeight,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               background: "#fefefe",
               borderRight: "0.2vw solid #000000",
               cursor: "pointer",
-              fontSize: "5vw",
+              fontSize: scrollFontSize,
               userSelect: "none"
             }}
           >
@@ -1982,10 +2013,10 @@ const savedData = ${dataString};
           <div 
             style={{
               width: "100%",
-              height: "10vw",
+              height: scrollBarHeight,
               background: "#fefefe",
               position: "relative",
-              padding: "1vw",
+              padding: scrollPadding,
               display: "flex",
               alignItems: "center"
             }}
@@ -2014,7 +2045,7 @@ const savedData = ${dataString};
               onPointerLeave={() => setIsDraggingSlider(false)}
               style={{
                 width: "100%",
-                height: "8vw",
+                height: `calc(${scrollBarHeight} - (${scrollPadding} * 2))`,
                 background: "#ffffff",
                 border: "0.2vw solid #000000",
                 position: "relative",
@@ -2027,8 +2058,8 @@ const savedData = ${dataString};
                 position: "absolute",
                 left: `calc(${gridRef.current ? Math.min(74.5, Math.max(0, (scrollPosition / (gridRef.current.scrollWidth - gridRef.current.clientWidth)) * 100)) : 0}% - 0px)`,
                 top: "0",
-                width: "20vw",
-                height: "8vw",
+                width: scrollThumbWidth,
+                height: `calc(${scrollBarHeight} - (${scrollPadding} * 2))`,
                 background: "#000000",
                 pointerEvents: "none"
               }} />
@@ -2043,22 +2074,21 @@ const savedData = ${dataString};
               }
             }}
             style={{
-              width: "10vw",
-              height: "10vw",
+              width: scrollButtonWidth,
+              height: scrollBarHeight,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               background: "#fefefe",
               borderLeft: "0.2vw solid #000000",
               cursor: "pointer",
-              fontSize: "5vw",
+              fontSize: scrollFontSize,
               userSelect: "none"
             }}
           >
             ▶
           </div>
         </div>
-      )}
 
       {/* COLOR EDITOR OVERLAY */}
       {showColorEditor && (
