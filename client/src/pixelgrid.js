@@ -2246,28 +2246,54 @@ const savedData = ${dataString};
                 const pixelIndex = row * 200 + col;
                 console.log("Grid click delegated to pixel:", pixelIndex, { row, col, x, y });
                 
-                // Find the actual pixel element and dispatch a pointer down event to it
-                const pixelElement = gridRef.current.querySelector(`[data-pixel-index="${pixelIndex}"]`);
-                console.log("Found pixel element:", !!pixelElement, "looking for index:", pixelIndex);
-                
-                // Debug: try to find ANY pixel element
-                const anyPixel = gridRef.current.querySelector('[data-pixel-index]');
-                console.log("Any pixel element exists?", !!anyPixel, anyPixel?.getAttribute('data-pixel-index'));
-                
-                if (pixelElement) {
-                  // Create a new pointer event with the same properties
-                  const syntheticEvent = new PointerEvent('pointerdown', {
-                    bubbles: true,
-                    cancelable: true,
-                    clientX: e.clientX,
-                    clientY: e.clientY,
-                    pointerId: e.pointerId,
-                    pointerType: e.pointerType
+                // Instead of trying to find and click the DOM element, 
+                // just execute the pixel's click logic directly
+                if (activeDrawingTool === "select") {
+                  console.log("=== DELEGATED PIXEL CLICK ===", { 
+                    pixel: pixelIndex, 
+                    tool: activeDrawingTool, 
+                    width: size.w, 
+                    isSelected: selectedPixels.includes(pixelIndex) 
                   });
-                  pixelElement.dispatchEvent(syntheticEvent);
-                  console.log("Dispatched synthetic event to pixel", pixelIndex);
-                } else {
-                  console.error("Could not find pixel element for index:", pixelIndex);
+                  
+                  // Check for mobile two-click mode first
+                  if (size.w <= 1024) {
+                    if (selectedPixels.includes(pixelIndex)) {
+                      // Clicking on already selected pixel - enable drag-to-move
+                      e.preventDefault();
+                      console.log("Mobile (delegated): Starting drag on selected pixel", pixelIndex);
+                      const startRow = Math.floor(pixelIndex / 200);
+                      const startCol = pixelIndex % 200;
+                      const dragState = { pixelIndex, startRow, startCol };
+                      
+                      console.log("DRAG INIT DEBUG (delegated):", { 
+                        clickedPixel: pixelIndex, 
+                        startRow, 
+                        startCol, 
+                        selectedPixels: selectedPixels.slice(0, 5),
+                        selectedPixelsLength: selectedPixels.length
+                      });
+                      
+                      setActiveGroup("__selected__");
+                      setGroupDragStart(dragState);
+                      setGroupDragCurrent(null);
+                      setIsDrawing(true);
+                      
+                      // Also update ref immediately for event handlers
+                      dragStateRef.current.activeGroup = "__selected__";
+                      dragStateRef.current.groupDragStart = dragState;
+                      dragStateRef.current.groupDragCurrent = null;
+                      dragStateRef.current.isDrawing = true;
+                      
+                      console.log("Mobile drag initialized (delegated):", { startRow, startCol, activeGroup: "__selected__" });
+                    } else if (selectionStart === null) {
+                      // First click: set selection start
+                      console.log("Mobile first click (delegated) - setting selection start to", pixelIndex);
+                      setSelectionStart(pixelIndex);
+                      setSelectionEnd(null);
+                      setSelectedPixels([]);
+                    }
+                  }
                 }
               } else {
                 console.log("Click outside grid bounds:", { row, col, rows, maxRow: rows - 1 });
