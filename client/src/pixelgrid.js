@@ -2261,11 +2261,10 @@ const savedData = ${dataString};
             // Calculate preview position during selected pixels drag
             let isInDragPreview = false;
             let dragPreviewColor = c;
-            if (groupDragStart !== null && activeGroup === "__selected__" && isDrawing) {
-              // Use groupDragCurrent if set, otherwise use the clicked position (no preview movement yet)
-              const currentDragPos = groupDragCurrent || { row: groupDragStart.startRow, col: groupDragStart.startCol };
-              const deltaRow = currentDragPos.row - groupDragStart.startRow;
-              const deltaCol = currentDragPos.col - groupDragStart.startCol;
+            if (groupDragStart !== null && groupDragCurrent !== null && activeGroup === "__selected__" && isDrawing) {
+              // Only show preview when pointer has actually moved (groupDragCurrent is set)
+              const deltaRow = groupDragCurrent.row - groupDragStart.startRow;
+              const deltaCol = groupDragCurrent.col - groupDragStart.startCol;
               const currentRow = Math.floor(i / 200);
               const currentCol = i % 200;
               const sourceRow = currentRow - deltaRow;
