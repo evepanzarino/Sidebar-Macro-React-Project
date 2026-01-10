@@ -498,6 +498,27 @@ export default function PixelGrid() {
     function handleResize() {
       setSize({ w: window.innerWidth, h: window.innerHeight });
     }
+    
+    const handlePointerMove = (e) => {
+      // Track drag position for selected pixels move on mobile/desktop
+      if (groupDragStart !== null && activeGroup === "__selected__" && isDrawing && gridRef.current) {
+        const rect = gridRef.current.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        // Calculate which pixel we're over
+        const pixelSize = rect.width / 200; // 200 columns
+        const col = Math.floor(x / pixelSize);
+        const row = Math.floor(y / pixelSize);
+        
+        // Ensure we're within bounds
+        if (row >= 0 && row < rows && col >= 0 && col < 200) {
+          console.log("Global pointermove: Setting groupDragCurrent:", { row, col });
+          setGroupDragCurrent({ row, col });
+        }
+      }
+    };
+    
     const stopDrawing = () => {
       console.log("stopDrawing called", { 
         groupDragStart, 
@@ -537,13 +558,15 @@ export default function PixelGrid() {
     };
 
     window.addEventListener("resize", handleResize);
+    window.addEventListener("pointermove", handlePointerMove);
     window.addEventListener("pointerup", stopDrawing);
     return () => {
       window.removeEventListener("resize", handleResize);
+      window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", stopDrawing);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeDrawingTool, groupDragStart, activeGroup, groupDragCurrent, selectedPixels, lineStartPixel, lineEndPixel, curveEndPixel]);
+  }, [activeDrawingTool, groupDragStart, activeGroup, groupDragCurrent, selectedPixels, lineStartPixel, lineEndPixel, curveEndPixel, isDrawing]);
 
   function paintPixel(e, index) {
     // Always immediate update for responsive feel
