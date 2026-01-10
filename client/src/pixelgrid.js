@@ -1022,6 +1022,21 @@ const savedData = ${dataString};
     // Update ref for next render
     prevSelectionRectRef.current = new Set(currentSet);
   }, [selectionRectSet, activeDrawingTool, viewMode, pixelColors]);
+  
+  // Clear selection borders when switching away from select tool or changing modes
+  useEffect(() => {
+    return () => {
+      // Cleanup: remove all selection borders when unmounting or tool changes
+      prevSelectionRectRef.current.forEach(idx => {
+        const el = document.querySelector(`[data-pixel-index="${idx}"]`);
+        if (el) {
+          el.style.border = '';
+          el.style.boxShadow = '';
+        }
+      });
+      prevSelectionRectRef.current.clear();
+    };
+  }, [activeDrawingTool, viewMode]);
 
   return (
     <div className="pixelgrid-container" style={{ width: "100vw", overflow: "hidden" }}>
