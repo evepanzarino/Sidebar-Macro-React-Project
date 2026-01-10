@@ -2053,19 +2053,6 @@ const savedData = ${dataString};
           </div>
         )}
         
-        {/* Selection overlay - absolute positioned outside grid */}
-        <div 
-          ref={selectionOverlayRef}
-          style={{
-            display: 'none',
-            pointerEvents: 'none',
-            boxSizing: 'border-box',
-            position: 'absolute',
-            zIndex: 100,
-            cursor: 'crosshair'
-          }}
-        />
-        
         {/* GRID - Scrollable with transparent background */}
         <div 
           ref={gridRef}
@@ -2092,6 +2079,19 @@ const savedData = ${dataString};
             background: "transparent",
             cursor: activeDrawingTool === "select" ? "crosshair" : "default"
           }}>
+        
+        {/* Selection overlay - absolute positioned inside grid to scroll with content */}
+        <div 
+          ref={selectionOverlayRef}
+          style={{
+            display: 'none',
+            pointerEvents: 'none',
+            boxSizing: 'border-box',
+            position: 'absolute',
+            zIndex: 100,
+            cursor: 'crosshair'
+          }}
+        />
         
         {(pixelColors || []).map((c, i) => {
           // Completely isolate drawing mode from layer calculations for performance
