@@ -1792,6 +1792,7 @@ const savedData = ${dataString};
                       setCurveEndPixel(null);
                     } else {
                       setCurveEndPixel(i);
+                      setHoveredPixel(i);
                     }
                   }
                 }}
