@@ -554,7 +554,12 @@ export default function PixelGrid() {
       maxCol = Math.max(maxCol, col);
     });
     
-    // Position container at cursor
+    const width = (maxCol - minCol + 1) * pixelSize;
+    const height = (maxRow - minRow + 1) * pixelSize;
+    previewContainer.style.width = `${width}px`;
+    previewContainer.style.height = `${height}px`;
+    
+    // Position container at cursor (offset by where user grabbed)
     const startPixelIndex = state.groupDragStart.pixelIndex;
     const startRow = Math.floor(startPixelIndex / 200);
     const startCol = startPixelIndex % 200;
@@ -578,7 +583,8 @@ export default function PixelGrid() {
       pixel.style.width = `${pixelSize}px`;
       pixel.style.height = `${pixelSize}px`;
       pixel.style.backgroundColor = pixelColors[sourceIndex] || '#ffffff';
-      pixel.style.border = '1px solid rgba(0,0,0,0.3)';
+      pixel.style.boxSizing = 'border-box';
+      pixel.style.border = '0.5px solid rgba(0,0,0,0.2)';
       
       previewContainer.appendChild(pixel);
     });
