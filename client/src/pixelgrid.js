@@ -981,46 +981,60 @@ const savedData = ${dataString};
   
   // Update selection borders incrementally using direct DOM manipulation
   useEffect(() => {
-    if (activeDrawingTool !== "select") return;
-    
-    const prevSet = prevSelectionRectRef.current;
-    const currentSet = selectionRectSet;
-    
-    // Find pixels to remove border from (in prev but not in current)
-    prevSet.forEach(idx => {
-      if (!currentSet.has(idx)) {
+    if (activeDrawingTool !== "select" || viewMode !== "drawing") {
+      // Clear all selection borders when not in select mode
+      prevSelectionRectRef.current.forEach(idx => {
         const el = document.querySelector(`[data-pixel-index="${idx}"]`);
         if (el) {
           el.style.border = '';
           el.style.boxShadow = '';
         }
-      }
-    });
+      });
+      prevSelectionRectRef.current.clear();
+      return;
+    }
     
-    // Find pixels to add border to (in current but not in prev)
-    currentSet.forEach(idx => {
-      if (!prevSet.has(idx)) {
-        const el = document.querySelector(`[data-pixel-index="${idx}"]`);
-        if (el && viewMode === "drawing") {
-          const color = pixelColors[idx] || '#ffffff';
-          const isLight = (() => {
-            if (!color || color.length < 7) return true;
-            const r = parseInt(color.substring(1, 3), 16);
-            const g = parseInt(color.substring(3, 5), 16);
-            const b = parseInt(color.substring(5, 7), 16);
-            const brightness = (r + g + b) / 3;
-            return brightness > 127;
-          })();
-          const borderColor = isLight ? '#000000' : '#CCCCCC';
-          const zoomFactor = 1; // Use default zoom
-          const borderWidth = `${0.2 * zoomFactor}vw`;
-          el.style.border = `${borderWidth} solid ${borderColor}`;
+    const prevSet = prevSelectionRectRef.current;
+    const currentSet = selectionRectSet;
+    
+    // Use requestAnimationFrame for smoother updates
+    requestAnimationFrame(() => {
+      // Find pixels to remove border from (in prev but not in current)
+      prevSet.forEach(idx => {
+        if (!currentSet.has(idx)) {
+          const el = document.querySelector(`[data-pixel-index="${idx}"]`);
+          if (el) {
+            el.style.border = '';
+            el.style.boxShadow = '';
+          }
         }
-      }
+      });
+      
+      // Find pixels to add border to (in current but not in prev)
+      currentSet.forEach(idx => {
+        if (!prevSet.has(idx)) {
+          const el = document.querySelector(`[data-pixel-index="${idx}"]`);
+          if (el) {
+            const color = pixelColors[idx] || '#ffffff';
+            const isLight = (() => {
+              if (!color || color.length < 7) return true;
+              const r = parseInt(color.substring(1, 3), 16);
+              const g = parseInt(color.substring(3, 5), 16);
+              const b = parseInt(color.substring(5, 7), 16);
+              const brightness = (r + g + b) / 3;
+              return brightness > 127;
+            })();
+            const borderColor = isLight ? '#000000' : '#CCCCCC';
+            const zoomFactor = 1;
+            const borderWidth = `${0.2 * zoomFactor}vw`;
+            el.style.border = `${borderWidth} solid ${borderColor}`;
+          }
+        }
+      });
+      
+      // Update ref for next render
+      prevSelectionRectRef.current = new Set(currentSet);
     });
-    
-    // Update ref for next render
-    prevSelectionRectRef.current = new Set(currentSet);
   }, [selectionRectSet, activeDrawingTool, viewMode, pixelColors]);
   
   // Clear selection borders when switching away from select tool or changing modes
@@ -2071,13 +2085,10 @@ const savedData = ${dataString};
             const isSelected = selectedPixels.includes(i);
             const isInSelectionRect = (() => {
               // Show selection rectangle preview for select tool during drag or mobile second click
+              // NOTE: Border styling is now handled via direct DOM manipulation in useEffect
+              // to prevent flashing - this just returns false to avoid React re-renders
               if (activeDrawingTool === "select" && selectionStart !== null && selectionEnd !== null) {
-                const inRect = selectionRectSet.has(i);
-                // Debug logging for selection rectangle
-                if (c === '#ffffff' || !c || c.length < 7) {
-                  console.log(`Uncolored pixel ${i}: inRect=${inRect}, color="${c}", selectionStart=${selectionStart}, selectionEnd=${selectionEnd}`);
-                }
-                return inRect;
+                return false; // DOM manipulation handles this
               }
               // Show active group highlight for other tools
               return activeGroup !== null && activeGroup !== "__selected__" && 
