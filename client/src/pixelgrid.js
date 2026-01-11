@@ -3390,7 +3390,7 @@ const savedData = ${dataString};
         }}>
           
           {/* Selection Type Label - Above Toggle */}
-          <div style={{ fontSize: "2vw", fontWeight: "bold", marginBottom: "0.5vw" }}>
+          <div style={{ fontSize: "2vw", border: "none", fontWeight: "bold", marginBottom: "0.5vw" }}>
             Select
           </div>
           
@@ -3401,17 +3401,19 @@ const savedData = ${dataString};
             <button
               onClick={() => setSelectAllPixels(!selectAllPixels)}
               style={{
-                background: selectAllPixels ? "#2196F3" : "#666",
+                background: "#000",
                 color: "white",
-                border: "0.15vw solid #000",
-                padding: "0.3vw 0.8vw",
+                padding: "0",
                 cursor: "pointer",
-                fontSize: "0.7vw",
+                fontSize: "1.5vw",
                 fontWeight: "bold",
                 whiteSpace: "nowrap",
                 display: "flex",
                 alignItems: "center",
-                gap: "0.3vw"
+                justifyContent: "center",
+                gap: "0.3vw",
+                width: "5vw",
+                height: "5vw"
               }}
               title={selectAllPixels ? "Selecting all pixels in box" : "Selecting only colored pixels"}
             >
