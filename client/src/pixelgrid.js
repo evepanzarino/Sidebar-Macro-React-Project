@@ -3401,13 +3401,14 @@ const savedData = ${dataString};
             <button
               onClick={() => setSelectAllPixels(!selectAllPixels)}
               style={{
-                background: "#000",
-                color: "white",
+                background: "#000000",
+                color: "#ffffff",
                 padding: "0",
                 cursor: "pointer",
                 fontSize: "1.5vw",
                 fontWeight: "bold",
                 whiteSpace: "nowrap",
+                border: "none",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
