@@ -4044,7 +4044,7 @@ const savedData = ${dataString};
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    background: "#fefefe",
+                    background: "#000000",
                     borderBottom: "0.2vw solid #000000",
                     cursor: "pointer",
                     fontSize: "2.5vw",
@@ -4060,7 +4060,7 @@ const savedData = ${dataString};
                   style={{
                     width: "5vw",
                     flex: 1,
-                    background: "#fefefe",
+                    background: "#000000",
                     position: "relative",
                     padding: "0.5vw",
                     display: "flex",
@@ -4526,6 +4526,7 @@ const savedData = ${dataString};
                           padding: "0",
                           background: activeGroup === group.name ? "#fefefe" : "#000000",
                           borderRadius: "0",
+                          color: #000000,
                           cursor: "pointer",
                           border: activeGroup === group.name ? "0.15vw solid #000000" : "0.15vw solid #fefefe",
                           fontWeight: activeGroup === group.name ? "bold" : "normal",
@@ -4547,7 +4548,7 @@ const savedData = ${dataString};
                             onClick={() => moveGroup(group.name, 0, -1)}
                             style={{
                               background: "#ffffff",
-                              color: "#ffffff",
+                              color: "#000000",
                               border: "0.2vw solid #000",
                               width: "10vw",
                               height: "10vw",
@@ -4569,7 +4570,7 @@ const savedData = ${dataString};
                             onClick={() => moveGroup(group.name, -1, 0)}
                             style={{
                               background: "#ffffff",
-                              color: "#ffffff",
+                              color: "#000000",
                               border: "0.2vw solid #000",
                               width: "10vw",
                               height: "10vw",
@@ -4591,7 +4592,7 @@ const savedData = ${dataString};
                             onClick={() => moveGroup(group.name, 1, 0)}
                             style={{
                               background: "#ffffff",
-                              color: "#ffffff",
+                              color: "#000000",
                               border: "0.2vw solid #000",
                               width: "10vw",
                               height: "10vw",
@@ -4613,7 +4614,7 @@ const savedData = ${dataString};
                             onClick={() => moveGroup(group.name, 0, 1)}
                             style={{
                               background: "#ffffff",
-                              color: "#ffffff",
+                              color: "#000000",
                               border: "0.2vw solid #000",
                               width: "10vw",
                               height: "10vw",
@@ -4651,7 +4652,7 @@ const savedData = ${dataString};
                       }}
                       style={{
                         background: "#ffffff",
-                        color: "#ffffff",
+                        color: "#000000",
                         border: "0.2vw solid #000",
                         width: "10vw",
                       height: "10vw",
@@ -4685,7 +4686,7 @@ const savedData = ${dataString};
                       }}
                       style={{
                         background: "#ffffff",
-                        color: "#ffffff",
+                        color: "#000000",
                         border: "0.2vw solid #000",
                         width: "10vw",
                       height: "10vw",
@@ -4725,7 +4726,7 @@ const savedData = ${dataString};
                       }}
                       style={{
                         background: "#ffffff",
-                        color: "#ffffff",
+                        color: "#000000",
                         border: "0.2vw solid #000",
                         width: "10vw",
                       height: "10vw",
