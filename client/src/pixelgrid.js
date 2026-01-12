@@ -949,7 +949,13 @@ export default function PixelGrid() {
     
     const newPixelGroups = { ...pixelGroups };
     selectedPixels.forEach(pixelIndex => {
-      newPixelGroups[pixelIndex] = { group: groupName, zIndex };
+      // Store the current color of the pixel with the group data
+      const currentColor = pixelColors[pixelIndex] || "#ffffff";
+      newPixelGroups[pixelIndex] = { 
+        group: groupName, 
+        zIndex,
+        color: currentColor  // Save the color with the layer
+      };
     });
     setPixelGroups(newPixelGroups);
     
@@ -968,12 +974,13 @@ export default function PixelGrid() {
     
     if (groupPixels.length === 0) return;
     
-    // Get colors and clear old positions
+    // Get colors from group data (not pixelColors) and clear old positions
     const pixelData = groupPixels.map(idx => ({
       oldIndex: idx,
-      color: pixelColors[idx],
+      color: pixelGroups[idx].color || pixelColors[idx],  // Use stored color from group
       row: Math.floor(idx / 200),
-      col: idx % 200
+      col: idx % 200,
+      zIndex: pixelGroups[idx].zIndex
     }));
     
     setPixelColors(prev => {
@@ -994,7 +1001,7 @@ export default function PixelGrid() {
       return copy;
     });
     
-    // Update pixel groups mapping
+    // Update pixel groups mapping with preserved color data
     const newPixelGroups = { ...pixelGroups };
     pixelData.forEach(p => {
       delete newPixelGroups[p.oldIndex];
@@ -1002,7 +1009,11 @@ export default function PixelGrid() {
       const newCol = p.col + deltaCol;
       if (newRow >= 0 && newRow < rows && newCol >= 0 && newCol < 200) {
         const newIndex = newRow * 200 + newCol;
-        newPixelGroups[newIndex] = pixelGroups[p.oldIndex] || { group: groupName, zIndex: 0 };
+        newPixelGroups[newIndex] = { 
+          group: groupName, 
+          zIndex: p.zIndex,
+          color: p.color  // Preserve the color when moving
+        };
       }
     });
     setPixelGroups(newPixelGroups);
@@ -2860,8 +2871,10 @@ const savedData = ${dataString};
             borderWidth = `${0.2 * zoomFactor}vw`;
           }
           
-          // Get the display color (either current pixel or preview from dragged group)
-          let displayColor = c;
+          // Get the display color (use stored color from group if pixel is in a group, otherwise use pixelColors)
+          let displayColor = pixelGroup && pixelGroup.color ? pixelGroup.color : c;
+          
+          // Override with drag preview color if currently dragging
           if (isInDragPreview) {
             const deltaRow = groupDragCurrent.row - groupDragStart.startRow;
             const deltaCol = groupDragCurrent.col - groupDragStart.startCol;
@@ -2870,7 +2883,8 @@ const savedData = ${dataString};
             const sourceRow = currentRow - deltaRow;
             const sourceCol = currentCol - deltaCol;
             const sourceIndex = sourceRow * 200 + sourceCol;
-            displayColor = pixelColors[sourceIndex] || c;
+            const sourceGroup = pixelGroups[sourceIndex];
+            displayColor = sourceGroup && sourceGroup.color ? sourceGroup.color : (pixelColors[sourceIndex] || c);
           }
           
           // Make white pixels transparent when background image is loaded
