@@ -168,8 +168,6 @@ export default function PixelGrid() {
   const [hoveredPixel, setHoveredPixel] = useState(null);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [isDraggingSlider, setIsDraggingSlider] = useState(false);
-  const [layersScrollPosition, setLayersScrollPosition] = useState(0);
-  const [isDraggingLayersSlider, setIsDraggingLayersSlider] = useState(false);
   const [activeDrawingTool, setActiveDrawingTool] = useState("pencil"); // "pencil", "line", "curve", "bucket", "select", "movegroup"
   const [lineStartPixel, setLineStartPixel] = useState(null); // For line/curve tool: first click position
   const [lineEndPixel, setLineEndPixel] = useState(null); // For line tool apply/preview
@@ -195,20 +193,43 @@ export default function PixelGrid() {
   });
   const backgroundInputRef = useRef(null);
   
-  // Groups store their own pixel data: { name, zIndex, pixels: { pixelIndex: color } }
+  const [pixelGroups, setPixelGroups] = useState(() => {
+    try {
+      const saved = localStorage.getItem("pixelgrid_pixelGroups");
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
+  });
+  
   const [groups, setGroups] = useState(() => {
     try {
       const saved = localStorage.getItem("pixelgrid_groups");
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
+      const savedGroups = saved ? JSON.parse(saved) : [];
+      
+      // Ensure background layer exists
+      const hasBackground = savedGroups.some(g => g.name === "Background");
+      if (!hasBackground) {
+        // Create background layer with all current non-white pixels
+        const backgroundPixels = {};
+        const savedColors = localStorage.getItem("pixelgrid_pixelColors");
+        if (savedColors) {
+          const colors = JSON.parse(savedColors);
+          colors.forEach((color, index) => {
+            if (color && color !== "#ffffff") {
+              backgroundPixels[index] = color;
+            }
+          });
+        }
+        savedGroups.unshift({ name: "Background", zIndex: -1, pixels: backgroundPixels, locked: true });
+      }
+      
+      return savedGroups;
+    } catch { 
+      // Create default background layer
+      return [{ name: "Background", zIndex: -1, pixels: {}, locked: true }]; 
+    }
   });
   
-  // Legacy pixelGroups for backwards compatibility
-  const [pixelGroups, setPixelGroups] = useState({});
-  
   const [activeGroup, setActiveGroup] = useState(null); // Currently selected group for moving
-  const [renameGroup, setRenameGroup] = useState(null); // Group being renamed
-  const [renameValue, setRenameValue] = useState(""); // Temporary value while renaming
   const [groupDragStart, setGroupDragStart] = useState(null); // { pixelIndex, startRow, startCol }
   const [groupDragCurrent, setGroupDragCurrent] = useState(null); // Current hover position during drag
   const [renderTrigger, setRenderTrigger] = useState(0); // Force re-renders by incrementing
@@ -223,7 +244,6 @@ export default function PixelGrid() {
   
   const color = activeTool === "primary" ? primaryColor : secondaryColor;
   const gridRef = useRef(null);
-  const layersMenuRef = useRef(null);
   
   // Refs to hold current values for event handlers without causing re-renders
   const dragStateRef = useRef({
@@ -329,39 +349,6 @@ export default function PixelGrid() {
       window.removeEventListener('pointerup', handlePointerUp, { capture: true });
     };
   }, [isDraggingSlider]);
-
-  // Handle layers scrollbar slider dragging with global pointer move
-  useEffect(() => {
-    if (!isDraggingLayersSlider) return;
-
-    const handlePointerMove = (e) => {
-      if (!layersMenuRef.current) return;
-      
-      // Get the slider track bounds
-      const scrollbarTrack = document.querySelector('[data-layers-scrollbar-track="true"]');
-      if (!scrollbarTrack) return;
-      
-      const rect = scrollbarTrack.getBoundingClientRect();
-      const y = e.clientY - rect.top;
-      const percent = Math.max(0, Math.min(1, y / rect.height));
-      const maxScroll = layersMenuRef.current.scrollHeight - layersMenuRef.current.clientHeight;
-      const newScrollTop = percent * maxScroll;
-      layersMenuRef.current.scrollTop = newScrollTop;
-      setLayersScrollPosition(newScrollTop);
-    };
-
-    const handlePointerUp = () => {
-      setIsDraggingLayersSlider(false);
-    };
-
-    window.addEventListener('pointermove', handlePointerMove, { passive: false, capture: true });
-    window.addEventListener('pointerup', handlePointerUp, { capture: true });
-
-    return () => {
-      window.removeEventListener('pointermove', handlePointerMove, { capture: true });
-      window.removeEventListener('pointerup', handlePointerUp, { capture: true });
-    };
-  }, [isDraggingLayersSlider]);
 
   // Handle touch drawing on mobile - track finger position to find pixel under touch
   useEffect(() => {
@@ -623,29 +610,20 @@ export default function PixelGrid() {
     const stopDrawing = () => {
       const state = dragStateRef.current;
       
-      // Finalize group move if dragging a layer
-      if (state.groupDragStart !== null && state.groupDragCurrent !== null && state.activeGroup !== null) {
-        const deltaRow = state.groupDragCurrent.row - state.groupDragStart.startRow;
-        const deltaCol = state.groupDragCurrent.col - state.groupDragStart.startCol;
+      // Finalize selected pixels move if dragging
+      if (state.groupDragStart !== null && state.activeGroup === "__selected__") {
+        const currentDragPos = state.groupDragCurrent || { row: state.groupDragStart.startRow, col: state.groupDragStart.startCol };
+        const deltaRow = currentDragPos.row - state.groupDragStart.startRow;
+        const deltaCol = currentDragPos.col - state.groupDragStart.startCol;
         
         if (deltaRow !== 0 || deltaCol !== 0) {
-          if (state.activeGroup === "__selected__") {
-            // Moving selected pixels (not in a group yet)
-            moveSelectedPixels(deltaRow, deltaCol, state.selectedPixels);
-            setGroupDragStart(null);
-            setGroupDragCurrent(null);
-            setActiveGroup(null);
-          } else {
-            // Moving an actual group/layer
-            moveGroup(state.activeGroup, deltaRow, deltaCol);
-            setGroupDragStart(null);
-            setGroupDragCurrent(null);
-          }
-        } else {
-          // No movement, just clear drag state
-          setGroupDragStart(null);
-          setGroupDragCurrent(null);
+          moveSelectedPixels(deltaRow, deltaCol, state.selectedPixels);
         }
+        
+        // Clear drag state
+        setGroupDragStart(null);
+        setGroupDragCurrent(null);
+        setActiveGroup(null);
       }
       
       setIsDrawing(false);
@@ -945,72 +923,75 @@ export default function PixelGrid() {
     if (selectedPixels.length === 0) return;
     
     const newGroups = [...groups];
-    let existingGroup = newGroups.find(g => g.name === groupName);
+    const existingGroup = newGroups.find(g => g.name === groupName);
+    // Exclude locked layers from z-index calculation
+    const normalLayers = groups.filter(g => !g.locked);
+    const zIndex = existingGroup ? existingGroup.zIndex : normalLayers.length;
     
     if (!existingGroup) {
-      // Create new group with pixel data
-      const pixels = {};
-      selectedPixels.forEach(pixelIndex => {
-        pixels[pixelIndex] = pixelColors[pixelIndex] || "#ffffff";
-      });
-      
-      existingGroup = { 
-        name: groupName, 
-        zIndex: groups.length,
-        pixels: pixels
-      };
-      newGroups.push(existingGroup);
-    } else {
-      // Add pixels to existing group
-      selectedPixels.forEach(pixelIndex => {
-        existingGroup.pixels[pixelIndex] = pixelColors[pixelIndex] || "#ffffff";
-      });
+      newGroups.push({ name: groupName, zIndex });
+      setGroups(newGroups);
     }
     
-    setGroups(newGroups);
+    const newPixelGroups = { ...pixelGroups };
+    selectedPixels.forEach(pixelIndex => {
+      newPixelGroups[pixelIndex] = { group: groupName, zIndex };
+    });
+    setPixelGroups(newPixelGroups);
+    
     setSelectedPixels([]);
     setSelectionStart(null);
     setSelectionEnd(null);
+    // Keep bottom bar open and activate the newly created group
     setActiveGroup(groupName);
-  }
-
-  // Helper function to update z-index for a specific group
-  function updateGroupZIndex(groupName, deltaZ) {
-    const newGroups = groups.map(g => 
-      g.name === groupName 
-        ? { ...g, zIndex: g.zIndex + deltaZ }
-        : g
-    );
-    setGroups(newGroups);
   }
 
   // Move group pixels
   function moveGroup(groupName, deltaRow, deltaCol) {
-    const group = groups.find(g => g.name === groupName);
-    if (!group || !group.pixels) return;
+    const groupPixels = Object.keys(pixelGroups)
+      .filter(idx => pixelGroups[idx].group === groupName)
+      .map(idx => parseInt(idx));
     
-    const newPixels = {};
+    if (groupPixels.length === 0) return;
     
-    Object.keys(group.pixels).forEach(pixelIndex => {
-      const idx = parseInt(pixelIndex);
-      const row = Math.floor(idx / 200);
-      const col = idx % 200;
-      const newRow = row + deltaRow;
-      const newCol = col + deltaCol;
-      
-      if (newRow >= 0 && newRow < rows && newCol >= 0 && newCol < 200) {
-        const newIndex = newRow * 200 + newCol;
-        newPixels[newIndex] = group.pixels[pixelIndex];
-      }
+    // Get colors and clear old positions
+    const pixelData = groupPixels.map(idx => ({
+      oldIndex: idx,
+      color: pixelColors[idx],
+      row: Math.floor(idx / 200),
+      col: idx % 200
+    }));
+    
+    setPixelColors(prev => {
+      const copy = [...prev];
+      // Clear old positions
+      pixelData.forEach(p => {
+        copy[p.oldIndex] = "#ffffff";
+      });
+      // Set new positions
+      pixelData.forEach(p => {
+        const newRow = p.row + deltaRow;
+        const newCol = p.col + deltaCol;
+        if (newRow >= 0 && newRow < rows && newCol >= 0 && newCol < 200) {
+          const newIndex = newRow * 200 + newCol;
+          copy[newIndex] = p.color;
+        }
+      });
+      return copy;
     });
     
-    const newGroups = groups.map(g => 
-      g.name === groupName 
-        ? { ...g, pixels: newPixels }
-        : g
-    );
-    
-    setGroups(newGroups);
+    // Update pixel groups mapping
+    const newPixelGroups = { ...pixelGroups };
+    pixelData.forEach(p => {
+      delete newPixelGroups[p.oldIndex];
+      const newRow = p.row + deltaRow;
+      const newCol = p.col + deltaCol;
+      if (newRow >= 0 && newRow < rows && newCol >= 0 && newCol < 200) {
+        const newIndex = newRow * 200 + newCol;
+        newPixelGroups[newIndex] = pixelGroups[p.oldIndex] || { group: groupName, zIndex: 0 };
+      }
+    });
+    setPixelGroups(newPixelGroups);
   }
 
   // Move selected pixels (not in a group)
@@ -1658,7 +1639,7 @@ const savedData = ${dataString};
             onClick={() => setShowFileMenu(v => !v)}
             style={{
               background: "#222",
-              color: "#ffffff",
+              color: "white",
               width: "100%",
               cursor: "pointer",
               fontSize: "2vw"
@@ -1685,7 +1666,7 @@ const savedData = ${dataString};
                 }}
                 style={{
                   cursor: "pointer",
-                  color: "#ffffff",
+                  color: "white",
                   textAlign: "center",
                   fontSize: ".9vw",
                   borderBottom: "0.2vw solid #333",
@@ -1703,7 +1684,7 @@ const savedData = ${dataString};
                 }}
                 style={{
                   cursor: "pointer",
-                  color: "#ffffff",
+                  color: "white",
                   textAlign: "center",
                   fontSize: ".9vw",
                   borderBottom: "0.2vw solid #333",
@@ -1721,7 +1702,7 @@ const savedData = ${dataString};
                 }}
                 style={{
                   cursor: "pointer",
-                  color: "#ffffff",
+                  color: "white",
                   textAlign: "center",
                   fontSize: ".9vw",
                   borderBottom: "0.2vw solid #333",
@@ -1791,7 +1772,7 @@ const savedData = ${dataString};
             onClick={() => setShowViewMenu(v => !v)}
             style={{
               background: "#222",
-              color: "#ffffff",
+              color: "white",
               width: "100%",
               cursor: "pointer",
               fontSize: "2vw"
@@ -1897,8 +1878,8 @@ const savedData = ${dataString};
       }}>
         {/* TOOLS SECTION */}
         <div style={{ width: "100%", textAlign: "center", paddingTop: "1vw" }}>
-          <div style={{ color: "#000000", fontSize: "1.5vw", marginBottom: "0" }}><b>Tools</b></div>
-          <div style={{ display: "flex", gap: "0", justifyContent: "center", flexWrap: "wrap", padding: "0 0.5vw" }}>
+          <div style={{ color: "#000000", fontSize: "1.5vw", marginBottom: "0.5vw" }}><b>Tools</b></div>
+          <div style={{ display: "flex", gap: "0.5vw", justifyContent: "center", flexWrap: "wrap", padding: "0 0.5vw" }}>
             {viewMode === "drawing" && (
               <>
                 <button
@@ -2089,7 +2070,7 @@ const savedData = ${dataString};
             onClick={() => setShowColorMenu(prev => !prev)}
             style={{
               background: "#333",
-              color: "#ffffff",
+              color: "white",
               width: "100%",
               cursor: "pointer",
               paddingTop:".75vw",
@@ -2113,7 +2094,7 @@ const savedData = ${dataString};
           }}>
             {/* PRIMARY COLOR */}
             <div style={{ width: "100%", textAlign: "center" }}>
-              <div style={{ color: "#0000000", fontSize: "1.5vw", marginBottom: "0" }}><b>Primary</b></div>
+              <div style={{ color: "#0000000", fontSize: "1.5vw", marginBottom: "0.5vw" }}><b>Primary</b></div>
               <div
                 onClick={() => {
                   if (activeTool === "primary") {
@@ -2141,7 +2122,7 @@ const savedData = ${dataString};
 
             {/* SECONDARY COLOR */}
             <div style={{ width: "100%", textAlign: "center" }}>
-              <div style={{ color: "#000000", fontSize: "1.5vw", marginBottom: "0" }}><b>Secondary</b></div>
+              <div style={{ color: "#000000", fontSize: "1.5vw", marginBottom: "0.5vw" }}><b>Secondary</b></div>
               <div
                 onClick={() => {
                   if (activeTool === "secondary") {
@@ -2181,7 +2162,7 @@ const savedData = ${dataString};
             <div style={{ 
               color: "#000000", 
               fontSize: "1.5vw", 
-              marginBottom: "0",
+              marginBottom: "0.5vw",
               textAlign: "center"
             }}>
               <b>Background Opacity</b>
@@ -2745,15 +2726,7 @@ const savedData = ${dataString};
           }
           
           // LAYERS MODE - Full layer functionality
-          // Find which group(s) this pixel belongs to
-          const pixelInGroups = groups.filter(g => g.pixels && g.pixels[i]);
-          // Get the top layer (highest z-index)
-          const pixelGroup = pixelInGroups.length > 0 
-            ? pixelInGroups.reduce((highest, current) => 
-                (!highest || current.zIndex > highest.zIndex) ? current : highest
-              , null)
-            : null;
-          
+          const pixelGroup = pixelGroups[i];
           const isLineStart = (activeDrawingTool === "line" || activeDrawingTool === "curve") && lineStartPixel === i;
           const isCurveEnd = activeDrawingTool === "curve" && curveEndPixel === i;
           
@@ -2763,10 +2736,10 @@ const savedData = ${dataString};
             // Don't show individual pixel borders for select tool - overlay handles it
             // Only show active group highlight for other tools
             return activeGroup !== null && activeGroup !== "__selected__" && 
-              pixelGroup?.name === activeGroup;
+              pixelGroup?.group === activeGroup;
           })();
           const isSelectionStartPoint = activeDrawingTool === "select" && selectionStart === i && selectionEnd === null && size.w <= 1024;
-          const isInActiveGroup = (pixelGroup && pixelGroup.name === activeGroup) || (activeGroup === "__selected__" && selectedPixels.includes(i));
+          const isInActiveGroup = (pixelGroup && pixelGroup.group === activeGroup) || (activeGroup === "__selected__" && selectedPixels.includes(i));
           const isMoveGroupHover = activeDrawingTool === "movegroup" && (pixelGroup || selectedPixels.includes(i)) && hoveredPixel === i;
           const isSelectGroupHover = activeDrawingTool === "select" && (pixelGroup || selectedPixels.includes(i)) && hoveredPixel === i && !isDrawing;
           
@@ -2783,9 +2756,7 @@ const savedData = ${dataString};
             if (activeGroup === "__selected__") {
               isInDragPreview = selectedPixels.includes(sourceIndex);
             } else {
-              // Check if source pixel is in the active group
-              const activeGroupObj = groups.find(g => g.name === activeGroup);
-              isInDragPreview = activeGroupObj && activeGroupObj.pixels && activeGroupObj.pixels[sourceIndex];
+              isInDragPreview = pixelGroups[sourceIndex]?.group === activeGroup;
             }
           }
           
@@ -2875,10 +2846,8 @@ const savedData = ${dataString};
             borderWidth = `${0.2 * zoomFactor}vw`;
           }
           
-          // Get the display color (use stored color from group if pixel is in a group, otherwise use pixelColors)
-          let displayColor = pixelGroup && pixelGroup.pixels ? pixelGroup.pixels[i] : c;
-          
-          // Override with drag preview color if currently dragging
+          // Get the display color (either current pixel or preview from dragged group)
+          let displayColor = c;
           if (isInDragPreview) {
             const deltaRow = groupDragCurrent.row - groupDragStart.startRow;
             const deltaCol = groupDragCurrent.col - groupDragStart.startCol;
@@ -2887,13 +2856,7 @@ const savedData = ${dataString};
             const sourceRow = currentRow - deltaRow;
             const sourceCol = currentCol - deltaCol;
             const sourceIndex = sourceRow * 200 + sourceCol;
-            
-            if (activeGroup === "__selected__") {
-              displayColor = pixelColors[sourceIndex] || c;
-            } else {
-              const activeGroupObj = groups.find(g => g.name === activeGroup);
-              displayColor = activeGroupObj && activeGroupObj.pixels ? activeGroupObj.pixels[sourceIndex] : c;
-            }
+            displayColor = pixelColors[sourceIndex] || c;
           }
           
           // Make white pixels transparent when background image is loaded
@@ -2913,60 +2876,24 @@ const savedData = ${dataString};
               }}
               onPointerDown={(e) => {
                 // Check if clicking on a grouped pixel with movegroup tool and group is already selected
-                if (activeDrawingTool === "movegroup" && pixelGroup && activeGroup === pixelGroup.name) {
-                  e.stopPropagation();
+                if (activeDrawingTool === "movegroup" && pixelGroup && activeGroup === pixelGroup.group) {
                   setGroupDragStart({ pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY });
                   setIsDrawing(true);
-                  return;
-                }
-                
-                if (activeDrawingTool === "movegroup" && pixelGroup && activeGroup !== pixelGroup.name) {
-                  // Movegroup tool: clicking on a different grouped pixel - select that layer
-                  e.stopPropagation();
-                  setActiveGroup(pixelGroup.name);
-                  setSelectedPixels([]);
-                  setSelectionStart(null);
-                  setSelectionEnd(null);
-                  return;
-                }
-                
-                if (activeDrawingTool === "movegroup" && selectedPixels.includes(i)) {
+                } else if (activeDrawingTool === "movegroup" && selectedPixels.includes(i)) {
                   // Moving selected pixels (not in a group yet)
-                  e.stopPropagation();
                   setActiveGroup("__selected__");
                   setGroupDragStart({ pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY });
                   setIsDrawing(true);
-                  return;
-                }
-                
-                if (activeDrawingTool === "select" && pixelGroup && activeGroup === pixelGroup.name) {
+                } else if (activeDrawingTool === "select" && pixelGroup && activeGroup === pixelGroup.group) {
                   // Select tool: clicking on already selected group enables drag-to-move
-                  e.stopPropagation();
                   setGroupDragStart({ pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY });
                   setIsDrawing(true);
-                  return;
-                }
-                
-                if (activeDrawingTool === "select" && pixelGroup && activeGroup !== pixelGroup.name) {
-                  // Select tool: clicking on a different grouped pixel - select that layer instead of starting new selection
-                  e.stopPropagation();
-                  setActiveGroup(pixelGroup.name);
-                  setSelectedPixels([]);
-                  setSelectionStart(null);
-                  setSelectionEnd(null);
-                  return;
-                }
-                
-                if (activeDrawingTool === "select" && selectedPixels.includes(i)) {
+                } else if (activeDrawingTool === "select" && selectedPixels.includes(i)) {
                   // Select tool: clicking on a selected pixel enables drag-to-move
-                  e.stopPropagation();
                   setActiveGroup("__selected__");
                   setGroupDragStart({ pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY });
                   setIsDrawing(true);
-                  return;
-                }
-                
-                if (activeDrawingTool === "select") {
+                } else if (activeDrawingTool === "select") {
                   // Mobile two-click selection mode
                   if (size.w <= 1024) {
                     if (selectionStart === null) {
@@ -3191,7 +3118,7 @@ const savedData = ${dataString};
                 top: "0",
                 width: "20vw",
                 height: "8vw",
-                background: "#ffffff",
+                background: "#000000",
                 pointerEvents: "none"
               }} />
             </div>
@@ -3269,8 +3196,8 @@ const savedData = ${dataString};
                   }
                 }}
                 style={{
-                  width: "10vw",
-                  height: "10vw",
+                  width: "2.5vw",
+                  height: "2.5vw",
                   border: "0.3vw solid #000000",
                   cursor: "pointer",
                 }}
@@ -3293,7 +3220,7 @@ const savedData = ${dataString};
                 width: "100%",
                 background: "#111",
                 border: "0.2vw solid #000000",
-                color: "#ffffff",
+                color: "white",
                 textAlign: "center",
                 borderRadius: "0.5vw",
                 fontSize: "1.5vw",
@@ -3304,7 +3231,7 @@ const savedData = ${dataString};
             <button
               onClick={() => setShowColorEditor(false)}
               style={{
-                color: "#ffffff",
+                color: "white",
                 fontSize: "1.3vw",
                 padding: "1vw",
                 cursor: "pointer",
@@ -3340,8 +3267,8 @@ const savedData = ${dataString};
               setHoveredPixel(null);
             }}
             style={{
-              background: "#ffffff",
-              color: "#ffffff",
+              background: "#f44336",
+              color: "white",
               border: "0.2vw solid #000",
               padding: "1vw 3vw",
               cursor: "pointer",
@@ -3362,7 +3289,7 @@ const savedData = ${dataString};
             }}
             style={{
               background: "#4CAF50",
-              color: "#ffffff",
+              color: "white",
               border: "0.2vw solid #000",
               padding: "1vw 3vw",
               cursor: "pointer",
@@ -3426,8 +3353,8 @@ const savedData = ${dataString};
                 setHoveredPixel(null);
               }}
               style={{
-                background: "#ffffff",
-                color: "#ffffff",
+                background: "#f44336",
+                color: "white",
                 border: "0.2vw solid #000",
                 padding: "1vw 3vw",
                 cursor: "pointer",
@@ -3459,7 +3386,7 @@ const savedData = ${dataString};
               }}
               style={{
                 background: "#4CAF50",
-                color: "#ffffff",
+                color: "white",
                 border: "0.2vw solid #000",
                 padding: "1vw 3vw",
                 cursor: "pointer",
@@ -3489,19 +3416,19 @@ const savedData = ${dataString};
           {activeDrawingTool === "select" && (
             <div style={{
               background: "#ffffff",
-              color: "#ffffff",
-              padding: "0",
+              color: "#000000",
+              padding: "0.8vw",
               display: "flex",
               flexDirection: "column",
-              gap: "0",
+              gap: "0.5vw",
               borderLeft: "0.3vw solid #000000",
               borderBottom: showLayersMenu ? "0.3vw solid #000000" : "none",
               overflowY: "auto"
             }}>
               
               {/* Select Menu Header */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0" }}>
-                <div style={{ display: "flex", gap: "0", alignItems: "center" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5vw" }}>
+                <div style={{ display: "flex", gap: "0.5vw", alignItems: "center" }}>
                   <div style={{ fontSize: "2vw", fontWeight: "bold" }}>
                     Select
                   </div>
@@ -3509,19 +3436,19 @@ const savedData = ${dataString};
                   <button
                     onClick={() => setSelectAllPixels(!selectAllPixels)}
                     style={{
-                      background: "#ffffff",
+                      background: "#000000",
                       color: "#ffffff",
                       padding: "0",
                       cursor: "pointer",
                       fontSize: "1.5vw",
                       fontWeight: "bold",
                       whiteSpace: "nowrap",
-                      border: "0.2vw solid #ffffff",
+                      border: "none",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      gap: "0",
-                      width: "10vw",
+                      gap: "0.3vw",
+                      width: "5vw",
                       height: "5vw"
                     }}
                     title={selectAllPixels ? "Selecting all pixels in box" : "Selecting only colored pixels"}
@@ -3530,19 +3457,19 @@ const savedData = ${dataString};
                     {selectAllPixels ? "All" : "Color"}
                   </button>
                 </div>
-                <div style={{ display: "flex", gap: "0" }}>
+                <div style={{ display: "flex", gap: "0.5vw" }}>
                   <button
                     onClick={() => setShowLayersMenu(!showLayersMenu)}
                     style={{
                       background: showLayersMenu ? "#333" : "#fefefe",
                       color: showLayersMenu ? "#fff" : "#000",
-                      border: "0.2vw solid #000",
+                      border: "0.15vw solid #000",
                       padding: "0",
                       cursor: "pointer",
                       fontSize: "1.2vw",
                       fontWeight: "bold",
-                      width: "10vw",
-                      height: "10vw",
+                      width: "5vw",
+                      height: "5vw",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center"
@@ -3559,14 +3486,14 @@ const savedData = ${dataString};
                     }}
                     style={{
                       background: "#666",
-                      color: "#ffffff",
-                      border: "0.2vw solid #000",
+                      color: "white",
+                      border: "0.15vw solid #000",
                       padding: "0",
                       cursor: "pointer",
                       fontSize: "1.5vw",
                       fontWeight: "bold",
-                      width: "10vw",
-                      height: "10vw",
+                      width: "5vw",
+                      height: "5vw",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center"
@@ -3590,40 +3517,43 @@ const savedData = ${dataString};
           {showLayersMenu && (
             <div style={{
               background: "#ffffff",
-              color: "#ffffff",
-              display: "grid",
-              gridTemplateColumns: "1fr 5vw",
-              gap: "0",
-              borderLeft: "0.3vw solid #000000"
+              color: "#000000",
+              padding: "0.8vw",
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.5vw",
+              borderLeft: "0.3vw solid #000000",
+              overflowY: "auto"
             }}>
               
-              {/* Scrollable Content Area */}
-              <div 
-                ref={layersMenuRef}
-                onScroll={(e) => {
-                  setLayersScrollPosition(e.target.scrollTop);
-                }}
-                style={{
-                  padding: "0",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0",
-                  overflowY: "auto",
-                  overflowX: "hidden",
-                  scrollbarWidth: "none",
-                  msOverflowStyle: "none"
-                }}
-              >
-              
               {/* Layers Menu Header */}
-              <div style={{ marginBottom: "0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5vw" }}>
                 <div style={{ fontSize: "2vw", fontWeight: "bold", color: "#000000" }}>
                   Layers
                 </div>
+                <button
+                  onClick={() => setShowLayersMenu(false)}
+                  style={{
+                    background: "#666",
+                    color: "white",
+                    border: "0.15vw solid #000",
+                    padding: "0",
+                    cursor: "pointer",
+                    fontSize: "1.5vw",
+                    fontWeight: "bold",
+                    width: "5vw",
+                    height: "5vw",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}
+                >
+                  ✕
+                </button>
               </div>
               
               {/* Group Creation Section */}
-              <div style={{ display: "flex", gap: "0", alignItems: "center", marginBottom: "0" }}>
+              <div style={{ display: "flex", gap: "0.5vw", alignItems: "center", marginBottom: "0.3vw" }}>
                 <input
                   type="text"
                   placeholder="Group name"
@@ -3634,14 +3564,14 @@ const savedData = ${dataString};
                     }
                   }}
                   style={{
-                    padding: "0",
+                    padding: "0.3vw 0.5vw",
                     fontSize: "1.5vw",
-                    border: "0.2vw solid #000000",
+                    border: "0.2vw solid #4CAF50",
                     textAlign: "center",
-                    background: "#ffffff",
-                    color: "#000000",
+                    background: "#222",
+                    color: "white",
                     flex: 1,
-                    lineHeight: "10vw"
+                    lineHeight: "5vw"
                   }}
                 />
                 <button
@@ -3653,9 +3583,9 @@ const savedData = ${dataString};
                     }
                   }}
                   style={{
-                    background: "#ffffff",
-                    color: "#000000",
-                    border: "0.2vw solid #000",
+                    background: "#000000",
+                    color: "white",
+                    border: "0.15vw solid #000",
                     cursor: "pointer",
                     fontSize: "1.5vw",
                     fontWeight: "bold",
@@ -3663,8 +3593,8 @@ const savedData = ${dataString};
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    width: "10vw",
-                    height: "10vw",
+                    width: "2.5vw",
+                    height: "2.5vw",
                     borderRadius: "0"
                   }}
                 >
@@ -3675,10 +3605,10 @@ const savedData = ${dataString};
               {/* Active Layer Editing Section */}
               {activeGroup && (
                 <>
-                  <div style={{ fontSize: "2vw", fontWeight: "bold", color: "#000000", marginBottom: "0" }}>
+                  <div style={{ fontSize: "2vw", fontWeight: "bold", color: "#000000", marginBottom: "0.3vw" }}>
                     Rename
                   </div>
-                  <div style={{ display: "flex", gap: "0", alignItems: "center", marginBottom: "0" }}>
+                  <div style={{ display: "flex", gap: "0.5vw", alignItems: "center", marginBottom: "0.3vw" }}>
                     <input
                       type="text"
                       value={groups.find(g => g.name === activeGroup)?.name || activeGroup}
@@ -3702,21 +3632,21 @@ const savedData = ${dataString};
                       }}
                       placeholder="Rename layer"
                       style={{
-                        padding: "0",
+                        padding: "0.3vw 0.5vw",
                         fontSize: "1.5vw",
-                        border: "0.2vw solid #ffffff",
+                        border: "0.2vw solid #FFD700",
                         textAlign: "center",
-                        background: "#ffffff",
-                        color: "#ffffff",
+                        background: "#222",
+                        color: "white",
                         flex: 1,
-                        lineHeight: "10vw"
+                        lineHeight: "5vw"
                       }}
                     />
                     <button
                       onClick={() => setActiveGroup(null)}
                       style={{
                         background: "#666",
-                        color: "#ffffff",
+                        color: "white",
                         border: "0.2vw solid #000",
                         cursor: "pointer",
                         fontSize: "1.3vw",
@@ -3724,8 +3654,8 @@ const savedData = ${dataString};
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        width: "10vw",
-                        height: "10vw",
+                        width: "2.5vw",
+                        height: "2.5vw",
                         borderRadius: "0"
                       }}
                     >
@@ -3738,20 +3668,20 @@ const savedData = ${dataString};
               {/* Layers Grid - Desktop */}
               <div style={{
                 display: "grid",
-                gridTemplateColumns: "auto 15vw auto auto auto",
-                gap: "0",
+                gridTemplateColumns: "auto 1fr auto auto auto",
+                gap: "0.3vw",
                 alignItems: "center",
                 background: "#1a1a1a",
-                padding: "0",
+                padding: "0.3vw",
                 borderRadius: "0",
                 fontSize: "0.7vw"
               }}>
                 {/* Header Row */}
-                <div style={{ fontWeight: "bold", padding: "0", color: "white" }}>Z</div>
-                <div style={{ fontWeight: "bold", padding: "0", color: "white" }}>Name</div>
-                <div style={{ fontWeight: "bold", padding: "0", color: "white" }}>Up</div>
-                <div style={{ fontWeight: "bold", padding: "0", color: "white" }}>Down</div>
-                <div style={{ fontWeight: "bold", padding: "0", color: "white" }}>Del</div>
+                <div style={{ fontWeight: "bold", padding: "0.2vw", color: "white" }}>Z</div>
+                <div style={{ fontWeight: "bold", padding: "0.2vw", color: "white" }}>Name</div>
+                <div style={{ fontWeight: "bold", padding: "0.2vw", color: "white" }}>Up</div>
+                <div style={{ fontWeight: "bold", padding: "0.2vw", color: "white" }}>Down</div>
+                <div style={{ fontWeight: "bold", padding: "0.2vw", color: "white" }}>Del</div>
                 
                 {/* Layer Rows - Sorted by z-index descending */}
                 {groups.sort((a, b) => b.zIndex - a.zIndex).map((group, index) => (
@@ -3811,147 +3741,62 @@ const savedData = ${dataString};
                   >
                     {/* Z-Index */}
                     <div style={{
-                      fontSize: "3vw",
+                      fontSize: "0.8vw",
                       fontWeight: "bold",
-                      padding: "0",
-                      background: "#000000",
-                      color: "#ffffff",
+                      padding: "0.3vw",
+                      background: dragOverLayer === group.name ? "#333" : (activeGroup === group.name ? "#2196F3" : "#222"),
                       borderRadius: "0",
                       textAlign: "center",
-                      border: "0.15vw solid #ffffff",
-                      cursor: "grab",
-                      width: "10vw",
-                      height: "10vw",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center"
+                      border: dragOverLayer === group.name ? "0.15vw dashed #FFD700" : "0.15vw solid #444",
+                      cursor: "grab"
                     }}>
                       {group.zIndex}
                     </div>
                     
                     {/* Layer Name */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0", flex: 1 }}>
-                      <div style={{ position: "relative", display: "flex" }}>
-                        <div
-                          onClick={() => {
-                            setActiveGroup(activeGroup === group.name ? null : group.name);
-                            setSelectedPixels([]); // Clear green selection preview
-                            setSelectionStart(null); // Clear selection state
-                            setSelectionEnd(null);
-                          }}
-                          style={{
-                            fontSize: "3vw",
-                            padding: "0",
-                            background: "#000000",
-                            color: "#ffffff",
-                            borderRadius: "0",
-                            cursor: "pointer",
-                            border: "0.15vw solid #ffffff",
-                            fontWeight: activeGroup === group.name ? "bold" : "normal",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                            width: "15vw",
-                            lineHeight: "10vw",
-                            height: "10vw"
-                          }}
-                        >
-                          {group.name}
-                        </div>
-                        
-                        {/* Edit/Confirm Button */}
-                        <button
-                          onClick={() => {
-                            if (renameGroup === group.name) {
-                              // Confirm rename
-                              if (renameValue.trim()) {
-                                const newGroups = groups.map(g => 
-                                  g.name === group.name ? { ...g, name: renameValue.trim() } : g
-                                );
-                                setGroups(newGroups);
-                                
-                                const newPixelGroups = {};
-                                Object.keys(pixelGroups).forEach(idx => {
-                                  const pg = pixelGroups[idx];
-                                  newPixelGroups[idx] = pg.group === group.name 
-                                    ? { ...pg, group: renameValue.trim() }
-                                    : pg;
-                                });
-                                setPixelGroups(newPixelGroups);
-                                
-                                if (activeGroup === group.name) {
-                                  setActiveGroup(renameValue.trim());
-                                }
-                              }
-                              setRenameGroup(null);
-                              setRenameValue("");
-                            } else {
-                              // Start rename
-                              setRenameGroup(group.name);
-                              setRenameValue(group.name);
-                            }
-                          }}
-                          style={{
-                            width: "5vw",
-                            height: "10vw",
-                            background: "#000000",
-                            color: "#ffffff",
-                            border: "0.15vw solid #ffffff",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "2.5vw",
-                            fontWeight: "bold",
-                            borderRadius: "0"
-                          }}
-                        >
-                          {renameGroup === group.name ? "✓" : "✎"}
-                        </button>
-                        
-                        {/* Rename Overlay */}
-                        {renameGroup === group.name && (
-                          <input
-                            type="text"
-                            value={renameValue}
-                            onChange={(e) => setRenameValue(e.target.value)}
-                            autoFocus
-                            style={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              width: "15vw",
-                              height: "10vw",
-                              fontSize: "3vw",
-                              border: "0.15vw solid #000000",
-                              background: "#ffffff",
-                              color: "#000000",
-                              textAlign: "center",
-                              lineHeight: "10vw",
-                              padding: "0",
-                              zIndex: 1000
-                            }}
-                          />
-                        )}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.2vw", flex: 1 }}>
+                      <div
+                        onClick={() => {
+                          setActiveGroup(activeGroup === group.name ? null : group.name);
+                          setSelectedPixels([]); // Clear green selection preview
+                          setSelectionStart(null); // Clear selection state
+                          setSelectionEnd(null);
+                        }}
+                        style={{
+                          fontSize: "0.8vw",
+                          padding: "0.3vw",
+                          background: "#000",
+                          color: "white",
+                          borderRadius: "0",
+                          cursor: "pointer",
+                          border: "0.15vw solid white",
+                          fontWeight: activeGroup === group.name ? "bold" : "normal",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          lineHeight: "5vw"
+                        }}
+                      >
+
                       </div>
                       
                       {/* Directional Movement Buttons - Show when movegroup tool is active and this layer is active */}
                       {activeDrawingTool === "movegroup" && activeGroup === group.name && (
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "0" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "0.2vw" }}>
                           {/* Left Button */}
                           <button
                             onClick={() => moveGroup(group.name, 0, -1)}
                             style={{
-                              background: "#ffffff",
-                              color: "#000000",
-                              border: "0.2vw solid #000",
-                              width: "10vw",
-                              height: "10vw",
+                              background: "#9C27B0",
+                              color: "white",
+                              border: "0.15vw solid #000",
+                              width: "2.5vw",
+                              height: "2.5vw",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
                               cursor: "pointer",
-                              fontSize: "2.5vw",
+                              fontSize: "1vw",
                               fontWeight: "900",
                               borderRadius: "0"
                             }}
@@ -3964,16 +3809,16 @@ const savedData = ${dataString};
                           <button
                             onClick={() => moveGroup(group.name, -1, 0)}
                             style={{
-                              background: "#ffffff",
-                              color: "#000000",
-                              border: "0.2vw solid #000",
-                              width: "10vw",
-                              height: "10vw",
+                              background: "#9C27B0",
+                              color: "white",
+                              border: "0.15vw solid #000",
+                              width: "2.5vw",
+                              height: "2.5vw",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
                               cursor: "pointer",
-                              fontSize: "2.5vw",
+                              fontSize: "1vw",
                               fontWeight: "900",
                               borderRadius: "0"
                             }}
@@ -3986,16 +3831,16 @@ const savedData = ${dataString};
                           <button
                             onClick={() => moveGroup(group.name, 1, 0)}
                             style={{
-                              background: "#ffffff",
-                              color: "#000000",
-                              border: "0.2vw solid #000",
-                              width: "10vw",
-                              height: "10vw",
+                              background: "#9C27B0",
+                              color: "white",
+                              border: "0.15vw solid #000",
+                              width: "2.5vw",
+                              height: "2.5vw",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
                               cursor: "pointer",
-                              fontSize: "2.5vw",
+                              fontSize: "1vw",
                               fontWeight: "900",
                               borderRadius: "0"
                             }}
@@ -4008,16 +3853,16 @@ const savedData = ${dataString};
                           <button
                             onClick={() => moveGroup(group.name, 0, 1)}
                             style={{
-                              background: "#ffffff",
-                              color: "#000000",
-                              border: "0.2vw solid #000",
-                              width: "10vw",
-                              height: "10vw",
+                              background: "#9C27B0",
+                              color: "white",
+                              border: "0.15vw solid #000",
+                              width: "2.5vw",
+                              height: "2.5vw",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
                               cursor: "pointer",
-                              fontSize: "2.5vw",
+                              fontSize: "1vw",
                               fontWeight: "900",
                               borderRadius: "0"
                             }}
@@ -4029,6 +3874,52 @@ const savedData = ${dataString};
                       )}
                     </div>
                     
+                    {/* Edit Button */}
+                    <button
+                      onClick={() => setActiveGroup(group.name)}
+                      style={{
+                        background: activeGroup === group.name ? "#FFD700" : "#444",
+                        color: activeGroup === group.name ? "#000" : "white",
+                        border: "0.1vw solid #000",
+                        width: "2.5vw",
+                      height: "2.5vw",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                        cursor: "pointer",
+                        fontSize: "0.7vw",
+                        fontWeight: "bold",
+                        borderRadius: "0"
+                      }}
+                    >
+                      {activeGroup === group.name ? "✓" : "✎"}
+                    </button>
+                    
+                    {/* Move Layer Button */}
+                    <button
+                      onClick={() => {
+                        setActiveGroup(group.name);
+                        setActiveDrawingTool("movegroup");
+                      }}
+                      style={{
+                        background: activeGroup === group.name && activeDrawingTool === "movegroup" ? "#9C27B0" : "#555",
+                        color: "white",
+                        border: "0.2vw solid #000",
+                        width: "2.5vw",
+                      height: "2.5vw",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                        cursor: "pointer",
+                        fontSize: "1.2vw",
+                        fontWeight: "bold",
+                        borderRadius: "0"
+                      }}
+                      title="Click to enable move mode, then drag pixels on canvas"
+                    >
+                      ☩
+                    </button>
+                    
                     {/* Move Up Button */}
                     <button
                       onClick={() => {
@@ -4036,19 +3927,26 @@ const savedData = ${dataString};
                           g.name === group.name ? { ...g, zIndex: g.zIndex + 1 } : g
                         );
                         setGroups(newGroups);
-                        updateGroupZIndex(group.name, +1);
+                        const newPixelGroups = {};
+                        Object.keys(pixelGroups).forEach(idx => {
+                          const pg = pixelGroups[idx];
+                          newPixelGroups[idx] = pg.group === group.name 
+                            ? { ...pg, zIndex: pg.zIndex + 1 }
+                            : pg;
+                        });
+                        setPixelGroups(newPixelGroups);
                       }}
                       style={{
-                        background: "#ffffff",
-                        color: "#000000",
+                        background: "#444",
+                        color: "white",
                         border: "0.2vw solid #000",
-                        width: "10vw",
-                      height: "10vw",
+                        width: "2.5vw",
+                      height: "2.5vw",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                         cursor: "pointer",
-                        fontSize: "2.5vw",
+                        fontSize: "1vw",
                         fontWeight: "bold",
                         borderRadius: "0"
                       }}
@@ -4063,19 +3961,26 @@ const savedData = ${dataString};
                           g.name === group.name ? { ...g, zIndex: g.zIndex - 1 } : g
                         );
                         setGroups(newGroups);
-                        updateGroupZIndex(group.name, -1);
+                        const newPixelGroups = {};
+                        Object.keys(pixelGroups).forEach(idx => {
+                          const pg = pixelGroups[idx];
+                          newPixelGroups[idx] = pg.group === group.name 
+                            ? { ...pg, zIndex: pg.zIndex - 1 }
+                            : pg;
+                        });
+                        setPixelGroups(newPixelGroups);
                       }}
                       style={{
-                        background: "#ffffff",
-                        color: "#000000",
+                        background: "#444",
+                        color: "white",
                         border: "0.2vw solid #000",
-                        width: "10vw",
-                      height: "10vw",
+                        width: "2.5vw",
+                      height: "2.5vw",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                         cursor: "pointer",
-                        fontSize: "2.5vw",
+                        fontSize: "1vw",
                         fontWeight: "bold",
                         borderRadius: "0"
                       }}
@@ -4086,6 +3991,10 @@ const savedData = ${dataString};
                     {/* Delete Button */}
                     <button
                       onClick={() => {
+                        if (group.locked) {
+                          alert("Background layer is locked and cannot be deleted.");
+                          return;
+                        }
                         if (window.confirm(`Delete layer "${group.name}"? This will ungroup all pixels.`)) {
                           // Remove group
                           setGroups(groups.filter(g => g.name !== group.name));
@@ -4106,16 +4015,16 @@ const savedData = ${dataString};
                         }
                       }}
                       style={{
-                        background: "#ffffff",
-                        color: "#000000",
+                        background: "#f44336",
+                        color: "white",
                         border: "0.2vw solid #000",
-                        width: "10vw",
-                      height: "10vw",
+                        width: "2.5vw",
+                      height: "2.5vw",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                         cursor: "pointer",
-                        fontSize: "2.5vw",
+                        fontSize: "1vw",
                         fontWeight: "bold",
                         borderRadius: "0"
                       }}
@@ -4124,120 +4033,6 @@ const savedData = ${dataString};
                     </button>
                   </div>
                 ))}
-              </div>
-              </div>
-              
-              {/* Vertical Scrollbar */}
-              <div style={{
-                width: "5vw",
-                background: "#fefefe",
-                borderLeft: "0.2vw solid #000000",
-                display: "flex",
-                flexDirection: "column"
-              }}>
-                {/* Up scroll button */}
-                <div 
-                  onPointerDown={() => {
-                    if (layersMenuRef.current) {
-                      const newScrollTop = Math.max(0, layersScrollPosition - 100);
-                      layersMenuRef.current.scrollTop = newScrollTop;
-                      setLayersScrollPosition(newScrollTop);
-                    }
-                  }}
-                  style={{
-                    width: "5vw",
-                    height: "5vw",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: "#000000",
-                    borderBottom: "0.2vw solid #000000",
-                    cursor: "pointer",
-                    fontSize: "2.5vw",
-                    userSelect: "none"
-                  }}
-                >
-                  ▲
-                </div>
-
-                {/* Slider track */}
-                <div 
-                  data-layers-scrollbar-track="true"
-                  style={{
-                    width: "5vw",
-                    flex: 1,
-                    background: "#000000",
-                    position: "relative",
-                    padding: "0.5vw",
-                    display: "flex",
-                    alignItems: "center"
-                  }}
-                >
-                  <div
-                    onPointerDown={(e) => {
-                      setIsDraggingLayersSlider(true);
-                      const rect = e.currentTarget.parentElement.getBoundingClientRect();
-                      const y = e.clientY - rect.top;
-                      const percent = y / rect.height;
-                      const maxScroll = layersMenuRef.current ? layersMenuRef.current.scrollHeight - layersMenuRef.current.clientHeight : 0;
-                      if (layersMenuRef.current) {
-                        const newScrollTop = percent * maxScroll;
-                        layersMenuRef.current.scrollTop = newScrollTop;
-                        setLayersScrollPosition(newScrollTop);
-                      }
-                    }}
-                    style={{
-                      width: "4vw",
-                      height: "100%",
-                      background: "#ffffff",
-                      border: "0.2vw solid #000000",
-                      position: "relative",
-                      cursor: "pointer",
-                      touchAction: "none"
-                    }}
-                  >
-                    {/* Slider thumb */}
-                    <div style={{
-                      position: "absolute",
-                      top: layersMenuRef.current && layersMenuRef.current.scrollHeight > layersMenuRef.current.clientHeight 
-                        ? `${((layersMenuRef.current.scrollTop / (layersMenuRef.current.scrollHeight - layersMenuRef.current.clientHeight)) * (layersMenuRef.current.clientHeight - 70)) / layersMenuRef.current.clientHeight * 100}%`
-                        : "0%",
-                      left: "0",
-                      width: "4vw",
-                      height: "5vw",
-                      background: "#ffffff",
-                      pointerEvents: "none"
-                    }} />
-                  </div>
-                </div>
-
-                {/* Down scroll button */}
-                <div 
-                  onPointerDown={() => {
-                    if (layersMenuRef.current) {
-                      const newScrollTop = Math.min(
-                        layersMenuRef.current.scrollHeight - layersMenuRef.current.clientHeight,
-                        layersScrollPosition + 100
-                      );
-                      layersMenuRef.current.scrollTop = newScrollTop;
-                      setLayersScrollPosition(newScrollTop);
-                    }
-                  }}
-                  style={{
-                    width: "5vw",
-                    height: "5vw",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: "#fefefe",
-                    borderTop: "0.2vw solid #000000",
-                    cursor: "pointer",
-                    fontSize: "2.5vw",
-                    userSelect: "none"
-                  }}
-                >
-                  ▼
-                </div>
               </div>
             </div>
           )}
@@ -4252,20 +4047,20 @@ const savedData = ${dataString};
           left: "10vw",
           right: 0,
           background: "#ffffff",
-          color: "#ffffff",
-          padding: "0",
+          color: "#000000",
+          padding: "0.8vw",
           zIndex: 1001,
           display: "flex",
           flexDirection: "column",
-          gap: "0",
+          gap: "0.5vw",
           borderTop: "0.3vw solid #000000",
           maxHeight: "35vw",
           overflowY: "auto"
         }}>
           
           {/* Select Menu Header */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0" }}>
-            <div style={{ display: "flex", gap: "0", alignItems: "center" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5vw" }}>
+            <div style={{ display: "flex", gap: "0.5vw", alignItems: "center" }}>
               <div style={{ fontSize: "2vw", fontWeight: "bold" }}>
                 Select
               </div>
@@ -4273,19 +4068,19 @@ const savedData = ${dataString};
               <button
                 onClick={() => setSelectAllPixels(!selectAllPixels)}
                 style={{
-                  background: "#ffffff",
+                  background: "#000000",
                   color: "#ffffff",
                   padding: "0",
                   cursor: "pointer",
                   fontSize: "1.5vw",
                   fontWeight: "bold",
                   whiteSpace: "nowrap",
-                  border: "0.2vw solid #ffffff",
+                  border: "none",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: "0",
-                  width: "10vw",
+                  gap: "0.3vw",
+                  width: "5vw",
                   height: "5vw"
                 }}
                 title={selectAllPixels ? "Selecting all pixels in box" : "Selecting only colored pixels"}
@@ -4294,19 +4089,19 @@ const savedData = ${dataString};
                 {selectAllPixels ? "All" : "Color"}
               </button>
             </div>
-            <div style={{ display: "flex", gap: "0" }}>
+            <div style={{ display: "flex", gap: "0.5vw" }}>
               <button
                 onClick={() => setShowLayersMenu(!showLayersMenu)}
                 style={{
                   background: showLayersMenu ? "#333" : "#fefefe",
                   color: showLayersMenu ? "#fff" : "#000",
-                  border: "0.2vw solid #000",
+                  border: "0.15vw solid #000",
                   padding: "0",
                   cursor: "pointer",
                   fontSize: "1.2vw",
                   fontWeight: "bold",
-                  width: "10vw",
-                  height: "10vw",
+                  width: "5vw",
+                  height: "5vw",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center"
@@ -4323,14 +4118,14 @@ const savedData = ${dataString};
                 }}
                 style={{
                   background: "#666",
-                  color: "#ffffff",
-                  border: "0.2vw solid #000",
+                  color: "white",
+                  border: "0.15vw solid #000",
                   padding: "0",
                   cursor: "pointer",
                   fontSize: "1.5vw",
                   fontWeight: "bold",
-                  width: "10vw",
-                  height: "10vw",
+                  width: "5vw",
+                  height: "5vw",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center"
@@ -4359,42 +4154,45 @@ const savedData = ${dataString};
           left: "10vw",
           right: 0,
           background: "#ffffff",
-          color: "#ffffff",
+          color: "#000000",
+          padding: "0.8vw",
           zIndex: 1000,
-          display: "grid",
-          gridTemplateColumns: "1fr 10vw",
-          gap: "0",
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.5vw",
           borderTop: "0.3vw solid #000000",
-          height: activeDrawingTool === "select" ? "35vw" : "auto"
+          height: activeDrawingTool === "select" ? "35vw" : "auto",
+          overflowY: "auto"
         }}>
           
-          {/* Scrollable Content Area - Mobile */}
-          <div
-            ref={layersMenuRef}
-            onScroll={(e) => {
-              setLayersScrollPosition(e.target.scrollTop);
-            }}
-            style={{
-              padding: "0",
-              display: "flex",
-              flexDirection: "column",
-              gap: "0",
-              overflowY: "auto",
-              overflowX: "hidden",
-              scrollbarWidth: "none",
-              msOverflowStyle: "none"
-            }}
-          >
-          
           {/* Layers Menu Header */}
-          <div style={{ marginBottom: "0" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5vw" }}>
             <div style={{ fontSize: "2vw", fontWeight: "bold", color: "#000000" }}>
               Layers
             </div>
+            <button
+              onClick={() => setShowLayersMenu(false)}
+              style={{
+                background: "#666",
+                color: "white",
+                border: "0.15vw solid #000",
+                padding: "0",
+                cursor: "pointer",
+                fontSize: "1.5vw",
+                fontWeight: "bold",
+                width: "5vw",
+                height: "5vw",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}
+            >
+              ✕
+            </button>
           </div>
           
           {/* Group Creation Section */}
-          <div style={{ display: "flex", gap: "0", alignItems: "center", marginBottom: "0" }}>
+          <div style={{ display: "flex", gap: "0.5vw", alignItems: "center", marginBottom: "0.3vw" }}>
             <input
               type="text"
               placeholder="Group name"
@@ -4405,14 +4203,14 @@ const savedData = ${dataString};
                 }
               }}
               style={{
-                padding: "0",
+                padding: "0.3vw 0.5vw",
                 fontSize: "1.5vw",
-                border: "0.2vw solid #000000",
+                border: "0.2vw solid #4CAF50",
                 textAlign: "center",
-                background: "#ffffff",
-                color: "#000000",
+                background: "#222",
+                color: "white",
                 flex: 1,
-                lineHeight: "10vw"
+                lineHeight: "5vw"
               }}
             />
             <button
@@ -4424,9 +4222,9 @@ const savedData = ${dataString};
                 }
               }}
               style={{
-                background: "#ffffff",
-                color: "#000000",
-                border: "0.2vw solid #000",
+                background: "#000000",
+                color: "white",
+                border: "0.15vw solid #000",
                 cursor: "pointer",
                 fontSize: "1.5vw",
                 fontWeight: "bold",
@@ -4434,8 +4232,8 @@ const savedData = ${dataString};
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                width: "10vw",
-                height: "10vw",
+                width: "2.5vw",
+                height: "2.5vw",
                 borderRadius: "0"
               }}
             >
@@ -4443,22 +4241,87 @@ const savedData = ${dataString};
             </button>
           </div>
           
+          {/* Active Layer Editing Section */}
+          {activeGroup && (
+            <>
+              <div style={{ fontSize: "2vw", fontWeight: "bold", color: "#000000", marginBottom: "0.3vw" }}>
+                Rename
+              </div>
+              <div style={{ display: "flex", gap: "0.5vw", alignItems: "center", marginBottom: "0.3vw" }}>
+                <input
+                  type="text"
+                  value={groups.find(g => g.name === activeGroup)?.name || activeGroup}
+                  onChange={(e) => {
+                    if (e.target.value.trim()) {
+                      const newGroups = groups.map(g => 
+                        g.name === activeGroup ? { ...g, name: e.target.value.trim() } : g
+                      );
+                      setGroups(newGroups);
+                      
+                      const newPixelGroups = {};
+                      Object.keys(pixelGroups).forEach(idx => {
+                        const pg = pixelGroups[idx];
+                        newPixelGroups[idx] = pg.group === activeGroup 
+                          ? { ...pg, group: e.target.value.trim() }
+                          : pg;
+                      });
+                      setPixelGroups(newPixelGroups);
+                      setActiveGroup(e.target.value.trim());
+                    }
+                  }}
+                  placeholder="Rename layer"
+                  style={{
+                    padding: "0.3vw 0.5vw",
+                    fontSize: "1.5vw",
+                    border: "0.2vw solid #FFD700",
+                    textAlign: "center",
+                    background: "#222",
+                    color: "white",
+                    flex: 1,
+                    lineHeight: "5vw"
+                  }}
+                />
+                <button
+                  onClick={() => setActiveGroup(null)}
+                  style={{
+                    background: "#666",
+                    color: "white",
+                    border: "0.2vw solid #000",
+                    cursor: "pointer",
+                    fontSize: "1.3vw",
+                    fontWeight: "bold",
+                    width: "2.5vw",
+                    height: "2.5vw",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderRadius: "0"
+                  }}
+                >
+                  Done
+                </button>
+              </div>
+            </>
+          )}
+          
               <div style={{
                 display: "grid",
-                gridTemplateColumns: "auto 1fr auto auto auto",
-                gap: "0",
+                gridTemplateColumns: "auto 1fr auto auto auto auto auto",
+                gap: "0.3vw",
                 alignItems: "center",
                 background: "#1a1a1a",
-                padding: "0",
+                padding: "0.3vw",
                 borderRadius: "0",
                 fontSize: "0.7vw"
               }}>
                 {/* Header Row */}
-                <div style={{ fontWeight: "bold", padding: "0", color: "white" }}>Z</div>
-                <div style={{ fontWeight: "bold", padding: "0", color: "white" }}>Name</div>
-                <div style={{ fontWeight: "bold", padding: "0", color: "white" }}>Up</div>
-                <div style={{ fontWeight: "bold", padding: "0", color: "white" }}>Down</div>
-                <div style={{ fontWeight: "bold", padding: "0", color: "white" }}>Del</div>
+                <div style={{ fontWeight: "bold", padding: "0.2vw" }}>Z</div>
+                <div style={{ fontWeight: "bold", padding: "0.2vw" }}>Name</div>
+                <div style={{ fontWeight: "bold", padding: "0.2vw" }}>Edit</div>
+                <div style={{ fontWeight: "bold", padding: "0.2vw" }}>Move</div>
+                <div style={{ fontWeight: "bold", padding: "0.2vw" }}>Up</div>
+                <div style={{ fontWeight: "bold", padding: "0.2vw" }}>Down</div>
+                <div style={{ fontWeight: "bold", padding: "0.2vw" }}>Del</div>
                 
                 {/* Layer Rows - Sorted by z-index descending */}
                 {groups.sort((a, b) => b.zIndex - a.zIndex).map((group, index) => (
@@ -4518,147 +4381,60 @@ const savedData = ${dataString};
                   >
                     {/* Z-Index */}
                     <div style={{
-                      fontSize: "3vw",
+                      fontSize: "0.8vw",
                       fontWeight: "bold",
-                      padding: "0",
-                      background: "#000",
-                      color: "#ffffff",
+                      padding: "0.3vw",
+                      background: dragOverLayer === group.name ? "#333" : (activeGroup === group.name ? "#2196F3" : "#222"),
                       borderRadius: "0",
                       textAlign: "center",
-                      border: "0.15vw solid #ffffff",
-                      cursor: "grab",
-                      width: "10vw",
-                      height: "10vw",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center"
+                      border: dragOverLayer === group.name ? "0.15vw dashed #FFD700" : "0.15vw solid #444",
+                      cursor: "grab"
                     }}>
                       {group.zIndex}
                     </div>
                     
                     {/* Layer Name */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0", flex: 1 }}>
-                      <div style={{ position: "relative", display: "flex" }}>
-                        <div
-                          onClick={() => {
-                            setActiveGroup(activeGroup === group.name ? null : group.name);
-                            setSelectedPixels([]); // Clear green selection preview
-                            setSelectionStart(null); // Clear selection state
-                            setSelectionEnd(null);
-                          }}
-                          style={{
-                            fontSize: "3vw",
-                            padding: "0",
-                            background: activeGroup === group.name ? "#fefefe" : "#000000",
-                            borderRadius: "0",
-                            color: activeGroup === group.name ? "#000000" : "#ffffff",
-                            cursor: "pointer",
-                            border: activeGroup === group.name ? "0.15vw solid #000000" : "0.15vw solid #fefefe",
-                            fontWeight: activeGroup === group.name ? "bold" : "normal",
-                            overflow: "hidden",
-                            lineHeight: "10vw",
-                            height: "10vw",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                            flex: 1
-                          }}
-                        >
-                          {group.name}
-                        </div>
-                        
-                        {/* Edit/Confirm Button */}
-                        <button
-                          onClick={() => {
-                            if (renameGroup === group.name) {
-                              // Confirm rename
-                              if (renameValue.trim()) {
-                                const newGroups = groups.map(g => 
-                                  g.name === group.name ? { ...g, name: renameValue.trim() } : g
-                                );
-                                setGroups(newGroups);
-                                
-                                const newPixelGroups = {};
-                                Object.keys(pixelGroups).forEach(idx => {
-                                  const pg = pixelGroups[idx];
-                                  newPixelGroups[idx] = pg.group === group.name 
-                                    ? { ...pg, group: renameValue.trim() }
-                                    : pg;
-                                });
-                                setPixelGroups(newPixelGroups);
-                                
-                                if (activeGroup === group.name) {
-                                  setActiveGroup(renameValue.trim());
-                                }
-                              }
-                              setRenameGroup(null);
-                              setRenameValue("");
-                            } else {
-                              // Start rename
-                              setRenameGroup(group.name);
-                              setRenameValue(group.name);
-                            }
-                          }}
-                          style={{
-                            width: "5vw",
-                            height: "10vw",
-                            background: "#000000",
-                            color: "#ffffff",
-                            border: "0.15vw solid #ffffff",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "2.5vw",
-                            fontWeight: "bold",
-                            borderRadius: "0"
-                          }}
-                        >
-                          {renameGroup === group.name ? "✓" : "✎"}
-                        </button>
-                        
-                        {/* Rename Overlay */}
-                        {renameGroup === group.name && (
-                          <input
-                            type="text"
-                            value={renameValue}
-                            onChange={(e) => setRenameValue(e.target.value)}
-                            autoFocus
-                            style={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              width: "calc(100% - 5vw)",
-                              height: "10vw",
-                              fontSize: "3vw",
-                              border: "0.15vw solid #000000",
-                              background: "#ffffff",
-                              color: "#000000",
-                              textAlign: "center",
-                              lineHeight: "10vw",
-                              padding: "0",
-                              zIndex: 1000
-                            }}
-                          />
-                        )}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.2vw", flex: 1 }}>
+                      <div
+                        onClick={() => {
+                          setActiveGroup(activeGroup === group.name ? null : group.name);
+                          setSelectedPixels([]); // Clear green selection preview
+                          setSelectionStart(null); // Clear selection state
+                          setSelectionEnd(null);
+                        }}
+                        style={{
+                          fontSize: "0.8vw",
+                          padding: "0.3vw",
+                          background: activeGroup === group.name ? "#2196F3" : "#222",
+                          borderRadius: "0",
+                          cursor: "pointer",
+                          border: activeGroup === group.name ? "0.15vw solid #FFD700" : "0.15vw solid #444",
+                          fontWeight: activeGroup === group.name ? "bold" : "normal",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap"
+                        }}
+                      >
+
                       </div>
                       
                       {/* Directional Movement Buttons - Show when movegroup tool is active and this layer is active */}
                       {activeDrawingTool === "movegroup" && activeGroup === group.name && (
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "0" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "0.2vw" }}>
                           {/* Left Button */}
                           <button
                             onClick={() => moveGroup(group.name, 0, -1)}
                             style={{
-                              background: "#ffffff",
-                              color: "#000000",
-                              border: "0.2vw solid #000",
-                              width: "10vw",
-                              height: "10vw",
+                              background: "#9C27B0",
+                              color: "white",
+                              border: "0.15vw solid #000",
+                              width: "2.5vw",
+                              height: "2.5vw",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
                               cursor: "pointer",
-                              fontSize: "2.5vw",
+                              fontSize: "1vw",
                               fontWeight: "900",
                               borderRadius: "0"
                             }}
@@ -4671,16 +4447,16 @@ const savedData = ${dataString};
                           <button
                             onClick={() => moveGroup(group.name, -1, 0)}
                             style={{
-                              background: "#ffffff",
-                              color: "#000000",
-                              border: "0.2vw solid #000",
-                              width: "10vw",
-                              height: "10vw",
+                              background: "#9C27B0",
+                              color: "white",
+                              border: "0.15vw solid #000",
+                              width: "2.5vw",
+                              height: "2.5vw",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
                               cursor: "pointer",
-                              fontSize: "2.5vw",
+                              fontSize: "1vw",
                               fontWeight: "900",
                               borderRadius: "0"
                             }}
@@ -4693,16 +4469,16 @@ const savedData = ${dataString};
                           <button
                             onClick={() => moveGroup(group.name, 1, 0)}
                             style={{
-                              background: "#ffffff",
-                              color: "#000000",
-                              border: "0.2vw solid #000",
-                              width: "10vw",
-                              height: "10vw",
+                              background: "#9C27B0",
+                              color: "white",
+                              border: "0.15vw solid #000",
+                              width: "2.5vw",
+                              height: "2.5vw",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
                               cursor: "pointer",
-                              fontSize: "2.5vw",
+                              fontSize: "1vw",
                               fontWeight: "900",
                               borderRadius: "0"
                             }}
@@ -4715,16 +4491,16 @@ const savedData = ${dataString};
                           <button
                             onClick={() => moveGroup(group.name, 0, 1)}
                             style={{
-                              background: "#ffffff",
-                              color: "#000000",
-                              border: "0.2vw solid #000",
-                              width: "10vw",
-                              height: "10vw",
+                              background: "#9C27B0",
+                              color: "white",
+                              border: "0.15vw solid #000",
+                              width: "2.5vw",
+                              height: "2.5vw",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
                               cursor: "pointer",
-                              fontSize: "2.5vw",
+                              fontSize: "1vw",
                               fontWeight: "900",
                               borderRadius: "0"
                             }}
@@ -4736,6 +4512,52 @@ const savedData = ${dataString};
                       )}
                     </div>
                     
+                    {/* Edit Button */}
+                    <button
+                      onClick={() => setActiveGroup(group.name)}
+                      style={{
+                        background: activeGroup === group.name ? "#FFD700" : "#444",
+                        color: activeGroup === group.name ? "#000" : "white",
+                        border: "0.1vw solid #000",
+                        width: "2.5vw",
+                      height: "2.5vw",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                        cursor: "pointer",
+                        fontSize: "0.7vw",
+                        fontWeight: "bold",
+                        borderRadius: "0"
+                      }}
+                    >
+                      {activeGroup === group.name ? "✓" : "✎"}
+                    </button>
+                    
+                    {/* Move Layer Button */}
+                    <button
+                      onClick={() => {
+                        setActiveGroup(group.name);
+                        setActiveDrawingTool("movegroup");
+                      }}
+                      style={{
+                        background: activeGroup === group.name && activeDrawingTool === "movegroup" ? "#9C27B0" : "#555",
+                        color: "white",
+                        border: "0.2vw solid #000",
+                        width: "2.5vw",
+                      height: "2.5vw",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                        cursor: "pointer",
+                        fontSize: "1.2vw",
+                        fontWeight: "bold",
+                        borderRadius: "0"
+                      }}
+                      title="Click to enable move mode, then drag pixels on canvas"
+                    >
+                      ☩
+                    </button>
+                    
                     {/* Move Up Button */}
                     <button
                       onClick={() => {
@@ -4743,19 +4565,26 @@ const savedData = ${dataString};
                           g.name === group.name ? { ...g, zIndex: g.zIndex + 1 } : g
                         );
                         setGroups(newGroups);
-                        updateGroupZIndex(group.name, +1);
+                        const newPixelGroups = {};
+                        Object.keys(pixelGroups).forEach(idx => {
+                          const pg = pixelGroups[idx];
+                          newPixelGroups[idx] = pg.group === group.name 
+                            ? { ...pg, zIndex: pg.zIndex + 1 }
+                            : pg;
+                        });
+                        setPixelGroups(newPixelGroups);
                       }}
                       style={{
-                        background: "#ffffff",
-                        color: "#000000",
+                        background: "#444",
+                        color: "white",
                         border: "0.2vw solid #000",
-                        width: "10vw",
-                      height: "10vw",
+                        width: "2.5vw",
+                      height: "2.5vw",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                         cursor: "pointer",
-                        fontSize: "2.5vw",
+                        fontSize: "1vw",
                         fontWeight: "bold",
                         borderRadius: "0"
                       }}
@@ -4770,19 +4599,26 @@ const savedData = ${dataString};
                           g.name === group.name ? { ...g, zIndex: g.zIndex - 1 } : g
                         );
                         setGroups(newGroups);
-                        updateGroupZIndex(group.name, -1);
+                        const newPixelGroups = {};
+                        Object.keys(pixelGroups).forEach(idx => {
+                          const pg = pixelGroups[idx];
+                          newPixelGroups[idx] = pg.group === group.name 
+                            ? { ...pg, zIndex: pg.zIndex - 1 }
+                            : pg;
+                        });
+                        setPixelGroups(newPixelGroups);
                       }}
                       style={{
-                        background: "#ffffff",
-                        color: "#000000",
+                        background: "#444",
+                        color: "white",
                         border: "0.2vw solid #000",
-                        width: "10vw",
-                      height: "10vw",
+                        width: "2.5vw",
+                      height: "2.5vw",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                         cursor: "pointer",
-                        fontSize: "2.5vw",
+                        fontSize: "1vw",
                         fontWeight: "bold",
                         borderRadius: "0"
                       }}
@@ -4793,6 +4629,10 @@ const savedData = ${dataString};
                     {/* Delete Button */}
                     <button
                       onClick={() => {
+                        if (group.locked) {
+                          alert("Background layer is locked and cannot be deleted.");
+                          return;
+                        }
                         if (window.confirm(`Delete layer "${group.name}"? This will ungroup all pixels.`)) {
                           // Remove group
                           setGroups(groups.filter(g => g.name !== group.name));
@@ -4813,16 +4653,16 @@ const savedData = ${dataString};
                         }
                       }}
                       style={{
-                        background: "#ffffff",
-                        color: "#000000",
+                        background: "#f44336",
+                        color: "white",
                         border: "0.2vw solid #000",
-                        width: "10vw",
-                      height: "10vw",
+                        width: "2.5vw",
+                      height: "2.5vw",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                         cursor: "pointer",
-                        fontSize: "2.5vw",
+                        fontSize: "1vw",
                         fontWeight: "bold",
                         borderRadius: "0"
                       }}
@@ -4832,120 +4672,6 @@ const savedData = ${dataString};
                   </div>
                 ))}
               </div>
-          </div>
-          
-          {/* Vertical Scrollbar - Mobile */}
-          <div style={{
-            width: "10vw",
-            background: "#fefefe",
-            borderLeft: "0.2vw solid #000000",
-            display: "flex",
-            flexDirection: "column"
-          }}>
-            {/* Up scroll button */}
-            <div 
-              onPointerDown={() => {
-                if (layersMenuRef.current) {
-                  const newScrollTop = Math.max(0, layersScrollPosition - 100);
-                  layersMenuRef.current.scrollTop = newScrollTop;
-                  setLayersScrollPosition(newScrollTop);
-                }
-              }}
-              style={{
-                width: "10vw",
-                height: "10vw",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "#fefefe",
-                borderBottom: "0.2vw solid #000000",
-                cursor: "pointer",
-                fontSize: "5vw",
-                userSelect: "none"
-              }}
-            >
-              ▲
-            </div>
-
-            {/* Slider track */}
-            <div 
-              data-layers-scrollbar-track="true"
-              style={{
-                width: "10vw",
-                flex: 1,
-                background: "#fefefe",
-                position: "relative",
-                padding: "1vw",
-                display: "flex",
-                alignItems: "center"
-              }}
-            >
-              <div
-                onPointerDown={(e) => {
-                  setIsDraggingLayersSlider(true);
-                  const rect = e.currentTarget.parentElement.getBoundingClientRect();
-                  const y = e.clientY - rect.top;
-                  const percent = y / rect.height;
-                  const maxScroll = layersMenuRef.current ? layersMenuRef.current.scrollHeight - layersMenuRef.current.clientHeight : 0;
-                  if (layersMenuRef.current) {
-                    const newScrollTop = percent * maxScroll;
-                    layersMenuRef.current.scrollTop = newScrollTop;
-                    setLayersScrollPosition(newScrollTop);
-                  }
-                }}
-                style={{
-                  width: "8vw",
-                  height: "100%",
-                  background: "#ffffff",
-                  border: "0.2vw solid #000000",
-                  position: "relative",
-                  cursor: "pointer",
-                  touchAction: "none"
-                }}
-              >
-                {/* Slider thumb */}
-                <div style={{
-                  position: "absolute",
-                  top: layersMenuRef.current && layersMenuRef.current.scrollHeight > layersMenuRef.current.clientHeight 
-                    ? `${((layersMenuRef.current.scrollTop / (layersMenuRef.current.scrollHeight - layersMenuRef.current.clientHeight)) * (layersMenuRef.current.clientHeight - 120)) / layersMenuRef.current.clientHeight * 100}%`
-                    : "0%",
-                  left: "0",
-                  width: "8vw",
-                  height: "8vw",
-                  background: "#ffffff",
-                  pointerEvents: "none"
-                }} />
-              </div>
-            </div>
-
-            {/* Down scroll button */}
-            <div 
-              onPointerDown={() => {
-                if (layersMenuRef.current) {
-                  const newScrollTop = Math.min(
-                    layersMenuRef.current.scrollHeight - layersMenuRef.current.clientHeight,
-                    layersScrollPosition + 100
-                  );
-                  layersMenuRef.current.scrollTop = newScrollTop;
-                  setLayersScrollPosition(newScrollTop);
-                }
-              }}
-              style={{
-                width: "10vw",
-                height: "10vw",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "#fefefe",
-                borderTop: "0.2vw solid #000000",
-                cursor: "pointer",
-                fontSize: "5vw",
-                userSelect: "none"
-              }}
-            >
-              ▼
-            </div>
-          </div>
         </div>
       )}
     </div>
