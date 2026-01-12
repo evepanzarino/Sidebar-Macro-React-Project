@@ -2905,35 +2905,59 @@ const savedData = ${dataString};
               onPointerDown={(e) => {
                 // Check if clicking on a grouped pixel with movegroup tool and group is already selected
                 if (activeDrawingTool === "movegroup" && pixelGroup && activeGroup === pixelGroup.group) {
+                  e.stopPropagation();
                   setGroupDragStart({ pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY });
                   setIsDrawing(true);
-                } else if (activeDrawingTool === "movegroup" && pixelGroup && activeGroup !== pixelGroup.group) {
+                  return;
+                }
+                
+                if (activeDrawingTool === "movegroup" && pixelGroup && activeGroup !== pixelGroup.group) {
                   // Movegroup tool: clicking on a different grouped pixel - select that layer
+                  e.stopPropagation();
                   setActiveGroup(pixelGroup.group);
                   setSelectedPixels([]);
                   setSelectionStart(null);
                   setSelectionEnd(null);
-                } else if (activeDrawingTool === "movegroup" && selectedPixels.includes(i)) {
+                  return;
+                }
+                
+                if (activeDrawingTool === "movegroup" && selectedPixels.includes(i)) {
                   // Moving selected pixels (not in a group yet)
+                  e.stopPropagation();
                   setActiveGroup("__selected__");
                   setGroupDragStart({ pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY });
                   setIsDrawing(true);
-                } else if (activeDrawingTool === "select" && pixelGroup && activeGroup === pixelGroup.group) {
+                  return;
+                }
+                
+                if (activeDrawingTool === "select" && pixelGroup && activeGroup === pixelGroup.group) {
                   // Select tool: clicking on already selected group enables drag-to-move
+                  e.stopPropagation();
                   setGroupDragStart({ pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY });
                   setIsDrawing(true);
-                } else if (activeDrawingTool === "select" && pixelGroup && activeGroup !== pixelGroup.group) {
+                  return;
+                }
+                
+                if (activeDrawingTool === "select" && pixelGroup && activeGroup !== pixelGroup.group) {
                   // Select tool: clicking on a different grouped pixel - select that layer instead of starting new selection
+                  e.stopPropagation();
                   setActiveGroup(pixelGroup.group);
                   setSelectedPixels([]);
                   setSelectionStart(null);
                   setSelectionEnd(null);
-                } else if (activeDrawingTool === "select" && selectedPixels.includes(i)) {
+                  return;
+                }
+                
+                if (activeDrawingTool === "select" && selectedPixels.includes(i)) {
                   // Select tool: clicking on a selected pixel enables drag-to-move
+                  e.stopPropagation();
                   setActiveGroup("__selected__");
                   setGroupDragStart({ pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY });
                   setIsDrawing(true);
-                } else if (activeDrawingTool === "select") {
+                  return;
+                }
+                
+                if (activeDrawingTool === "select") {
                   // Mobile two-click selection mode
                   if (size.w <= 1024) {
                     if (selectionStart === null) {
