@@ -3557,29 +3557,10 @@ const savedData = ${dataString};
               >
               
               {/* Layers Menu Header */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0" }}>
+              <div style={{ marginBottom: "0" }}>
                 <div style={{ fontSize: "2vw", fontWeight: "bold", color: "#000000" }}>
                   Layers
                 </div>
-                <button
-                  onClick={() => setShowLayersMenu(false)}
-                  style={{
-                    background: "#666",
-                    color: "#ffffff",
-                    border: "0.2vw solid #000",
-                    padding: "0",
-                    cursor: "pointer",
-                    fontSize: "1.5vw",
-                    fontWeight: "bold",
-                    width: "10vw",
-                    height: "10vw",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center"
-                  }}
-                >
-                  ✕
-                </button>
               </div>
               
               {/* Group Creation Section */}
@@ -4361,29 +4342,10 @@ const savedData = ${dataString};
           >
           
           {/* Layers Menu Header */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0" }}>
+          <div style={{ marginBottom: "0" }}>
             <div style={{ fontSize: "2vw", fontWeight: "bold", color: "#000000" }}>
               Layers
             </div>
-            <button
-              onClick={() => setShowLayersMenu(false)}
-              style={{
-                background: "#666",
-                color: "#ffffff",
-                border: "0.2vw solid #000",
-                padding: "0",
-                cursor: "pointer",
-                fontSize: "1.5vw",
-                fontWeight: "bold",
-                width: "10vw",
-                height: "10vw",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-              }}
-            >
-              ✕
-            </button>
           </div>
           
           {/* Group Creation Section */}
