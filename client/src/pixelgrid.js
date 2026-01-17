@@ -2400,8 +2400,27 @@ export default function PixelGrid() {
       }
       
       // Add new positions
+      // IMPORTANT: Only update pixelGroups if this layer has equal or higher zIndex
+      // This preserves pixels from higher layers and prevents data loss
       selectedPixelIndices.forEach(pixelIndex => {
-        updatedPixelGroups[pixelIndex] = { group: originalLayerName, zIndex: originalZIndex };
+        const existingEntry = updatedPixelGroups[pixelIndex];
+        // Only update if:
+        // 1. No existing entry, OR
+        // 2. Existing entry is from a lower or equal zIndex layer, OR
+        // 3. Existing entry is from the same layer we're restoring
+        if (!existingEntry || 
+            existingEntry.zIndex <= originalZIndex || 
+            existingEntry.group === originalLayerName) {
+          updatedPixelGroups[pixelIndex] = { group: originalLayerName, zIndex: originalZIndex };
+        } else {
+          // A higher zIndex layer owns this pixel - don't overwrite
+          console.log("restoreSelectedToLayer: Preserving higher zIndex pixel", {
+            pixelIndex,
+            existingGroup: existingEntry.group,
+            existingZIndex: existingEntry.zIndex,
+            movingLayerZIndex: originalZIndex
+          });
+        }
       });
       
       console.log("restoreSelectedToLayer: Remapped pixels to original layer", { 
