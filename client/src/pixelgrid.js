@@ -5301,7 +5301,8 @@ const savedData = ${dataString};
                   } else if (selectedLayer) {
                     console.log("onPointerUp: Restoring __selected__ to original layer");
                     restoreSelectedToLayer(movedPixelIndices);
-                    // Don't reload from storage - the restore updated React state correctly
+                    // Reload all layers from localStorage after move to ensure data consistency
+                    shouldReloadFromStorage = true;
                   } else {
                     console.log("onPointerUp: No __selected__ layer to restore");
                   }
