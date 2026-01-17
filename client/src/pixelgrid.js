@@ -1465,12 +1465,6 @@ export default function PixelGrid() {
       setActiveDrawingTool("movegroup");
     }
     
-    const newPixelGroups = { ...pixelGroups };
-    selectedPixels.forEach(pixelIndex => {
-      newPixelGroups[pixelIndex] = { group: groupName, zIndex };
-    });
-    setPixelGroups(newPixelGroups);
-    
     // Clear pixels from base pixelColors array (they now belong to the layer)
     setPixelColors(prevColors => {
       const newColors = [...prevColors];
@@ -1480,10 +1474,25 @@ export default function PixelGrid() {
       return newColors;
     });
     
+    // Capture selectedPixels before clearing
+    const pixelsToMap = [...selectedPixels];
+    
     // Clear selection which will trigger useEffect to remove __selected__ layer
     setSelectedPixels([]);
     setSelectionStart(null);
     setSelectionEnd(null);
+    
+    // Update pixelGroups AFTER clearing selection to avoid race condition
+    setTimeout(() => {
+      setPixelGroups(prevPixelGroups => {
+        const newPixelGroups = { ...prevPixelGroups };
+        pixelsToMap.forEach(pixelIndex => {
+          newPixelGroups[pixelIndex] = { group: groupName, zIndex };
+        });
+        return newPixelGroups;
+      });
+    }, 0);
+    
     // Keep bottom bar open and activate the newly created group
     setActiveGroup(groupName);
   }
@@ -3284,12 +3293,12 @@ const savedData = ${dataString};
                     setSelectionEnd(null);
                     // Clear localStorage
                     try {
-                      localStorage.removeItem("pixelgrid_pixelColors");
-                      localStorage.removeItem("pixelgrid_pixelGroups");
-                      localStorage.removeItem("pixelgrid_groups");
+                      localStorage.clear();
                     } catch (err) {
                       console.error("Failed to clear localStorage:", err);
                     }
+                    // Reload page to ensure clean state
+                    window.location.reload();
                   }
                   setShowFileMenu(false);
                 }}
