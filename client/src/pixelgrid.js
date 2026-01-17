@@ -195,6 +195,11 @@ export default function PixelGrid() {
   });
   const backgroundInputRef = useRef(null);
   
+  // Image upload state
+  const [uploadedImage, setUploadedImage] = useState(null); // Store the uploaded image for scaling
+  const [imageScale, setImageScale] = useState(75); // Default scale width in pixels
+  const [showImageScaleDialog, setShowImageScaleDialog] = useState(false);
+  
   const [pixelGroups, setPixelGroups] = useState(() => {
     try {
       const saved = localStorage.getItem("pixelgrid_pixelGroups");
@@ -516,6 +521,7 @@ export default function PixelGrid() {
   });
 
   const fileInputRef = useRef(null);
+  const imageInputRef = useRef(null);
   const saveTimerRef = useRef(null);
   
   // Debounced save to localStorage (only save after 500ms of no changes)
@@ -2395,6 +2401,82 @@ const savedData = ${dataString};
     setBackgroundImage(null);
   }
 
+  // Load image from PNG/JPG and convert to pixel art
+  function loadImageAsPixelArt(file) {
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        setUploadedImage(img);
+        setImageScale(75); // Default to 75px wide
+        setShowImageScaleDialog(true);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+  
+  // Apply the scaled image to the canvas
+  function applyImageToCanvas(targetWidth) {
+    if (!uploadedImage) return;
+    
+    // Create canvas to read pixel data
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Calculate height based on aspect ratio
+    const aspectRatio = uploadedImage.height / uploadedImage.width;
+    const targetHeight = Math.round(targetWidth * aspectRatio);
+    
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    
+    // Draw image scaled
+    ctx.drawImage(uploadedImage, 0, 0, targetWidth, targetHeight);
+    
+    // Get pixel data
+    const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight);
+    const pixels = imageData.data;
+    
+    // Convert to our pixel format
+    const newPixelColors = [...pixelColors];
+    for (let row = 0; row < targetHeight && row < rows; row++) {
+      for (let col = 0; col < targetWidth && col < cols; col++) {
+        const imageIndex = (row * targetWidth + col) * 4;
+        const r = pixels[imageIndex];
+        const g = pixels[imageIndex + 1];
+        const b = pixels[imageIndex + 2];
+        const a = pixels[imageIndex + 3];
+        
+        // Convert to hex color (skip transparent pixels)
+        if (a > 128) {
+          const hex = '#' + 
+            r.toString(16).padStart(2, '0') +
+            g.toString(16).padStart(2, '0') +
+            b.toString(16).padStart(2, '0');
+          
+          const pixelIndex = row * cols + col;
+          newPixelColors[pixelIndex] = hex;
+        }
+      }
+    }
+    
+    setPixelColors(newPixelColors);
+    
+    // Save to localStorage
+    try {
+      localStorage.setItem("pixelgrid_pixelColors", JSON.stringify(newPixelColors));
+    } catch (err) {
+      console.error("Failed to save to localStorage:", err);
+    }
+    
+    // Close dialog
+    setShowImageScaleDialog(false);
+    setUploadedImage(null);
+  }
+
   // Track selection overlay element for rendering border around entire selection
   const selectionOverlayRef = useRef(null);
   const selectionBorderColorRef = useRef('#000000');
@@ -2498,7 +2580,9 @@ const savedData = ${dataString};
         borderBottomColor: "rgb(0, 0, 0)",
         display: "grid",
         alignItems: "center",
-        gridTemplateColumns: `${logoPixelSize * 7}vw ${titlePixelSize * 4}vw ${titlePixelSize * 2}vw ${titlePixelSize * 4}vw ${titlePixelSize * 4}vw ${titlePixelSize * 3}vw ${titlePixelSize * 5}vw ${titlePixelSize * 4}vw ${titlePixelSize * 2}vw ${titlePixelSize * 4}vw .75vw auto auto auto auto`,
+        gridTemplateColumns: size.w <= 1024 
+          ? `${logoPixelSize * 7}vw ${titlePixelSize * 4}vw ${titlePixelSize * 2}vw ${titlePixelSize * 4}vw ${titlePixelSize * 4}vw ${titlePixelSize * 3}vw ${titlePixelSize * 5}vw ${titlePixelSize * 4}vw ${titlePixelSize * 2}vw ${titlePixelSize * 4}vw .75vw 10vw 10vw 10vw 10vw`
+          : `${logoPixelSize * 7}vw ${titlePixelSize * 4}vw ${titlePixelSize * 2}vw ${titlePixelSize * 4}vw ${titlePixelSize * 4}vw ${titlePixelSize * 3}vw ${titlePixelSize * 5}vw ${titlePixelSize * 4}vw ${titlePixelSize * 2}vw ${titlePixelSize * 4}vw .75vw 7.525vw 7.525vw 7.525vw 7.525vw`,
         zIndex: 20
       }}>
         <div className="logo" style={{
@@ -2897,11 +2981,13 @@ const savedData = ${dataString};
           <button
             onClick={() => setShowFileMenu(v => !v)}
             style={{
-              background: "#222",
-              color: "white",
+              background: showFileMenu ? "#000" : "#fff",
+              color: showFileMenu ? "#fff" : "#000",
+              border: "0.2vw solid #000",
               width: "100%",
               cursor: "pointer",
-              fontSize: "2vw"
+              height: size.w <= 1024 ? "10vw" : "7vw",
+              fontSize: "3vw"
             }}
           >
             File
@@ -2912,7 +2998,7 @@ const savedData = ${dataString};
               position: "absolute",
               top: "100%",
               left: 0,
-              background: "#222",
+              background: "#000",
               display: "grid",
               width: "100%",
               boxShadow: "0 0.6vw 2vw rgba(0,0,0,0.5)",
@@ -2927,7 +3013,8 @@ const savedData = ${dataString};
                   cursor: "pointer",
                   color: "white",
                   textAlign: "center",
-                  fontSize: ".9vw",
+                  fontSize: size.w <= 1024 ? "1.5vw" : "1.05vw",
+                  width: size.w <= 1024 ? "10vw" : "7.5vw",
                   borderBottom: "0.2vw solid #333",
                   padding: "0.5vw"
                 }}
@@ -2945,12 +3032,32 @@ const savedData = ${dataString};
                   cursor: "pointer",
                   color: "white",
                   textAlign: "center",
-                  fontSize: ".9vw",
+                  fontSize: size.w <= 1024 ? "1.5vw" : "1.05vw",
+                  width: size.w <= 1024 ? "10vw" : "7.5vw",
                   borderBottom: "0.2vw solid #333",
                   padding: "0.5vw"
                 }}
               >
                 Load
+              </div>
+              
+              <div
+                onClick={() => {
+                  setShowFileMenu(false);
+                  // trigger hidden image input to load PNG/JPG
+                  imageInputRef.current && imageInputRef.current.click();
+                }}
+                style={{
+                  cursor: "pointer",
+                  color: "white",
+                  textAlign: "center",
+                  fontSize: size.w <= 1024 ? "1.5vw" : "1.05vw",
+                  width: size.w <= 1024 ? "10vw" : "7.5vw",
+                  borderBottom: "0.2vw solid #333",
+                  padding: "0.5vw"
+                }}
+              >
+                Load Image (PNG/JPG)
               </div>
               
               <div
@@ -2963,7 +3070,8 @@ const savedData = ${dataString};
                   cursor: "pointer",
                   color: "white",
                   textAlign: "center",
-                  fontSize: ".9vw",
+                  fontSize: size.w <= 1024 ? "1.5vw" : "1.05vw",
+                  width: size.w <= 1024 ? "10vw" : "7.5vw",
                   borderBottom: "0.2vw solid #333",
                   padding: "0.5vw"
                 }}
@@ -2981,7 +3089,8 @@ const savedData = ${dataString};
                     cursor: "pointer",
                     color: "#ff9800",
                     textAlign: "center",
-                    fontSize: ".9vw",
+                    fontSize: size.w <= 1024 ? "1.5vw" : "1.05vw",
+                    width: size.w <= 1024 ? "10vw" : "7.5vw",
                     borderBottom: "0.2vw solid #333",
                     padding: "0.5vw"
                   }}
@@ -3015,7 +3124,8 @@ const savedData = ${dataString};
                   cursor: "pointer",
                   color: "#f44336",
                   textAlign: "center",
-                  fontSize: ".9vw",
+                  fontSize: size.w <= 1024 ? "1.5vw" : "1.05vw",
+                  width: size.w <= 1024 ? "10vw" : "7.5vw",
                   padding: "0.5vw"
                 }}
               >
@@ -3030,14 +3140,16 @@ const savedData = ${dataString};
           <button
             onClick={() => setShowViewMenu(v => !v)}
             style={{
-              background: "#222",
-              color: "white",
+              background: showViewMenu ? "#000" : "#fff",
+              color: showViewMenu ? "#fff" : "#000",
+              border: "0.2vw solid #000",
               width: "100%",
               cursor: "pointer",
-              fontSize: "2vw"
+              height: size.w <= 1024 ? "10vw" : "7vw",
+              fontSize: "3vw"
             }}
           >
-            Modes
+            View
           </button>
 
           {showViewMenu && (
@@ -3045,7 +3157,7 @@ const savedData = ${dataString};
               position: "absolute",
               top: "100%",
               left: 0,
-              background: "#222",
+              background: "#000",
               display: "grid",
               width: "100%",
               boxShadow: "0 0.6vw 2vw rgba(0,0,0,0.5)",
@@ -3062,7 +3174,8 @@ const savedData = ${dataString};
                   cursor: "pointer",
                   color: viewMode === "drawing" ? "#4CAF50" : "white",
                   textAlign: "center",
-                  fontSize: ".9vw",
+                  fontSize: size.w <= 1024 ? "1.5vw" : "1.05vw",
+                  width: size.w <= 1024 ? "10vw" : "7.5vw",
                   borderBottom: "0.2vw solid #333",
                   padding: "0.5vw",
                   fontWeight: viewMode === "drawing" ? "bold" : "normal"
@@ -3081,7 +3194,8 @@ const savedData = ${dataString};
                   cursor: "pointer",
                   color: viewMode === "layers" ? "#4CAF50" : "white",
                   textAlign: "center",
-                  fontSize: ".9vw",
+                  fontSize: size.w <= 1024 ? "1.5vw" : "1.05vw",
+                  width: size.w <= 1024 ? "10vw" : "7.5vw",
                   padding: "0.5vw",
                   fontWeight: viewMode === "layers" ? "bold" : "normal"
                 }}
@@ -3119,6 +3233,20 @@ const savedData = ${dataString};
             e.target.value = null;
           }}
         />
+        
+        {/* hidden file input for loading images as pixel art */}
+        <input
+          ref={imageInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/jpg"
+          style={{ display: "none" }}
+          onChange={(e) => {
+            const f = e.target.files && e.target.files[0];
+            if (f) loadImageAsPixelArt(f);
+            // clear selection so same file can be reloaded if needed
+            e.target.value = null;
+          }}
+        />
       </div>
 
       {/* SIDEBAR */}
@@ -3128,17 +3256,32 @@ const savedData = ${dataString};
       <div style={{
         background: "#fefefe",
         position: "relative",
-        display: "inline-flex",
+        display: "grid",
+        gridTemplateRows: "1fr auto",
         width: size.w <= 1024 ? "10vw" : "7vw",
-        flexDirection: "column",
-        gap: "1vw",
-        alignItems: "center",
         borderRight: "0.2vw solid #000000",
+        height: "100vh"
       }}>
+        {/* TOP SECTION - Tools and expandable menus */}
+        <div style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "1vw",
+          alignItems: "center",
+          overflowY: "auto",
+          paddingBottom: "1vw",
+          minHeight: "0"
+        }}>
         {/* TOOLS SECTION */}
         <div style={{ width: "100%", textAlign: "center", paddingTop: "1vw" }}>
           <div style={{ color: "#000000", fontSize: "1.5vw", marginBottom: "0.5vw" }}><b>Tools</b></div>
-          <div style={{ display: "flex", gap: "0.5vw", justifyContent: "center", flexWrap: "wrap", padding: "0 0.5vw" }}>
+          <div style={{ 
+            display: "grid", 
+            gridTemplateColumns: size.w <= 1024 ? "1fr" : "3.66vw 2.7vw",
+            gap: size.w <= 1024 ? "0.2vw" : "0", 
+            padding: "0",
+            justifyItems: "center"
+          }}>
             {/* Pencil Tool */}
             <button
               onClick={() => {
@@ -3148,17 +3291,18 @@ const savedData = ${dataString};
                 setLineStartPixel(null);
               }}
               style={{
-                width: size.w <= 1024 ? "8vw" : "6vw",
-                height: size.w <= 1024 ? "8vw" : "6vw",
-                background: activeDrawingTool === "pencil" ? "#333" : "#fefefe",
-                color: activeDrawingTool === "pencil" ? "#fff" : "#000",
-                border: "0.3vw solid #000000",
+                width: size.w <= 1024 ? "8vw" : "3vw",
+                height: size.w <= 1024 ? "8vw" : "3vw",
+                background: activeDrawingTool === "pencil" ? "#000" : "#fff",
+                color: activeDrawingTool === "pencil" ? "white" : "black",
+                border: "0.15vw solid #000000",
+                padding: "0",
                 cursor: "pointer",
-                fontSize: size.w <= 1024 ? "4vw" : "3vw",
+                fontSize: size.w <= 1024 ? "4vw" : "1.2vw",
+                fontWeight: "bold",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: activeDrawingTool === "pencil" ? "0px 0px .2vw .2vw #000000" : "none",
               }}
             >
               <i className="fas fa-paintbrush"></i>
@@ -3173,17 +3317,18 @@ const savedData = ${dataString};
                 setLineStartPixel(null);
               }}
               style={{
-                width: size.w <= 1024 ? "8vw" : "6vw",
-                height: size.w <= 1024 ? "8vw" : "6vw",
-                background: activeDrawingTool === "eraser" ? "#333" : "#fefefe",
-                color: activeDrawingTool === "eraser" ? "#fff" : "#000",
-                border: "0.3vw solid #000000",
+                width: size.w <= 1024 ? "8vw" : "3vw",
+                height: size.w <= 1024 ? "8vw" : "3vw",
+                background: activeDrawingTool === "eraser" ? "#000" : "#fff",
+                color: activeDrawingTool === "eraser" ? "white" : "black",
+                border: "0.15vw solid #000000",
+                padding: "0",
                 cursor: "pointer",
-                fontSize: size.w <= 1024 ? "4vw" : "3vw",
+                fontSize: size.w <= 1024 ? "4vw" : "1.2vw",
+                fontWeight: "bold",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: activeDrawingTool === "eraser" ? "0px 0px .2vw .2vw #000000" : "none",
               }}
             >
               <i className="fas fa-eraser"></i>
@@ -3198,17 +3343,18 @@ const savedData = ${dataString};
                 setLineStartPixel(null);
               }}
               style={{
-                width: size.w <= 1024 ? "8vw" : "6vw",
-                height: size.w <= 1024 ? "8vw" : "6vw",
-                background: activeDrawingTool === "line" ? "#333" : "#fefefe",
-                color: activeDrawingTool === "line" ? "#fff" : "#000",
-                border: "0.3vw solid #000000",
+                width: size.w <= 1024 ? "8vw" : "3vw",
+                height: size.w <= 1024 ? "8vw" : "3vw",
+                background: activeDrawingTool === "line" ? "#000" : "#fff",
+                color: activeDrawingTool === "line" ? "white" : "black",
+                border: "0.15vw solid #000000",
+                padding: "0",
                 cursor: "pointer",
-                fontSize: size.w <= 1024 ? "4vw" : "3vw",
+                fontSize: size.w <= 1024 ? "4vw" : "1.2vw",
+                fontWeight: "bold",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: activeDrawingTool === "line" ? "0px 0px .2vw .2vw #000000" : "none",
               }}
             >
               <i className="fas fa-slash"></i>
@@ -3225,17 +3371,18 @@ const savedData = ${dataString};
                 setCurveCurveAmount(0);
               }}
               style={{
-                width: size.w <= 1024 ? "8vw" : "6vw",
-                height: size.w <= 1024 ? "8vw" : "6vw",
-                background: activeDrawingTool === "curve" ? "#333" : "#fefefe",
-                color: activeDrawingTool === "curve" ? "#fff" : "#000",
-                border: "0.3vw solid #000000",
+                width: size.w <= 1024 ? "8vw" : "3vw",
+                height: size.w <= 1024 ? "8vw" : "3vw",
+                background: activeDrawingTool === "curve" ? "#000" : "#fff",
+                color: activeDrawingTool === "curve" ? "white" : "black",
+                border: "0.15vw solid #000000",
+                padding: "0",
                 cursor: "pointer",
-                fontSize: size.w <= 1024 ? "4vw" : "3vw",
+                fontSize: size.w <= 1024 ? "4vw" : "1.2vw",
+                fontWeight: "bold",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: activeDrawingTool === "curve" ? "0px 0px .2vw .2vw #000000" : "none",
               }}
             >
               <i className="fas fa-bezier-curve"></i>
@@ -3250,17 +3397,18 @@ const savedData = ${dataString};
                 setLineStartPixel(null);
               }}
               style={{
-                width: size.w <= 1024 ? "8vw" : "6vw",
-                height: size.w <= 1024 ? "8vw" : "6vw",
-                background: activeDrawingTool === "bucket" ? "#333" : "#fefefe",
-                color: activeDrawingTool === "bucket" ? "#fff" : "#000",
-                border: "0.3vw solid #000000",
+                width: size.w <= 1024 ? "8vw" : "3vw",
+                height: size.w <= 1024 ? "8vw" : "3vw",
+                background: activeDrawingTool === "bucket" ? "#000" : "#fff",
+                color: activeDrawingTool === "bucket" ? "white" : "black",
+                border: "0.15vw solid #000000",
+                padding: "0",
                 cursor: "pointer",
-                fontSize: size.w <= 1024 ? "4vw" : "3vw",
+                fontSize: size.w <= 1024 ? "4vw" : "1.2vw",
+                fontWeight: "bold",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: activeDrawingTool === "bucket" ? "0px 0px .2vw .2vw #000000" : "none",
               }}
             >
               <i className="fas fa-fill-drip"></i>
@@ -3274,19 +3422,21 @@ const savedData = ${dataString};
                 setLineStartPixel(null);
                 setSelectionStart(null);
                 setSelectionEnd(null);
+                setShowLayersMenu(true);
               }}
               style={{
-                width: size.w <= 1024 ? "8vw" : "6vw",
-                height: size.w <= 1024 ? "8vw" : "6vw",
-                background: activeDrawingTool === "movegroup" ? "#333" : "#fefefe",
-                color: activeDrawingTool === "movegroup" ? "#fff" : "#000",
-                border: "0.3vw solid #000000",
+                width: size.w <= 1024 ? "8vw" : "3vw",
+                height: size.w <= 1024 ? "8vw" : "3vw",
+                background: activeDrawingTool === "movegroup" ? "#000" : "#fff",
+                color: activeDrawingTool === "movegroup" ? "white" : "black",
+                border: "0.15vw solid #000000",
+                padding: "0",
                 cursor: "pointer",
-                fontSize: size.w <= 1024 ? "4vw" : "4vw",
+                fontSize: size.w <= 1024 ? "4vw" : "1.2vw",
+                fontWeight: "bold",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: activeDrawingTool === "movegroup" ? "0px 0px .2vw .2vw #000000" : "none",
               }}
             >
               <i className="fas fa-arrows-alt"></i>
@@ -3301,19 +3451,21 @@ const savedData = ${dataString};
                 setLineStartPixel(null);
                 setSelectionStart(null);
                 setSelectionEnd(null);
+                setShowLayersMenu(true);
               }}
               style={{
-                width: size.w <= 1024 ? "8vw" : "6vw",
-                height: size.w <= 1024 ? "8vw" : "6vw",
-                background: activeDrawingTool === "select" ? "#333" : "#fefefe",
-                color: activeDrawingTool === "select" ? "#fff" : "#000",
-                border: "0.3vw solid #000000",
+                width: size.w <= 1024 ? "8vw" : "3vw",
+                height: size.w <= 1024 ? "8vw" : "3vw",
+                background: activeDrawingTool === "select" ? "#000" : "#fff",
+                color: activeDrawingTool === "select" ? "white" : "black",
+                border: "0.15vw solid #000000",
+                padding: "0",
                 cursor: "pointer",
-                fontSize: size.w <= 1024 ? "3vw" : "3vw",
+                fontSize: size.w <= 1024 ? "3vw" : "1.2vw",
+                fontWeight: "bold",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: activeDrawingTool === "select" ? "0px 0px .2vw .2vw #000000" : "none",
               }}
             >
               <i className="fas fa-vector-square"></i>
@@ -3323,110 +3475,24 @@ const savedData = ${dataString};
             <button
               onClick={() => setShowLayersMenu(!showLayersMenu)}
               style={{
-                width: size.w <= 1024 ? "8vw" : "6vw",
-                height: size.w <= 1024 ? "8vw" : "6vw",
-                background: showLayersMenu ? "#333" : "#fefefe",
-                color: showLayersMenu ? "#fff" : "#000",
-                border: "0.3vw solid #000000",
+                width: size.w <= 1024 ? "8vw" : "3vw",
+                height: size.w <= 1024 ? "8vw" : "3vw",
+                background: showLayersMenu ? "#000" : "#fff",
+                color: showLayersMenu ? "white" : "black",
+                border: "0.15vw solid #000000",
+                padding: "0",
                 cursor: "pointer",
-                fontSize: size.w <= 1024 ? "3vw" : "3vw",
+                fontSize: size.w <= 1024 ? "3vw" : "1.2vw",
+                fontWeight: "bold",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: showLayersMenu ? "0px 0px .2vw .2vw #000000" : "none",
               }}
             >
               <i className="fas fa-layer-group"></i>
             </button>
           </div>
         </div>
-
-        {/* COLOR MENU HEADER */}
-        <div style={{ width: "100%", position: "relative" }}>
-          <button
-            onClick={() => setShowColorMenu(prev => !prev)}
-            style={{
-              background: "#333",
-              color: "white",
-              width: "100%",
-              cursor: "pointer",
-              paddingTop:".75vw",
-              paddingBottom:".75vw",
-              fontSize: "1.75vw",
-            }}
-          >
-            {showColorMenu ? "▼ Color" : "► Color"}
-          </button>
-        </div>
-
-        {/* COLOR MENU CONTENT */}
-        {showColorMenu && (
-          <div style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "1vw",
-            width: "100%",
-            transition: "max-height 0.3s ease",
-          }}>
-            {/* PRIMARY COLOR */}
-            <div style={{ width: "100%", textAlign: "center" }}>
-              <div style={{ color: "#0000000", fontSize: "1.5vw", marginBottom: "0.5vw" }}><b>Primary</b></div>
-              <div
-                onClick={() => {
-                  if (activeTool === "primary") {
-                    setEditingColor("primary");
-                    setShowColorEditor(true);
-                  } else {
-                    setActiveTool("primary");
-                  }
-                }}
-                style={{
-                  width: size.w <= 1024 ? "8vw" : "6vw",
-                  height: size.w <= 1024 ? "8vw" : "6vw",
-                  background: primaryColor,
-                  border: activeTool === "primary" 
-                    ? (isLightColor(primaryColor) ? "0.4vw solid #000000" : "0.4vw solid #ffffff")
-                    : (isLightColor(primaryColor) ? "0.3vw solid #000000" : "0.3vw solid #ffffff"),
-                  cursor: "pointer",
-                  margin: "0 auto",
-                  boxShadow: activeTool === "primary" 
-                    ? "0px 0px .2vw .2vw #000000"
-                    : "none",
-                }}
-              />
-            </div>
-
-            {/* SECONDARY COLOR */}
-            <div style={{ width: "100%", textAlign: "center" }}>
-              <div style={{ color: "#000000", fontSize: "1.5vw", marginBottom: "0.5vw" }}><b>Secondary</b></div>
-              <div
-                onClick={() => {
-                  if (activeTool === "secondary") {
-                    setEditingColor("secondary");
-                    setShowColorEditor(true);
-                  } else {
-                    setActiveTool("secondary");
-                  }
-                }}
-                style={{
-                  width: size.w <= 1024 ? "8vw" : "6vw",
-                  height: size.w <= 1024 ? "8vw" : "6vw",
-                  background: secondaryColor,
-                  border: activeTool === "secondary" 
-                    ? (isLightColor(secondaryColor) ? "0.4vw solid #000000" : "0.4vw solid #ffffff")
-                    : (isLightColor(secondaryColor) ? "0.3vw solid #000000" : "0.3vw solid #ffffff"),
-                  cursor: "pointer",
-                  margin: "0 auto",
-                  boxShadow: activeTool === "secondary" 
-                    ? (isLightColor(secondaryColor) ? "0 0 1vw rgba(0,0,0,0.5)" : "0 0 1vw rgba(255,255,255,0.5)") 
-                    : "none",
-                }}
-              />
-
-            </div>
-          </div>
-        )}
         
         {/* BACKGROUND OPACITY CONTROL */}
         {backgroundImage && (
@@ -3434,7 +3500,6 @@ const savedData = ${dataString};
             width: "100%",
             padding: "1vw",
             borderTop: "0.2vw solid #ddd",
-            marginTop: "1vw"
           }}>
             <div style={{ 
               color: "#000000", 
@@ -3466,6 +3531,87 @@ const savedData = ${dataString};
             </div>
           </div>
         )}
+        </div>
+        
+        {/* BOTTOM SECTION - Primary and Secondary Colors (Always Visible) */}
+        <div style={{
+          display: "grid",
+          gridTemplateRows: "auto auto",
+          gridTemplateColumns: size.w <= 1024 ? "10vw" : "7vw",
+          gap: "0",
+          width: "100%",
+          borderTop: "0.2vw solid #000000",
+          marginBottom: size.w <= 1024 ? "21vw" : "8vw"
+        }}>
+          {/* PRIMARY COLOR */}
+          <div style={{ 
+            width: "100%", 
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "0.5vw",
+            borderBottom: "0.1vw solid #ddd"
+          }}>
+            <div style={{ color: "#000000", fontSize: "1.2vw", marginBottom: "0.3vw" }}><b>Primary</b></div>
+            <div
+              onClick={() => {
+                if (activeTool === "primary") {
+                  setEditingColor("primary");
+                  setShowColorEditor(true);
+                } else {
+                  setActiveTool("primary");
+                }
+              }}
+              style={{
+                width: size.w <= 1024 ? "8vw" : "5vw",
+                height: size.w <= 1024 ? "8vw" : "5vw",
+                background: primaryColor,
+                border: activeTool === "primary" 
+                  ? (isLightColor(primaryColor) ? "0.4vw solid #000000" : "0.4vw solid #ffffff")
+                  : (isLightColor(primaryColor) ? "0.3vw solid #000000" : "0.3vw solid #ffffff"),
+                cursor: "pointer",
+                boxShadow: activeTool === "primary" 
+                  ? "0 0 1vw rgba(0,0,0,1)"
+                  : "none",
+              }}
+            />
+          </div>
+
+          {/* SECONDARY COLOR */}
+          <div style={{ 
+            width: "100%", 
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "0.5vw"
+          }}>
+            <div style={{ color: "#000000", fontSize: "1.2vw", marginBottom: "0.3vw" }}><b>Secondary</b></div>
+            <div
+              onClick={() => {
+                if (activeTool === "secondary") {
+                  setEditingColor("secondary");
+                  setShowColorEditor(true);
+                } else {
+                  setActiveTool("secondary");
+                }
+              }}
+              style={{
+                width: size.w <= 1024 ? "8vw" : "5vw",
+                height: size.w <= 1024 ? "8vw" : "5vw",
+                background: secondaryColor,
+                border: activeTool === "secondary" 
+                  ? (isLightColor(secondaryColor) ? "0.4vw solid #000000" : "0.4vw solid #ffffff")
+                  : (isLightColor(secondaryColor) ? "0.3vw solid #000000" : "0.3vw solid #ffffff"),
+                cursor: "pointer",
+                boxShadow: activeTool === "secondary" 
+                  ? "0 0 1vw rgba(0,0,0,1)" 
+                  : "none",
+              }}
+            />
+          </div>
+        </div>
       </div>
 
       {/* GRID CONTAINER WITH BACKGROUND */}
@@ -3779,6 +3925,7 @@ const savedData = ${dataString};
                         setSelectionStart(i);
                         setSelectionEnd(null);
                         setSelectedPixels([]);
+                        setIsDrawing(true); // Enable drag preview
                       } else {
                         // Second click: finalize selection
                         console.log("Mobile second click - finalizing selection from", selectionStart, "to", i);
@@ -3788,6 +3935,7 @@ const savedData = ${dataString};
                         setSelectedPixels(selected);
                         setSelectionStart(null);
                         setSelectionEnd(null);
+                        setIsDrawing(false); // Stop drawing after finalizing
                       }
                     } else {
                       // Desktop mode - drag to create rectangular selection
@@ -3974,8 +4122,8 @@ const savedData = ${dataString};
                   }
                 }}
                 onPointerLeave={() => {
-                  // Clear mobile selection preview when leaving pixel
-                  if (activeDrawingTool === "select" && size.w <= 1024 && selectionStart !== null && selectedPixels.length === 0) {
+                  // Clear mobile selection preview when leaving pixel (but not during active drag)
+                  if (activeDrawingTool === "select" && size.w <= 1024 && selectionStart !== null && selectedPixels.length === 0 && !isDrawing) {
                     setSelectionEnd(null);
                   }
                   
@@ -4703,6 +4851,239 @@ const savedData = ${dataString};
         </div>
       )}
 
+      {/* IMAGE SCALE DIALOG */}
+      {showImageScaleDialog && uploadedImage && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            right: 0,
+            width: "25vw",
+            height: "100vh",
+            background: "#ffffff",
+            display: "flex",
+            flexDirection: "column",
+            zIndex: 2000,
+            borderLeft: "0.3vw solid #000",
+            overflowY: "auto"
+          }}
+        >
+          <div
+            style={{
+              padding: "2vw",
+              display: "flex",
+              flexDirection: "column",
+              gap: "2vw"
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ color: "#000", fontSize: "2vw", fontWeight: "bold" }}>
+                Scale Image
+              </div>
+              <button
+                onClick={() => {
+                  setShowImageScaleDialog(false);
+                  setUploadedImage(null);
+                }}
+                style={{
+                  background: "#000",
+                  color: "white",
+                  border: "0.2vw solid #000",
+                  cursor: "pointer",
+                  fontSize: "2.5vw",
+                  fontWeight: "bold",
+                  width: "5vw",
+                  height: "5vw",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: "0.5vw"
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            
+            {/* Preview */}
+            <div style={{ 
+              border: "0.2vw solid #000", 
+              borderRadius: "0.5vw",
+              padding: "1vw",
+              background: "#f5f5f5",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1vw"
+            }}>
+              <div style={{ color: "#000", fontSize: "1.2vw", fontWeight: "bold" }}>
+                Preview
+              </div>
+              <div style={{ 
+                width: "100%", 
+                display: "flex", 
+                justifyContent: "center",
+                alignItems: "center",
+                minHeight: "15vw",
+                background: "#fff",
+                border: "0.1vw solid #ccc",
+                borderRadius: "0.3vw",
+                overflow: "hidden"
+              }}>
+                <canvas
+                  ref={(canvas) => {
+                    if (canvas && uploadedImage) {
+                      const ctx = canvas.getContext('2d');
+                      const aspectRatio = uploadedImage.height / uploadedImage.width;
+                      const previewWidth = imageScale;
+                      const previewHeight = Math.round(previewWidth * aspectRatio);
+                      
+                      canvas.width = previewWidth;
+                      canvas.height = previewHeight;
+                      
+                      ctx.imageSmoothingEnabled = false;
+                      ctx.drawImage(uploadedImage, 0, 0, previewWidth, previewHeight);
+                    }
+                  }}
+                  style={{
+                    maxWidth: "100%",
+                    maxHeight: "20vw",
+                    imageRendering: "pixelated"
+                  }}
+                />
+              </div>
+              <div style={{ color: "#666", fontSize: "1vw", textAlign: "center" }}>
+                Scaled: {imageScale} × {Math.round(imageScale * (uploadedImage.height / uploadedImage.width))}px
+              </div>
+            </div>
+            
+            {/* Original Info */}
+            <div style={{ 
+              color: "#000", 
+              fontSize: "1.2vw", 
+              padding: "1vw",
+              background: "#f9f9f9",
+              border: "0.1vw solid #ddd",
+              borderRadius: "0.5vw"
+            }}>
+              <div><strong>Original:</strong> {uploadedImage.width} × {uploadedImage.height}px</div>
+            </div>
+            
+            {/* Scale Control */}
+            <div style={{ 
+              display: "flex", 
+              flexDirection: "column", 
+              gap: "1vw",
+              padding: "1vw",
+              background: "#f9f9f9",
+              border: "0.1vw solid #ddd",
+              borderRadius: "0.5vw"
+            }}>
+              <label style={{ color: "#000", fontSize: "1.5vw", fontWeight: "bold" }}>
+                Width: {imageScale}px
+              </label>
+              <input
+                type="range"
+                min="10"
+                max="200"
+                value={imageScale}
+                onChange={(e) => setImageScale(parseInt(e.target.value))}
+                style={{
+                  width: "100%",
+                  cursor: "pointer",
+                  accentColor: "#4CAF50"
+                }}
+              />
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9vw", color: "#666" }}>
+                <span>10px</span>
+                <span>75px</span>
+                <span>200px</span>
+              </div>
+              
+              {/* Quick preset buttons */}
+              <div style={{ display: "flex", gap: "0.5vw", marginTop: "0.5vw" }}>
+                <button
+                  onClick={() => setImageScale(50)}
+                  style={{
+                    flex: 1,
+                    background: imageScale === 50 ? "#4CAF50" : "#fff",
+                    color: imageScale === 50 ? "#fff" : "#000",
+                    border: "0.15vw solid #000",
+                    padding: "0.5vw",
+                    cursor: "pointer",
+                    fontSize: "1vw",
+                    borderRadius: "0.3vw"
+                  }}
+                >
+                  50px
+                </button>
+                <button
+                  onClick={() => setImageScale(75)}
+                  style={{
+                    flex: 1,
+                    background: imageScale === 75 ? "#4CAF50" : "#fff",
+                    color: imageScale === 75 ? "#fff" : "#000",
+                    border: "0.15vw solid #000",
+                    padding: "0.5vw",
+                    cursor: "pointer",
+                    fontSize: "1vw",
+                    borderRadius: "0.3vw"
+                  }}
+                >
+                  75px
+                </button>
+                <button
+                  onClick={() => setImageScale(100)}
+                  style={{
+                    flex: 1,
+                    background: imageScale === 100 ? "#4CAF50" : "#fff",
+                    color: imageScale === 100 ? "#fff" : "#000",
+                    border: "0.15vw solid #000",
+                    padding: "0.5vw",
+                    cursor: "pointer",
+                    fontSize: "1vw",
+                    borderRadius: "0.3vw"
+                  }}
+                >
+                  100px
+                </button>
+                <button
+                  onClick={() => setImageScale(200)}
+                  style={{
+                    flex: 1,
+                    background: imageScale === 200 ? "#4CAF50" : "#fff",
+                    color: imageScale === 200 ? "#fff" : "#000",
+                    border: "0.15vw solid #000",
+                    padding: "0.5vw",
+                    cursor: "pointer",
+                    fontSize: "1vw",
+                    borderRadius: "0.3vw"
+                  }}
+                >
+                  200px
+                </button>
+              </div>
+            </div>
+
+            {/* Apply Button */}
+            <button
+              onClick={() => applyImageToCanvas(imageScale)}
+              style={{
+                background: "#4CAF50",
+                color: "white",
+                fontSize: "1.8vw",
+                padding: "1.5vw",
+                cursor: "pointer",
+                border: "0.2vw solid #000",
+                borderRadius: "0.5vw",
+                fontWeight: "bold",
+                marginTop: "1vw"
+              }}
+            >
+              Apply to Canvas
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* COLOR EDITOR OVERLAY */}
       {showColorEditor && (
         <div
@@ -4797,13 +5178,16 @@ const savedData = ${dataString};
         <div
           style={{
             position: "fixed",
-            bottom: size.w <= 1024 ? "10vw" : "0",
-            left: size.w <= 1024 ? "10vw" : "10vw",
-            right: 0,
+            top: "auto",
+            bottom: size.w <= 1024 ? (showLayersMenu ? "45vw" : "10vw") : "0",
+            left: size.w <= 1024 ? "10vw" : "7vw",
+            right: size.w > 1024 && showLayersMenu ? "35vw" : "0",
             background: "#ffffff",
             padding: "1vw",
             borderTop: "0.3vw solid #000000",
-            zIndex: 1000,
+            borderBottom: "none",
+            borderLeft: size.w > 1024 && showLayersMenu ? "0.3vw solid #000000" : "none",
+            zIndex: 1001,
             display: "flex",
             justifyContent: "center",
             gap: "1vw"
@@ -4816,8 +5200,8 @@ const savedData = ${dataString};
               setHoveredPixel(null);
             }}
             style={{
-              background: "#f44336",
-              color: "white",
+              background: "#fff",
+              color: "#000",
               border: "0.2vw solid #000",
               padding: "1vw 3vw",
               cursor: "pointer",
@@ -4837,8 +5221,8 @@ const savedData = ${dataString};
               setHoveredPixel(null);
             }}
             style={{
-              background: "#4CAF50",
-              color: "white",
+              background: "#000",
+              color: "#fff",
               border: "0.2vw solid #000",
               padding: "1vw 3vw",
               cursor: "pointer",
@@ -4856,13 +5240,13 @@ const savedData = ${dataString};
         <div
           style={{
             position: "fixed",
-            bottom: size.w <= 1024 ? "10vw" : "0",
-            left: size.w <= 1024 ? "10vw" : "10vw",
-            right: 0,
+            inset: size.w <= 1024 ? (showLayersMenu ? "auto 0px 45vw 10vw" : "auto 0px 10vw 10vw") : "auto 35vw 0px 7vw",
             background: "#ffffff",
             padding: "1vw",
             borderTop: "0.3vw solid #000000",
-            zIndex: 1000,
+            borderBottom: "none",
+            borderLeft: "none",
+            zIndex: 1001,
             display: "flex",
             flexDirection: "column",
             gap: "1vw",
@@ -4890,7 +5274,10 @@ const savedData = ${dataString};
             max="100"
             value={curveCurveAmount}
             onChange={(e) => setCurveCurveAmount(Number(e.target.value))}
-            style={{ width: "80%" }}
+            style={{
+              width: "80%",
+              accentColor: "#000"
+            }}
           />
           
           <div style={{ display: "flex", gap: "1vw" }}>
@@ -4902,8 +5289,8 @@ const savedData = ${dataString};
                 setHoveredPixel(null);
               }}
               style={{
-                background: "#f44336",
-                color: "white",
+                background: "#fff",
+                color: "#000",
                 border: "0.2vw solid #000",
                 padding: "1vw 3vw",
                 cursor: "pointer",
@@ -4970,8 +5357,8 @@ const savedData = ${dataString};
                 setHoveredPixel(null);
               }}
               style={{
-                background: "#4CAF50",
-                color: "white",
+                background: "#000",
+                color: "#fff",
                 border: "0.2vw solid #000",
                 padding: "1vw 3vw",
                 cursor: "pointer",
@@ -4991,7 +5378,7 @@ const savedData = ${dataString};
           position: "fixed",
           top: 0,
           right: 0,
-          width: "25vw",
+          width: "35vw",
           height: "100vh",
           display: "grid",
           gridTemplateRows: (activeDrawingTool === "select" && showLayersMenu) ? "auto 1fr" : showLayersMenu ? "1fr" : "1fr",
@@ -5002,18 +5389,18 @@ const savedData = ${dataString};
             <div style={{
               background: "#ffffff",
               color: "#000000",
-              padding: "0.8vw",
+              padding: "0px",
               display: "flex",
               flexDirection: "column",
-              gap: "0.5vw",
+              gap: "0px",
               borderLeft: "0.3vw solid #000000",
               borderBottom: showLayersMenu ? "0.3vw solid #000000" : "none",
               overflowY: "auto"
             }}>
               
               {/* Select Menu Header */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5vw" }}>
-                <div style={{ display: "flex", gap: "0.5vw", alignItems: "center" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0px" }}>
+                <div style={{ display: "flex", gap: "0px", alignItems: "center" }}>
                   <div style={{ fontSize: "2vw", fontWeight: "bold" }}>
                     Select
                   </div>
@@ -5046,7 +5433,7 @@ const savedData = ${dataString};
                   <button
                     onClick={() => setShowLayersMenu(!showLayersMenu)}
                     style={{
-                      background: showLayersMenu ? "#333" : "#fefefe",
+                      background: showLayersMenu ? "#000" : "#fff",
                       color: showLayersMenu ? "#fff" : "#000",
                       border: "0.15vw solid #000",
                       padding: "0",
@@ -5070,12 +5457,12 @@ const savedData = ${dataString};
                       setSelectionEnd(null);
                     }}
                     style={{
-                      background: "#666",
+                      background: "#000",
                       color: "white",
                       border: "0.15vw solid #000",
                       padding: "0",
                       cursor: "pointer",
-                      fontSize: "1.5vw",
+                      fontSize: "2.5vw",
                       fontWeight: "bold",
                       width: "5vw",
                       height: "5vw",
@@ -5163,15 +5550,15 @@ const savedData = ${dataString};
                 <button
                   onClick={() => setShowLayersMenu(false)}
                   style={{
-                    background: "#666",
+                    background: "#000",
                     color: "white",
                     border: "0.2vw solid #000",
                     padding: "0px",
                     cursor: "pointer",
-                    fontSize: "1.5vw",
+                    fontSize: "2.5vw",
                     fontWeight: "bold",
-                    width: "10vw",
-                    height: "10vw",
+                    width: "5vw",
+                    height: "5vw",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center"
@@ -5185,7 +5572,7 @@ const savedData = ${dataString};
               <div style={{ display: "flex", gap: "0px", alignItems: "center", marginBottom: "0px" }}>
                 <input
                   type="text"
-                  placeholder="Group name"
+                  placeholder="Layer Name"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && e.target.value.trim()) {
                       createGroup(e.target.value.trim());
@@ -5198,14 +5585,15 @@ const savedData = ${dataString};
                     border: "0.2vw solid #000",
                     textAlign: "center",
                     background: "#fff",
-                    color: "#fff",
+                    color: "#000",
                     flex: 1,
-                    lineHeight: "10vw"
+                    width: "0vw",
+                    lineHeight: "5vw"
                   }}
                 />
                 <button
                   onClick={() => {
-                    const input = document.querySelector('input[placeholder="Group name"]');
+                    const input = document.querySelector('input[placeholder="Layer Name"]');
                     if (input && input.value.trim()) {
                       createGroup(input.value.trim());
                       input.value = "";
@@ -5213,21 +5601,21 @@ const savedData = ${dataString};
                   }}
                   style={{
                     background: "#fff",
-                    color: "#fff",
+                    color: "#000",
                     border: "0.2vw solid #000",
                     cursor: "pointer",
-                    fontSize: "1.5vw",
+                    fontSize: "1.05vw",
                     fontWeight: "bold",
                     whiteSpace: "nowrap",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    width: "10vw",
-                    height: "10vw",
+                    width: "5vw",
+                    height: "5vw",
                     borderRadius: "0"
                   }}
                 >
-                  + New Group
+                  Create +
                 </button>
               </div>
               
@@ -5308,7 +5696,7 @@ const savedData = ${dataString};
                   >
                     {/* Z-Index */}
                     <div style={{
-                      fontSize: "3vw",
+                      fontSize: "1.5vw",
                       fontWeight: "bold",
                       padding: "0px",
                       background: "#000",
@@ -5317,8 +5705,8 @@ const savedData = ${dataString};
                       textAlign: "center",
                       border: "0.15vw solid #fff",
                       cursor: "grab",
-                      width: "10vw",
-                      height: "10vw",
+                      width: "5vw",
+                      height: "5vw",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center"
@@ -5353,7 +5741,7 @@ const savedData = ${dataString};
                             }
                           }}
                           style={{
-                            fontSize: "3vw",
+                            fontSize: "1.5vw",
                             padding: "0px",
                             background: "#000",
                             borderRadius: "0",
@@ -5362,8 +5750,8 @@ const savedData = ${dataString};
                             border: "0.15vw solid #fff",
                             fontWeight: "normal",
                             overflow: "hidden",
-                            lineHeight: "10vw",
-                            height: "10vw",
+                            lineHeight: "5vw",
+                            height: "5vw",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
                             flex: 1
@@ -5394,17 +5782,18 @@ const savedData = ${dataString};
                           }}
                           style={{
                             width: "5vw",
-                            height: "10vw",
+                            height: "5vw",
                             background: "#000",
-                            color: "#fff",
-                            border: "0.15vw solid #fff",
+                            color: "white",
+                            border: "0.2vw solid #000",
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                             fontSize: "2.5vw",
                             fontWeight: "bold",
-                            borderRadius: "0"
+                            borderRadius: "0",
+                            padding: "0px"
                           }}
                         >
                           ✎
@@ -5522,18 +5911,19 @@ const savedData = ${dataString};
                         setPixelGroups(newPixelGroups);
                       }}
                       style={{
-                        background: "#fff",
-                        color: "#000",
+                        background: "#000",
+                        color: "white",
                         border: "0.2vw solid #000",
-                        width: "10vw",
-                        height: "10vw",
+                        width: "5vw",
+                        height: "5vw",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         cursor: "pointer",
                         fontSize: "2.5vw",
                         fontWeight: "bold",
-                        borderRadius: "0"
+                        borderRadius: "0",
+                        padding: "0px"
                       }}
                     >
                       ▲
@@ -5556,18 +5946,19 @@ const savedData = ${dataString};
                         setPixelGroups(newPixelGroups);
                       }}
                       style={{
-                        background: "#fff",
-                        color: "#000",
+                        background: "#000",
+                        color: "white",
                         border: "0.2vw solid #000",
-                        width: "10vw",
-                        height: "10vw",
+                        width: "5vw",
+                        height: "5vw",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         cursor: "pointer",
                         fontSize: "2.5vw",
                         fontWeight: "bold",
-                        borderRadius: "0"
+                        borderRadius: "0",
+                        padding: "0px"
                       }}
                     >
                       ▼
@@ -5600,18 +5991,19 @@ const savedData = ${dataString};
                         }
                       }}
                       style={{
-                        background: "#fff",
-                        color: "#000",
+                        background: "#000",
+                        color: "white",
                         border: "0.2vw solid #000",
-                        width: "10vw",
-                        height: "10vw",
+                        width: "5vw",
+                        height: "5vw",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         cursor: "pointer",
                         fontSize: "2.5vw",
                         fontWeight: "bold",
-                        borderRadius: "0"
+                        borderRadius: "0",
+                        padding: "0px"
                       }}
                     >
                       ✕
@@ -5621,7 +6013,8 @@ const savedData = ${dataString};
               </div>
               </div>
               
-              {/* Custom Vertical Scrollbar */}
+              {/* Custom Vertical Scrollbar - Mobile Only */}
+              {size.w <= 1024 && (
               <div
                 data-vertical-scrollbar="true"
                 style={{
@@ -5661,6 +6054,7 @@ const savedData = ${dataString};
                   }}
                 />
               </div>
+              )}
             </div>
           )}
         </div>
@@ -5675,19 +6069,19 @@ const savedData = ${dataString};
           right: 0,
           background: "#ffffff",
           color: "#000000",
-          padding: "0.8vw",
+          padding: "0px",
           zIndex: 1001,
           display: "flex",
           flexDirection: "column",
-          gap: "0.5vw",
+          gap: "0px",
           borderTop: "0.3vw solid #000000",
           maxHeight: "35vw",
           overflowY: "auto"
         }}>
           
           {/* Select Menu Header */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5vw" }}>
-            <div style={{ display: "flex", gap: "0.5vw", alignItems: "center" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0px" }}>
+            <div style={{ display: "flex", gap: "0px", alignItems: "center" }}>
               <div style={{ fontSize: "2vw", fontWeight: "bold" }}>
                 Select
               </div>
@@ -5707,8 +6101,8 @@ const savedData = ${dataString};
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "0.3vw",
-                  width: "5vw",
-                  height: "5vw"
+                  width: "10vw",
+                  height: "10vw"
                 }}
                 title={selectAllPixels ? "Selecting all pixels in box" : "Selecting only colored pixels"}
               >
@@ -5716,19 +6110,19 @@ const savedData = ${dataString};
                 {selectAllPixels ? "All" : "Color"}
               </button>
             </div>
-            <div style={{ display: "flex", gap: "0.5vw" }}>
+            <div style={{ display: "flex", gap: "0px" }}>
               <button
                 onClick={() => setShowLayersMenu(!showLayersMenu)}
                 style={{
-                  background: showLayersMenu ? "#333" : "#fefefe",
+                  background: showLayersMenu ? "#000" : "#fff",
                   color: showLayersMenu ? "#fff" : "#000",
                   border: "0.15vw solid #000",
                   padding: "0",
                   cursor: "pointer",
                   fontSize: "1.2vw",
                   fontWeight: "bold",
-                  width: "5vw",
-                  height: "5vw",
+                  width: "10vw",
+                  height: "10vw",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center"
@@ -5744,15 +6138,15 @@ const savedData = ${dataString};
                   setSelectionEnd(null);
                 }}
                 style={{
-                  background: "#666",
+                  background: "#000",
                   color: "white",
                   border: "0.15vw solid #000",
                   padding: "0",
                   cursor: "pointer",
-                  fontSize: "1.5vw",
+                  fontSize: "2.5vw",
                   fontWeight: "bold",
-                  width: "5vw",
-                  height: "5vw",
+                  width: "10vw",
+                  height: "10vw",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center"
@@ -5810,12 +6204,12 @@ const savedData = ${dataString};
             <button
               onClick={() => setShowLayersMenu(false)}
               style={{
-                background: "#666",
+                background: "#000",
                 color: "white",
                 border: "0.2vw solid #000",
                 padding: "0px",
                 cursor: "pointer",
-                fontSize: "1.5vw",
+                fontSize: "2.5vw",
                 fontWeight: "bold",
                 width: "10vw",
                 height: "10vw",
@@ -5832,7 +6226,7 @@ const savedData = ${dataString};
           <div style={{ display: "flex", gap: "0px", alignItems: "center", marginBottom: "0px" }}>
             <input
               type="text"
-              placeholder="Group name"
+              placeholder="Layer Name"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && e.target.value.trim()) {
                   createGroup(e.target.value.trim());
@@ -5845,14 +6239,14 @@ const savedData = ${dataString};
                 border: "0.2vw solid #000",
                 textAlign: "center",
                 background: "#fff",
-                color: "#fff",
+                color: "#000",
                 flex: 1,
                 lineHeight: "10vw"
               }}
             />
             <button
               onClick={() => {
-                const input = document.querySelector('input[placeholder="Group name"]');
+                const input = document.querySelector('input[placeholder="Layer Name"]');
                 if (input && input.value.trim()) {
                   createGroup(input.value.trim());
                   input.value = "";
@@ -5860,7 +6254,7 @@ const savedData = ${dataString};
               }}
               style={{
                 background: "#fff",
-                color: "#fff",
+                color: "#000",
                 border: "0.2vw solid #000",
                 cursor: "pointer",
                 fontSize: "1.5vw",
@@ -5874,7 +6268,7 @@ const savedData = ${dataString};
                 borderRadius: "0"
               }}
             >
-              + New Group
+              Create +
             </button>
           </div>
           
@@ -6150,6 +6544,10 @@ const savedData = ${dataString};
           </div>
           
           {/* Custom Scrollbar Column */}
+          {(() => {
+            const scrollContainer = document.querySelector('[data-mobile-layers-scroll-container="true"]');
+            const needsScroll = scrollContainer && scrollContainer.scrollHeight > scrollContainer.clientHeight;
+            return needsScroll ? (
           <div style={{
             width: "10vw",
             background: "#fefefe",
@@ -6175,7 +6573,8 @@ const savedData = ${dataString};
                 background: "#fefefe",
                 borderBottom: "0.2vw solid #000",
                 cursor: "pointer",
-                fontSize: "5vw"
+                fontSize: "5vw",
+                color: "#000"
               }}
             >
               ▲
@@ -6228,11 +6627,12 @@ const savedData = ${dataString};
                     const scrollPercent = verticalScrollPosition / maxScroll;
                     const trackElement = document.querySelector('[data-mobile-layers-scrollbar-track="true"]');
                     if (!trackElement) return "0%";
-                    const trackHeight = trackElement.offsetHeight - 2; // Account for padding
-                    const thumbHeight = 8; // 8vw in viewport units
-                    const thumbHeightPx = (thumbHeight / 100) * window.innerWidth;
-                    const maxThumbTop = trackHeight - thumbHeightPx;
-                    const thumbTop = scrollPercent * maxThumbTop;
+                    const trackInnerDiv = trackElement.querySelector('div');
+                    if (!trackInnerDiv) return "0%";
+                    const trackHeight = trackInnerDiv.offsetHeight;
+                    const thumbHeight = (8 / 100) * window.innerWidth; // 8vw to pixels
+                    const maxThumbTop = trackHeight - thumbHeight;
+                    const thumbTop = Math.min(scrollPercent * maxThumbTop, maxThumbTop);
                     return `${thumbTop}px`;
                   })(),
                   left: 0,
@@ -6262,12 +6662,15 @@ const savedData = ${dataString};
                 background: "#fefefe",
                 borderTop: "0.2vw solid #000",
                 cursor: "pointer",
-                fontSize: "5vw"
+                fontSize: "5vw",
+                color: "#000"
               }}
             >
               ▼
             </div>
           </div>
+            ) : null;
+          })()}
         </div>
       )}
     </div>
