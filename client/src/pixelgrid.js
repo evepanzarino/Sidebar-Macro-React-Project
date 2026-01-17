@@ -1875,7 +1875,7 @@ export default function PixelGrid() {
   }
 
   // Extract active layer to __selected__ for moving
-  function extractLayerToSelected(layerName) {
+  function extractLayerToSelected(layerName, onComplete) {
     // FIRST: Reload all layers from localStorage to ensure all pixels are restored
     // This is critical when a layer has been covered by another layer
     console.log("Reloading all layers from localStorage before extraction");
@@ -1885,31 +1885,39 @@ export default function PixelGrid() {
       if (storedGroups) {
         allLayersFromStorage = JSON.parse(storedGroups);
         
-        // Reload groups from localStorage with frozen pixels
-        setGroups(allLayersFromStorage.map(g => ({
-          ...g,
-          pixels: Object.freeze({ ...g.pixels }),
-          originalSelectionArea: g.originalSelectionArea || []
-        })));
-        
-        // Rebuild pixelGroups from localStorage layer data
-        const newPixelGroups = {};
-        allLayersFromStorage.forEach(layer => {
-          if (layer.pixels) {
-            Object.keys(layer.pixels).forEach(pixelIndex => {
-              const idx = parseInt(pixelIndex, 10);
-              newPixelGroups[idx] = {
-                group: layer.name,
-                zIndex: layer.zIndex || 0
-              };
-            });
-          }
+        // Use flushSync to ensure state updates complete immediately
+        flushSync(() => {
+          // Reload groups from localStorage with frozen pixels
+          setGroups(allLayersFromStorage.map(g => ({
+            ...g,
+            pixels: Object.freeze({ ...g.pixels }),
+            originalSelectionArea: g.originalSelectionArea || []
+          })));
+          
+          // Rebuild pixelGroups from localStorage layer data
+          const newPixelGroups = {};
+          allLayersFromStorage.forEach(layer => {
+            if (layer.pixels) {
+              Object.keys(layer.pixels).forEach(pixelIndex => {
+                const idx = parseInt(pixelIndex, 10);
+                newPixelGroups[idx] = {
+                  group: layer.name,
+                  zIndex: layer.zIndex || 0
+                };
+              });
+            }
+          });
+          setPixelGroups(newPixelGroups);
         });
-        setPixelGroups(newPixelGroups);
         
         console.log("Successfully reloaded all layers from localStorage", {
           layerCount: allLayersFromStorage.length,
-          pixelGroupCount: Object.keys(newPixelGroups).length
+          pixelGroupCount: Object.keys(allLayersFromStorage.reduce((acc, layer) => {
+            if (layer.pixels) {
+              Object.keys(layer.pixels).forEach(idx => acc[idx] = true);
+            }
+            return acc;
+          }, {})).length
         });
       }
     } catch (error) {
@@ -2076,54 +2084,57 @@ export default function PixelGrid() {
 
     // Update groups: add __selected__ but KEEP original layer's pixels (don't clear them)
     // AND restore the original layer's complete pixel data from localStorage to force re-render
-    setGroups(prevGroups => {
-      const updated = prevGroups
-        .filter(g => g.name !== "__selected__")
-        .map(g => {
-          // If this is the layer being extracted, use its current pixel data
-          if (g.name === layerName) {
-            // Keep only the pixels that are in the current layer
-            // This removes any pixels that were part of __selected__
-            const layerPixels = restoredPixels || g.pixels || {};
-            console.log("extractLayerToSelected: Using current pixel data for original layer", {
-              layerName,
-              pixelCount: Object.keys(layerPixels).length
-            });
-            return {
-              ...g,
-              pixels: Object.freeze({ ...layerPixels }),
-              originalSelectionArea: currentSelectionArea
-            };
-          }
-          return g;
-        })
-        .concat([selectedLayer]);
-      console.log("extractLayerToSelected: Updated groups", { 
-        groupCount: updated.length, 
-        selectedPixels: layerPixelIndices.length,
-        pixelIdentifiers: Array.from(pixelIdentifiers.entries()).slice(0, 5).map(([idx, id]) => ({ index: idx, id }))
+    // Use flushSync to ensure this completes before drag starts
+    flushSync(() => {
+      setGroups(prevGroups => {
+        const updated = prevGroups
+          .filter(g => g.name !== "__selected__")
+          .map(g => {
+            // If this is the layer being extracted, use its current pixel data
+            if (g.name === layerName) {
+              // Keep only the pixels that are in the current layer
+              // This removes any pixels that were part of __selected__
+              const layerPixels = restoredPixels || g.pixels || {};
+              console.log("extractLayerToSelected: Using current pixel data for original layer", {
+                layerName,
+                pixelCount: Object.keys(layerPixels).length
+              });
+              return {
+                ...g,
+                pixels: Object.freeze({ ...layerPixels }),
+                originalSelectionArea: currentSelectionArea
+              };
+            }
+            return g;
+          })
+          .concat([selectedLayer]);
+        console.log("extractLayerToSelected: Updated groups", { 
+          groupCount: updated.length, 
+          selectedPixels: layerPixelIndices.length,
+          pixelIdentifiers: Array.from(pixelIdentifiers.entries()).slice(0, 5).map(([idx, id]) => ({ index: idx, id }))
+        });
+        return updated;
       });
-      return updated;
-    });
 
-    // Update pixelGroups to ensure all restored pixels from localStorage are properly mapped
-    if (restoredPixels) {
-      setPixelGroups(prevPixelGroups => {
-        const updatedPixelGroups = { ...prevPixelGroups };
-        // Add all pixels from localStorage that aren't currently in pixelGroups
-        Object.keys(restoredPixels).forEach(pixelIndex => {
-          const idx = parseInt(pixelIndex);
-          if (!updatedPixelGroups[idx] || updatedPixelGroups[idx].group === layerName) {
-            updatedPixelGroups[idx] = { group: layerName, zIndex: layer.zIndex };
-          }
+      // Update pixelGroups to ensure all restored pixels from localStorage are properly mapped
+      if (restoredPixels) {
+        setPixelGroups(prevPixelGroups => {
+          const updatedPixelGroups = { ...prevPixelGroups };
+          // Add all pixels from localStorage that aren't currently in pixelGroups
+          Object.keys(restoredPixels).forEach(pixelIndex => {
+            const idx = parseInt(pixelIndex);
+            if (!updatedPixelGroups[idx] || updatedPixelGroups[idx].group === layerName) {
+              updatedPixelGroups[idx] = { group: layerName, zIndex: layer.zIndex };
+            }
+          });
+          console.log("extractLayerToSelected: Updated pixelGroups with restored pixels", {
+            layerName,
+            restoredPixelCount: Object.keys(restoredPixels).length
+          });
+          return updatedPixelGroups;
         });
-        console.log("extractLayerToSelected: Updated pixelGroups with restored pixels", {
-          layerName,
-          restoredPixelCount: Object.keys(restoredPixels).length
-        });
-        return updatedPixelGroups;
-      });
-    }
+      }
+    });
 
     // DON'T update pixelGroups during extraction - keep pixels pointing to original layer
     // This way the original layer's pixels remain visible at their original positions
@@ -2131,6 +2142,11 @@ export default function PixelGrid() {
     
     // Note: __selected__ layer exists but its pixels aren't in pixelGroups yet
     // They'll only be moved to the new positions when the move is committed
+    
+    // Call the completion callback if provided
+    if (onComplete) {
+      onComplete();
+    }
 
     return {
       layerName,
@@ -2140,7 +2156,7 @@ export default function PixelGrid() {
   }
 
   // Extract only selected pixels from a layer to __selected__ for moving
-  function extractSelectionToSelected(layerName, selectedPixelIndices) {
+  function extractSelectionToSelected(layerName, selectedPixelIndices, onComplete) {
     // FIRST: Reload all layers from localStorage to ensure all pixels are restored
     // This is critical when a layer has been covered by another layer
     console.log("Reloading all layers from localStorage before selection extraction");
@@ -2150,31 +2166,39 @@ export default function PixelGrid() {
       if (storedGroups) {
         allLayersFromStorage = JSON.parse(storedGroups);
         
-        // Reload groups from localStorage with frozen pixels
-        setGroups(allLayersFromStorage.map(g => ({
-          ...g,
-          pixels: Object.freeze({ ...g.pixels }),
-          originalSelectionArea: g.originalSelectionArea || []
-        })));
-        
-        // Rebuild pixelGroups from localStorage layer data
-        const newPixelGroups = {};
-        allLayersFromStorage.forEach(layer => {
-          if (layer.pixels) {
-            Object.keys(layer.pixels).forEach(pixelIndex => {
-              const idx = parseInt(pixelIndex, 10);
-              newPixelGroups[idx] = {
-                group: layer.name,
-                zIndex: layer.zIndex || 0
-              };
-            });
-          }
+        // Use flushSync to ensure state updates complete immediately
+        flushSync(() => {
+          // Reload groups from localStorage with frozen pixels
+          setGroups(allLayersFromStorage.map(g => ({
+            ...g,
+            pixels: Object.freeze({ ...g.pixels }),
+            originalSelectionArea: g.originalSelectionArea || []
+          })));
+          
+          // Rebuild pixelGroups from localStorage layer data
+          const newPixelGroups = {};
+          allLayersFromStorage.forEach(layer => {
+            if (layer.pixels) {
+              Object.keys(layer.pixels).forEach(pixelIndex => {
+                const idx = parseInt(pixelIndex, 10);
+                newPixelGroups[idx] = {
+                  group: layer.name,
+                  zIndex: layer.zIndex || 0
+                };
+              });
+            }
+          });
+          setPixelGroups(newPixelGroups);
         });
-        setPixelGroups(newPixelGroups);
         
         console.log("Successfully reloaded all layers from localStorage", {
           layerCount: allLayersFromStorage.length,
-          pixelGroupCount: Object.keys(newPixelGroups).length
+          pixelGroupCount: Object.keys(allLayersFromStorage.reduce((acc, layer) => {
+            if (layer.pixels) {
+              Object.keys(layer.pixels).forEach(idx => acc[idx] = true);
+            }
+            return acc;
+          }, {})).length
         });
       }
     } catch (error) {
@@ -2259,14 +2283,22 @@ export default function PixelGrid() {
     };
 
     // Update groups: add __selected__ WITHOUT clearing original layer
-    setGroups(prevGroups => {
-      return prevGroups
-        .filter(g => g.name !== "__selected__")
-        .concat([selectedLayer]);
+    // Use flushSync to ensure this completes before drag starts
+    flushSync(() => {
+      setGroups(prevGroups => {
+        return prevGroups
+          .filter(g => g.name !== "__selected__")
+          .concat([selectedLayer]);
+      });
     });
 
     // DON'T update pixelGroups during extraction - keep pixels pointing to original layer
     // The CSS transform will handle the visual preview
+    
+    // Call the completion callback if provided
+    if (onComplete) {
+      onComplete();
+    }
 
     return {
       layerName,
@@ -5273,38 +5305,55 @@ const savedData = ${dataString};
                     const clickedPixelGroup = pixelGroups[i];
                     if (clickedPixelGroup && clickedPixelGroup.group !== "__selected__") {
                       // Extract only the selected pixels from the layer
-                      extractSelectionToSelected(clickedPixelGroup.group, selectedPixels);
+                      // Wait for extraction to complete before setting drag state
+                      extractSelectionToSelected(clickedPixelGroup.group, selectedPixels, () => {
+                        const dragState = { pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY };
+                        setActiveGroup("__selected__");
+                        setGroupDragStart(dragState);
+                        setGroupDragCurrent(null);
+                        setSelectionTransform({ deltaRow: 0, deltaCol: 0, active: true });
+                        setIsDrawing(true);
+                        
+                        // Update ref for immediate access
+                        dragStateRef.current.activeGroup = "__selected__";
+                        dragStateRef.current.groupDragStart = dragState;
+                        dragStateRef.current.groupDragCurrent = null;
+                        dragStateRef.current.isDrawing = true;
+                      });
+                    } else {
+                      const dragState = { pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY };
+                      setActiveGroup("__selected__");
+                      setGroupDragStart(dragState);
+                      setGroupDragCurrent(null);
+                      setSelectionTransform({ deltaRow: 0, deltaCol: 0, active: true });
+                      setIsDrawing(true);
+                      
+                      // Update ref for immediate access
+                      dragStateRef.current.activeGroup = "__selected__";
+                      dragStateRef.current.groupDragStart = dragState;
+                      dragStateRef.current.groupDragCurrent = null;
+                      dragStateRef.current.isDrawing = true;
                     }
-                    const dragState = { pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY };
-                    setActiveGroup("__selected__");
-                    setGroupDragStart(dragState);
-                    setGroupDragCurrent(null);
-                    setSelectionTransform({ deltaRow: 0, deltaCol: 0, active: true });
-                    setIsDrawing(true);
-                    
-                    // Update ref for immediate access
-                    dragStateRef.current.activeGroup = "__selected__";
-                    dragStateRef.current.groupDragStart = dragState;
-                    dragStateRef.current.groupDragCurrent = null;
-                    dragStateRef.current.isDrawing = true;
                   }
                   // Priority 2: No selection - move entire layer
                   else if (pixelGroup) {
                     // Clicking on a layer pixel - extract entire layer to __selected__
-                    extractLayerToSelected(pixelGroup.group);
-                    const dragState = { pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY };
-                    setActiveGroup("__selected__");
-                    setSelectedPixels([]); // Clear any rectangular selection
-                    setGroupDragStart(dragState);
-                    setGroupDragCurrent(null);
-                    setSelectionTransform({ deltaRow: 0, deltaCol: 0, active: true });
-                    setIsDrawing(true);
-                    
-                    // Update ref for immediate access
-                    dragStateRef.current.activeGroup = "__selected__";
-                    dragStateRef.current.groupDragStart = dragState;
-                    dragStateRef.current.groupDragCurrent = null;
-                    dragStateRef.current.isDrawing = true;
+                    // Wait for extraction to complete before setting drag state
+                    extractLayerToSelected(pixelGroup.group, () => {
+                      const dragState = { pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY };
+                      setActiveGroup("__selected__");
+                      setSelectedPixels([]); // Clear any rectangular selection
+                      setGroupDragStart(dragState);
+                      setGroupDragCurrent(null);
+                      setSelectionTransform({ deltaRow: 0, deltaCol: 0, active: true });
+                      setIsDrawing(true);
+                      
+                      // Update ref for immediate access
+                      dragStateRef.current.activeGroup = "__selected__";
+                      dragStateRef.current.groupDragStart = dragState;
+                      dragStateRef.current.groupDragCurrent = null;
+                      dragStateRef.current.isDrawing = true;
+                    });
                   }
                   // Priority 3: __selected__ layer exists (from previous operation)
                   else if (activeGroup === "__selected__") {
