@@ -1817,6 +1817,46 @@ export default function PixelGrid() {
 
   // Extract active layer to __selected__ for moving
   function extractLayerToSelected(layerName) {
+    // FIRST: Reload all layers from localStorage to ensure all pixels are restored
+    // This is critical when a layer has been covered by another layer
+    console.log("Reloading all layers from localStorage before extraction");
+    let allLayersFromStorage = [];
+    try {
+      const storedGroups = localStorage.getItem("pixelgrid_groups");
+      if (storedGroups) {
+        allLayersFromStorage = JSON.parse(storedGroups);
+        
+        // Reload groups from localStorage with frozen pixels
+        setGroups(allLayersFromStorage.map(g => ({
+          ...g,
+          pixels: Object.freeze({ ...g.pixels }),
+          originalSelectionArea: g.originalSelectionArea || []
+        })));
+        
+        // Rebuild pixelGroups from localStorage layer data
+        const newPixelGroups = {};
+        allLayersFromStorage.forEach(layer => {
+          if (layer.pixels) {
+            Object.keys(layer.pixels).forEach(pixelIndex => {
+              const idx = parseInt(pixelIndex, 10);
+              newPixelGroups[idx] = {
+                group: layer.name,
+                zIndex: layer.zIndex || 0
+              };
+            });
+          }
+        });
+        setPixelGroups(newPixelGroups);
+        
+        console.log("Successfully reloaded all layers from localStorage", {
+          layerCount: allLayersFromStorage.length,
+          pixelGroupCount: Object.keys(newPixelGroups).length
+        });
+      }
+    } catch (error) {
+      console.error("Failed to reload layers from localStorage", error);
+    }
+    
     // Don't extract if already extracted
     const existingSelected = groups.find(g => g.name === "__selected__");
     if (existingSelected) {
@@ -1826,37 +1866,23 @@ export default function PixelGrid() {
       return null;
     }
     
-    const layer = groups.find(g => g.name === layerName);
+    // Use the freshly loaded data from localStorage
+    const layer = allLayersFromStorage.find(g => g.name === layerName) || groups.find(g => g.name === layerName);
     if (!layer) {
       console.log("extractLayerToSelected: Layer not found", { layerName });
       return null;
     }
 
-    // ALWAYS RESTORE FROM LOCALSTORAGE to get the original saved state
-    let restoredLayer = null;
-    let restoredPixels = null;
-    let restoredSelectionArea = null;
+    // Get the layer data directly from localStorage (already loaded above)
+    let restoredPixels = layer.pixels || {};
+    let restoredSelectionArea = layer.originalSelectionArea || [];
     
-    try {
-      const storedGroups = localStorage.getItem("pixelgrid_groups");
-      if (storedGroups) {
-        const parsedGroups = JSON.parse(storedGroups);
-        const storedLayer = parsedGroups.find(g => g.name === layerName);
-        if (storedLayer) {
-          restoredLayer = storedLayer;
-          restoredPixels = storedLayer.pixels || {};
-          restoredSelectionArea = storedLayer.originalSelectionArea || [];
-          console.log("extractLayerToSelected: Restored layer from localStorage", {
-            layerName,
-            pixelCount: Object.keys(restoredPixels).length,
-            selectionAreaLength: restoredSelectionArea.length,
-            hasOriginalData: true
-          });
-        }
-      }
-    } catch (error) {
-      console.error("extractLayerToSelected: Failed to restore from localStorage", error);
-    }
+    console.log("extractLayerToSelected: Using layer from localStorage", {
+      layerName,
+      pixelCount: Object.keys(restoredPixels).length,
+      selectionAreaLength: restoredSelectionArea.length,
+      hasOriginalData: true
+    });
 
     // If we have restored data from localStorage, use those original pixel indices
     // Otherwise fall back to current pixelGroups positions
@@ -2052,7 +2078,48 @@ export default function PixelGrid() {
 
   // Extract only selected pixels from a layer to __selected__ for moving
   function extractSelectionToSelected(layerName, selectedPixelIndices) {
-    const layer = groups.find(g => g.name === layerName);
+    // FIRST: Reload all layers from localStorage to ensure all pixels are restored
+    // This is critical when a layer has been covered by another layer
+    console.log("Reloading all layers from localStorage before selection extraction");
+    let allLayersFromStorage = [];
+    try {
+      const storedGroups = localStorage.getItem("pixelgrid_groups");
+      if (storedGroups) {
+        allLayersFromStorage = JSON.parse(storedGroups);
+        
+        // Reload groups from localStorage with frozen pixels
+        setGroups(allLayersFromStorage.map(g => ({
+          ...g,
+          pixels: Object.freeze({ ...g.pixels }),
+          originalSelectionArea: g.originalSelectionArea || []
+        })));
+        
+        // Rebuild pixelGroups from localStorage layer data
+        const newPixelGroups = {};
+        allLayersFromStorage.forEach(layer => {
+          if (layer.pixels) {
+            Object.keys(layer.pixels).forEach(pixelIndex => {
+              const idx = parseInt(pixelIndex, 10);
+              newPixelGroups[idx] = {
+                group: layer.name,
+                zIndex: layer.zIndex || 0
+              };
+            });
+          }
+        });
+        setPixelGroups(newPixelGroups);
+        
+        console.log("Successfully reloaded all layers from localStorage", {
+          layerCount: allLayersFromStorage.length,
+          pixelGroupCount: Object.keys(newPixelGroups).length
+        });
+      }
+    } catch (error) {
+      console.error("Failed to reload layers from localStorage", error);
+    }
+    
+    // Use the freshly loaded data from localStorage
+    const layer = allLayersFromStorage.find(g => g.name === layerName) || groups.find(g => g.name === layerName);
     if (!layer) return null;
 
     // Filter selected pixels that actually belong to this layer
