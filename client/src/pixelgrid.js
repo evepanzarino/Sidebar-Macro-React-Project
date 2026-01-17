@@ -5352,18 +5352,21 @@ const savedData = ${dataString};
                       // Extract only the selected pixels from the layer
                       // Wait for extraction to complete before setting drag state
                       extractSelectionToSelected(clickedPixelGroup.group, selectedPixels, () => {
-                        const dragState = { pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY };
-                        setActiveGroup("__selected__");
-                        setGroupDragStart(dragState);
-                        setGroupDragCurrent(null);
-                        setSelectionTransform({ deltaRow: 0, deltaCol: 0, active: true });
-                        setIsDrawing(true);
-                        
-                        // Update ref for immediate access
-                        dragStateRef.current.activeGroup = "__selected__";
-                        dragStateRef.current.groupDragStart = dragState;
-                        dragStateRef.current.groupDragCurrent = null;
-                        dragStateRef.current.isDrawing = true;
+                        // Use flushSync to ensure drag state is set immediately
+                        flushSync(() => {
+                          const dragState = { pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY };
+                          setActiveGroup("__selected__");
+                          setGroupDragStart(dragState);
+                          setGroupDragCurrent(null);
+                          setSelectionTransform({ deltaRow: 0, deltaCol: 0, active: true });
+                          setIsDrawing(true);
+                          
+                          // Update ref for immediate access
+                          dragStateRef.current.activeGroup = "__selected__";
+                          dragStateRef.current.groupDragStart = dragState;
+                          dragStateRef.current.groupDragCurrent = null;
+                          dragStateRef.current.isDrawing = true;
+                        });
                       });
                     } else {
                       const dragState = { pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY };
@@ -5385,19 +5388,22 @@ const savedData = ${dataString};
                     // Clicking on a layer pixel - extract entire layer to __selected__
                     // Wait for extraction to complete before setting drag state
                     extractLayerToSelected(pixelGroup.group, () => {
-                      const dragState = { pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY };
-                      setActiveGroup("__selected__");
-                      setSelectedPixels([]); // Clear any rectangular selection
-                      setGroupDragStart(dragState);
-                      setGroupDragCurrent(null);
-                      setSelectionTransform({ deltaRow: 0, deltaCol: 0, active: true });
-                      setIsDrawing(true);
-                      
-                      // Update ref for immediate access
-                      dragStateRef.current.activeGroup = "__selected__";
-                      dragStateRef.current.groupDragStart = dragState;
-                      dragStateRef.current.groupDragCurrent = null;
-                      dragStateRef.current.isDrawing = true;
+                      // Use flushSync to ensure drag state is set immediately
+                      flushSync(() => {
+                        const dragState = { pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY };
+                        setActiveGroup("__selected__");
+                        setSelectedPixels([]); // Clear any rectangular selection
+                        setGroupDragStart(dragState);
+                        setGroupDragCurrent(null);
+                        setSelectionTransform({ deltaRow: 0, deltaCol: 0, active: true });
+                        setIsDrawing(true);
+                        
+                        // Update ref for immediate access
+                        dragStateRef.current.activeGroup = "__selected__";
+                        dragStateRef.current.groupDragStart = dragState;
+                        dragStateRef.current.groupDragCurrent = null;
+                        dragStateRef.current.isDrawing = true;
+                      });
                     });
                   }
                   // Priority 3: __selected__ layer exists (from previous operation)
