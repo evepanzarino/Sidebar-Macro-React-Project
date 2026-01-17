@@ -171,7 +171,7 @@ export default function PixelGrid() {
   const [isDraggingSlider, setIsDraggingSlider] = useState(false);
   const [verticalScrollPosition, setVerticalScrollPosition] = useState(0);
   const [isDraggingVerticalSlider, setIsDraggingVerticalSlider] = useState(false);
-  const [activeDrawingTool, setActiveDrawingTool] = useState("movegroup"); // "pencil", "eraser", "line", "curve", "bucket", "select", "movegroup"
+  const [activeDrawingTool, setActiveDrawingTool] = useState("pencil"); // "pencil", "eraser", "line", "curve", "bucket", "select", "movegroup"
   const [lineStartPixel, setLineStartPixel] = useState(null); // For line/curve tool: first click position
   const [lineEndPixel, setLineEndPixel] = useState(null); // For line tool apply/preview
   const [curveEndPixel, setCurveEndPixel] = useState(null); // For curve tool adjustment mode
