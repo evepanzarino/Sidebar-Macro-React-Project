@@ -180,34 +180,6 @@ export default function PixelGrid() {
   const [selectedPixels, setSelectedPixels] = useState([]); // Array of selected pixel indices
   const [selectAllPixels, setSelectAllPixels] = useState(true); // Toggle: select all pixels vs only colored pixels (defaults to true)
   const [showLayersMenu, setShowLayersMenu] = useState(false); // Show layers menu
-  const [history, setHistory] = useState(() => {
-    try {
-      const saved = localStorage.getItem("pixelgrid_history");
-      return saved ? JSON.parse(saved) : [];
-    } catch (error) {
-      console.error("Failed to load history from localStorage:", error);
-      return [];
-    }
-  }); // History stack for undo
-  const [historyIndex, setHistoryIndex] = useState(() => {
-    try {
-      const saved = localStorage.getItem("pixelgrid_historyIndex");
-      return saved ? parseInt(saved, 10) : -1;
-    } catch (error) {
-      console.error("Failed to load historyIndex from localStorage:", error);
-      return -1;
-    }
-  }); // Current position in history
-  const [redoStack, setRedoStack] = useState(() => {
-    try {
-      const saved = localStorage.getItem("pixelgrid_redoStack");
-      return saved ? JSON.parse(saved) : [];
-    } catch (error) {
-      console.error("Failed to load redoStack from localStorage:", error);
-      return [];
-    }
-  }); // Redo stack
-  const [lastActionSaved, setLastActionSaved] = useState(true); // Track if current action was saved to history
   
   // Background image state
   const [backgroundImage, setBackgroundImage] = useState(() => {
@@ -626,17 +598,6 @@ export default function PixelGrid() {
     }
   }, [backgroundOpacity]);
   
-  // Save history to localStorage when it changes
-  useEffect(() => {
-    try {
-      localStorage.setItem("pixelgrid_history", JSON.stringify(history));
-      localStorage.setItem("pixelgrid_historyIndex", historyIndex.toString());
-      localStorage.setItem("pixelgrid_redoStack", JSON.stringify(redoStack));
-    } catch (error) {
-      console.error("Failed to save history to localStorage:", error);
-    }
-  }, [history, historyIndex, redoStack]);
-  
   // Save groups (layers) to localStorage - ONLY when explicitly called, not automatically
   // This prevents moves from persisting until user draws with that layer selected
   // eslint-disable-next-line no-unused-vars
@@ -769,7 +730,6 @@ export default function PixelGrid() {
       // Always clear preview and drag state when pointer up
       setSelectionTransform({ deltaRow: 0, deltaCol: 0, active: false });
       setIsDrawing(false);
-      setLastActionSaved(true); // Reset for next action
       
       // Don't clear hoveredPixel if we're in line/curve mode with points selected
       const lineToolActive = activeDrawingTool === "line" && (state.lineStartPixel !== null || state.lineEndPixel !== null);
@@ -811,20 +771,6 @@ export default function PixelGrid() {
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeDrawingTool]);
-
-  function saveToHistory() {
-    const snapshot = {
-      pixelColors: [...pixelColors],
-      groups: groups.map(g => ({ ...g, pixels: { ...g.pixels } })),
-      pixelGroups: { ...pixelGroups },
-      selectedPixels: [...selectedPixels]
-    };
-    const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(snapshot);
-    setHistory(newHistory);
-    setHistoryIndex(newHistory.length - 1);
-    setRedoStack([]); // Clear redo stack when new action is performed
-  }
 
   function erasePixel(e, index) {
     // If there's an active group, erase from the layer's pixels
@@ -2686,8 +2632,8 @@ const savedData = ${dataString};
         display: "grid",
         alignItems: "center",
         gridTemplateColumns: size.w <= 1024 
-          ? `${logoPixelSize * 7}vw ${titlePixelSize * 4}vw ${titlePixelSize * 2}vw ${titlePixelSize * 4}vw ${titlePixelSize * 4}vw ${titlePixelSize * 3}vw ${titlePixelSize * 5}vw ${titlePixelSize * 4}vw ${titlePixelSize * 2}vw ${titlePixelSize * 4}vw .75vw 10vw 6vw 6vw 10vw 10vw 10vw`
-          : `${logoPixelSize * 7}vw ${titlePixelSize * 4}vw ${titlePixelSize * 2}vw ${titlePixelSize * 4}vw ${titlePixelSize * 4}vw ${titlePixelSize * 3}vw ${titlePixelSize * 5}vw ${titlePixelSize * 4}vw ${titlePixelSize * 2}vw ${titlePixelSize * 4}vw .75vw 7.525vw 4vw 4vw 7.525vw 7.525vw 7.525vw`,
+          ? `${logoPixelSize * 7}vw ${titlePixelSize * 4}vw ${titlePixelSize * 2}vw ${titlePixelSize * 4}vw ${titlePixelSize * 4}vw ${titlePixelSize * 3}vw ${titlePixelSize * 5}vw ${titlePixelSize * 4}vw ${titlePixelSize * 2}vw ${titlePixelSize * 4}vw .75vw 10vw 10vw 10vw 10vw`
+          : `${logoPixelSize * 7}vw ${titlePixelSize * 4}vw ${titlePixelSize * 2}vw ${titlePixelSize * 4}vw ${titlePixelSize * 4}vw ${titlePixelSize * 3}vw ${titlePixelSize * 5}vw ${titlePixelSize * 4}vw ${titlePixelSize * 2}vw ${titlePixelSize * 4}vw .75vw 7.525vw 7.525vw 7.525vw 7.525vw`,
         zIndex: 20
       }}>
         <div className="logo" style={{
@@ -3310,71 +3256,6 @@ const savedData = ${dataString};
             </div>
           )}
         </div>
-        
-        {/* UNDO BUTTON */}
-        <button
-          onClick={() => {
-            if (historyIndex > 0) {
-              const newIndex = historyIndex - 1;
-              const snapshot = history[newIndex];
-              setRedoStack([...redoStack, { pixelColors: [...pixelColors], groups: groups.map(g => ({ ...g, pixels: { ...g.pixels } })), pixelGroups: { ...pixelGroups }, selectedPixels: [...selectedPixels] }]);
-              setPixelColors(snapshot.pixelColors);
-              setGroups(snapshot.groups);
-              setPixelGroups(snapshot.pixelGroups);
-              setSelectedPixels(snapshot.selectedPixels);
-              setHistoryIndex(newIndex);
-            }
-          }}
-          style={{
-            background: historyIndex > 0 ? "#fff" : "#ccc",
-            color: historyIndex > 0 ? "#000" : "#666",
-            border: "0.2vw solid #000",
-            width: "100%",
-            cursor: historyIndex > 0 ? "pointer" : "not-allowed",
-            height: size.w <= 1024 ? "10vw" : "7vw",
-            fontSize: size.w <= 1024 ? "4vw" : "1.5vw",
-            fontWeight: "bold",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center"
-          }}
-        >
-          <i className="fas fa-undo"></i>
-        </button>
-        
-        {/* REDO BUTTON */}
-        <button
-          onClick={() => {
-            if (redoStack.length > 0) {
-              const snapshot = redoStack[redoStack.length - 1];
-              const newRedoStack = redoStack.slice(0, -1);
-              const newHistory = [...history];
-              newHistory[historyIndex] = { pixelColors: [...pixelColors], groups: groups.map(g => ({ ...g, pixels: { ...g.pixels } })), pixelGroups: { ...pixelGroups }, selectedPixels: [...selectedPixels] };
-              setHistory(newHistory);
-              setPixelColors(snapshot.pixelColors);
-              setGroups(snapshot.groups);
-              setPixelGroups(snapshot.pixelGroups);
-              setSelectedPixels(snapshot.selectedPixels);
-              setRedoStack(newRedoStack);
-              setHistoryIndex(historyIndex + 1);
-            }
-          }}
-          style={{
-            background: redoStack.length > 0 ? "#fff" : "#ccc",
-            color: redoStack.length > 0 ? "#000" : "#666",
-            border: "0.2vw solid #000",
-            width: "100%",
-            cursor: redoStack.length > 0 ? "pointer" : "not-allowed",
-            height: size.w <= 1024 ? "10vw" : "7vw",
-            fontSize: size.w <= 1024 ? "4vw" : "1.5vw",
-            fontWeight: "bold",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center"
-          }}
-        >
-          <i className="fas fa-redo"></i>
-        </button>
         
         {/* hidden file input used by Load action */}
         <input
@@ -4118,12 +3999,6 @@ const savedData = ${dataString};
                   } else if (activeDrawingTool === "movegroup") {
                     // Move tool: click and drag to move selected pixels or grouped layers
                     if (selectedPixels.includes(i)) {
-                      // Save history before moving
-                      if (!lastActionSaved) {
-                        saveToHistory();
-                        setLastActionSaved(true);
-                      }
-                      
                       // Clicking on selected pixel - start drag to move
                       const startRow = Math.floor(i / 200);
                       const startCol = i % 200;
@@ -4151,19 +4026,9 @@ const savedData = ${dataString};
                       setIsDrawing(true);
                     }
                   } else if (activeDrawingTool === "pencil") {
-                    // Save history on first pixel draw
-                    if (!isDrawing) {
-                      saveToHistory();
-                      setLastActionSaved(false);
-                    }
                     setIsDrawing(true);
                     paintPixel(e, i);
                   } else if (activeDrawingTool === "eraser") {
-                    // Save history on first pixel erase
-                    if (!isDrawing) {
-                      saveToHistory();
-                      setLastActionSaved(false);
-                    }
                     setIsDrawing(true);
                     erasePixel(e, i);
                   } else if (activeDrawingTool === "bucket") {
