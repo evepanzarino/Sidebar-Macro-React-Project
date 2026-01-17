@@ -6499,33 +6499,52 @@ const savedData = ${dataString};
               
               {/* Select Menu Header */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0px" }}>
-                <div style={{ display: "flex", gap: "0px", alignItems: "center" }}>
-                  <div style={{ fontSize: "2vw", fontWeight: "bold" }}>
-                    Select
+                <div style={{ display: "flex", gap: "0.5vw", alignItems: "center" }}>
+                  <div style={{ fontSize: "1.5vw", fontWeight: "bold" }}>
+                    Select Mode
                   </div>
-                  {/* Selection Mode Toggle */}
+                  {/* Selection Mode Toggle - Two Buttons */}
                   <button
-                    onClick={() => setSelectAllPixels(!selectAllPixels)}
+                    onClick={() => setSelectAllPixels(true)}
                     style={{
-                      background: "#000000",
-                      color: "#ffffff",
+                      background: selectAllPixels ? "#000000" : "#ffffff",
+                      color: selectAllPixels ? "#ffffff" : "#000000",
                       padding: "0",
                       cursor: "pointer",
                       fontSize: "1.5vw",
                       fontWeight: "bold",
                       whiteSpace: "nowrap",
-                      border: "none",
+                      border: "0.2vw solid #000000",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      gap: "0.3vw",
                       width: "5vw",
                       height: "5vw"
                     }}
-                    title={selectAllPixels ? "Selecting all pixels in box" : "Selecting only colored pixels"}
+                    title="Select all pixels in box"
                   >
-                    <i className={selectAllPixels ? "fas fa-check-square" : "fas fa-square"}></i>
-                    {selectAllPixels ? "All" : "Color"}
+                    All
+                  </button>
+                  <button
+                    onClick={() => setSelectAllPixels(false)}
+                    style={{
+                      background: !selectAllPixels ? "#000000" : "#ffffff",
+                      color: !selectAllPixels ? "#ffffff" : "#000000",
+                      padding: "0",
+                      cursor: "pointer",
+                      fontSize: "1.5vw",
+                      fontWeight: "bold",
+                      whiteSpace: "nowrap",
+                      border: "0.2vw solid #000000",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: "5vw",
+                      height: "5vw"
+                    }}
+                    title="Select only colored pixels"
+                  >
+                    Color
                   </button>
                 </div>
                 <div style={{ display: "flex", gap: "0.5vw" }}>
