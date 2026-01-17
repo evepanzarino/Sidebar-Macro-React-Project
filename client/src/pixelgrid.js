@@ -205,6 +205,11 @@ export default function PixelGrid() {
   
   const [pixelGroups, setPixelGroups] = useState(() => {
     try {
+      // Check if we should clear everything on this load
+      const shouldClear = sessionStorage.getItem("pixelgrid_clearOnLoad");
+      if (shouldClear) {
+        return {};
+      }
       const saved = localStorage.getItem("pixelgrid_pixelGroups");
       return saved ? JSON.parse(saved) : {};
     } catch { return {}; }
@@ -212,6 +217,14 @@ export default function PixelGrid() {
   
   const [groups, setGroups] = useState(() => {
     try {
+      // Check if we should clear everything on this load
+      const shouldClear = sessionStorage.getItem("pixelgrid_clearOnLoad");
+      if (shouldClear) {
+        sessionStorage.removeItem("pixelgrid_clearOnLoad");
+        localStorage.clear();
+        return [{ name: "Background", zIndex: -1, pixels: {}, locked: true }];
+      }
+      
       const saved = localStorage.getItem("pixelgrid_groups");
       const savedGroups = saved ? JSON.parse(saved) : [];
       
@@ -506,6 +519,11 @@ export default function PixelGrid() {
   // Initialize pixelColors with saved data or defaults
   const [pixelColors, setPixelColors] = useState(() => {
     try {
+      // Check if we should clear everything on this load
+      const shouldClear = sessionStorage.getItem("pixelgrid_clearOnLoad");
+      if (shouldClear) {
+        return Array(totalPixels).fill(null);
+      }
       const saved = localStorage.getItem("pixelgrid_pixelColors");
       if (saved) {
         const parsed = JSON.parse(saved);
@@ -655,7 +673,8 @@ export default function PixelGrid() {
           zIndex: 999, // Always on top
           pixels: {},
           locked: false,
-          originalPixelIndices: selectedPixels
+          originalPixelIndices: selectedPixels,
+          originalSelectionArea: selectedPixels // Used for transform preview
         };
         
         // Add color data to pixels
@@ -3284,13 +3303,9 @@ const savedData = ${dataString};
               <div
                 onClick={() => {
                   if (window.confirm("Clear all pixels, groups, and layers? This will also clear localStorage.")) {
-                    // Clear localStorage FIRST before reload
-                    try {
-                      localStorage.clear();
-                    } catch (err) {
-                      console.error("Failed to clear localStorage:", err);
-                    }
-                    // Reload page to ensure clean state - initialization will start fresh
+                    // Set a flag to clear everything on reload
+                    sessionStorage.setItem("pixelgrid_clearOnLoad", "true");
+                    // Reload page - initialization will detect flag and clear everything
                     window.location.reload();
                   }
                   setShowFileMenu(false);
