@@ -4002,7 +4002,10 @@ const savedData = ${dataString};
                       // Clicking on selected pixel - start drag to move
                       const startRow = Math.floor(i / 200);
                       const startCol = i % 200;
-                      const dragState = { pixelIndex: i, startRow, startCol, clientX: e.clientX, clientY: e.clientY };
+                      // Handle both mouse and touch events
+                      const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+                      const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+                      const dragState = { pixelIndex: i, startRow, startCol, clientX, clientY };
                       
                       setActiveGroup("__selected__");
                       setGroupDragStart(dragState);
@@ -4020,9 +4023,12 @@ const savedData = ${dataString};
                       const pixelGroup = pixelGroups[i];
                       const startRow = Math.floor(i / 200);
                       const startCol = i % 200;
+                      // Handle both mouse and touch events
+                      const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+                      const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
                       
                       setActiveGroup(pixelGroup.group);
-                      setGroupDragStart({ pixelIndex: i, startRow, startCol, clientX: e.clientX, clientY: e.clientY });
+                      setGroupDragStart({ pixelIndex: i, startRow, startCol, clientX, clientY });
                       setIsDrawing(true);
                     }
                   } else if (activeDrawingTool === "pencil") {
