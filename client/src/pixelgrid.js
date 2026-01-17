@@ -3358,7 +3358,6 @@ const savedData = ${dataString};
                   setViewMode("drawing");
                   setShowViewMenu(false);
                   setActiveDrawingTool("pencil");
-                  setActiveGroup(null);
                 }}
                 style={{
                   cursor: "pointer",
@@ -3485,7 +3484,6 @@ const savedData = ${dataString};
               onClick={() => {
                 setActiveDrawingTool("pencil");
                 setViewMode("drawing");
-                setActiveGroup(null);
                 setLineStartPixel(null);
               }}
               style={{
@@ -3511,7 +3509,6 @@ const savedData = ${dataString};
               onClick={() => {
                 setActiveDrawingTool("eraser");
                 setViewMode("drawing");
-                setActiveGroup(null);
                 setLineStartPixel(null);
               }}
               style={{
@@ -3537,7 +3534,6 @@ const savedData = ${dataString};
               onClick={() => {
                 setActiveDrawingTool("line");
                 setViewMode("drawing");
-                setActiveGroup(null);
                 setLineStartPixel(null);
               }}
               style={{
@@ -3563,7 +3559,6 @@ const savedData = ${dataString};
               onClick={() => {
                 setActiveDrawingTool("curve");
                 setViewMode("drawing");
-                setActiveGroup(null);
                 setLineStartPixel(null);
                 setCurveEndPixel(null);
                 setCurveCurveAmount(0);
@@ -3591,7 +3586,6 @@ const savedData = ${dataString};
               onClick={() => {
                 setActiveDrawingTool("bucket");
                 setViewMode("drawing");
-                setActiveGroup(null);
                 setLineStartPixel(null);
               }}
               style={{
@@ -3645,7 +3639,6 @@ const savedData = ${dataString};
               onClick={() => {
                 setActiveDrawingTool("select");
                 setViewMode("layers");
-                setActiveGroup(null);
                 setLineStartPixel(null);
                 setSelectionStart(null);
                 setSelectionEnd(null);
@@ -3657,7 +3650,6 @@ const savedData = ${dataString};
                 dragStateRef.current.groupDragStart = null;
                 dragStateRef.current.groupDragCurrent = null;
                 dragStateRef.current.isDrawing = false;
-                dragStateRef.current.activeGroup = null;
               }}
               style={{
                 width: size.w <= 1024 ? "8vw" : "3vw",
