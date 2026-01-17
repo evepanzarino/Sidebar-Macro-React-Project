@@ -644,6 +644,74 @@ export default function PixelGrid() {
     });
   }, [totalPixels]);
 
+  // Sync selectedPixels to __selected__ layer
+  useEffect(() => {
+    if (selectedPixels.length > 0) {
+      // Create or update __selected__ layer
+      setGroups(prevGroups => {
+        const existingSelectedIndex = prevGroups.findIndex(g => g.name === "__selected__");
+        const selectedLayer = {
+          name: "__selected__",
+          zIndex: 999, // Always on top
+          pixels: {},
+          locked: false,
+          originalPixelIndices: selectedPixels
+        };
+        
+        // Add color data to pixels
+        selectedPixels.forEach(idx => {
+          const pixelGroup = pixelGroups[idx];
+          if (pixelGroup && pixelGroup.group !== "__selected__") {
+            // Get color from the layer the pixel belongs to
+            const sourceLayer = prevGroups.find(g => g.name === pixelGroup.group);
+            if (sourceLayer && sourceLayer.pixels[idx]) {
+              selectedLayer.pixels[idx] = sourceLayer.pixels[idx];
+            }
+          } else if (pixelColors[idx]) {
+            // Get color from base canvas
+            selectedLayer.pixels[idx] = pixelColors[idx];
+          }
+        });
+        
+        if (existingSelectedIndex >= 0) {
+          // Update existing __selected__ layer
+          const newGroups = [...prevGroups];
+          newGroups[existingSelectedIndex] = selectedLayer;
+          return newGroups;
+        } else {
+          // Add new __selected__ layer
+          return [...prevGroups, selectedLayer];
+        }
+      });
+      
+      // Update pixelGroups to map selected pixels to __selected__
+      setPixelGroups(prevPixelGroups => {
+        const newPixelGroups = { ...prevPixelGroups };
+        selectedPixels.forEach(idx => {
+          newPixelGroups[idx] = { group: "__selected__", zIndex: 999 };
+        });
+        return newPixelGroups;
+      });
+      
+      // Set __selected__ as active group when using move tool
+      if (activeDrawingTool === "movegroup" && activeGroup === null) {
+        setActiveGroup("__selected__");
+      }
+    } else {
+      // Remove __selected__ layer when no pixels selected
+      setGroups(prevGroups => prevGroups.filter(g => g.name !== "__selected__"));
+      setPixelGroups(prevPixelGroups => {
+        const newPixelGroups = { ...prevPixelGroups };
+        Object.keys(newPixelGroups).forEach(idx => {
+          if (newPixelGroups[idx].group === "__selected__") {
+            delete newPixelGroups[idx];
+          }
+        });
+        return newPixelGroups;
+      });
+    }
+  }, [selectedPixels, pixelGroups, pixelColors, activeDrawingTool, activeGroup]);
+
   useEffect(() => {
     function handleResize() {
       setSize({ w: window.innerWidth, h: window.innerHeight });
@@ -3885,6 +3953,86 @@ const savedData = ${dataString};
                     }
                   }
                 }
+                // MOVEGROUP TOOL DELEGATION - Handle move tool clicks that miss pixel directly
+                else if (activeDrawingTool === "movegroup") {
+                  console.log("=== DELEGATED MOVEGROUP CLICK ===", { 
+                    pixel: pixelIndex, 
+                    tool: activeDrawingTool, 
+                    isSelected: selectedPixels.includes(pixelIndex),
+                    hasPixelGroup: !!pixelGroups[pixelIndex]
+                  });
+                  
+                  if (selectedPixels.includes(pixelIndex)) {
+                    // Clicking on selected pixel - start drag to move
+                    const startRow = Math.floor(pixelIndex / 200);
+                    const startCol = pixelIndex % 200;
+                    const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+                    const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+                    const dragState = { pixelIndex, startRow, startCol, clientX, clientY };
+                    
+                    console.log("DELEGATED: Starting drag on selected pixels", { 
+                      pixelIndex, 
+                      startRow, 
+                      startCol,
+                      selectedCount: selectedPixels.length
+                    });
+                    
+                    // Update ref immediately BEFORE state updates
+                    dragStateRef.current.activeGroup = "__selected__";
+                    dragStateRef.current.groupDragStart = dragState;
+                    dragStateRef.current.groupDragCurrent = null;
+                    dragStateRef.current.isDrawing = true;
+                    dragStateRef.current.selectedPixels = selectedPixels;
+                    
+                    flushSync(() => {
+                      setActiveGroup("__selected__");
+                      setGroupDragStart(dragState);
+                      setGroupDragCurrent(null);
+                      setIsDrawing(true);
+                      setRenderTrigger(prev => prev + 1);
+                    });
+                  } else if (pixelGroups[pixelIndex]) {
+                    // Clicking on a grouped pixel - start drag to move that layer
+                    const pixelGroup = pixelGroups[pixelIndex];
+                    const startRow = Math.floor(pixelIndex / 200);
+                    const startCol = pixelIndex % 200;
+                    const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+                    const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+                    
+                    console.log("DELEGATED: Starting drag on layer", pixelGroup.group);
+                    
+                    setActiveGroup(pixelGroup.group);
+                    setGroupDragStart({ pixelIndex, startRow, startCol, clientX, clientY });
+                    setIsDrawing(true);
+                  } else if (selectedPixels.length > 0) {
+                    // Clicking on empty space but have selected pixels - move __selected__ layer
+                    const startRow = Math.floor(pixelIndex / 200);
+                    const startCol = pixelIndex % 200;
+                    const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+                    const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+                    const dragState = { pixelIndex, startRow, startCol, clientX, clientY };
+                    
+                    console.log("DELEGATED: Moving __selected__ from empty space", { 
+                      pixelIndex, 
+                      selectedCount: selectedPixels.length
+                    });
+                    
+                    // Update ref immediately BEFORE state updates
+                    dragStateRef.current.activeGroup = "__selected__";
+                    dragStateRef.current.groupDragStart = dragState;
+                    dragStateRef.current.groupDragCurrent = null;
+                    dragStateRef.current.isDrawing = true;
+                    dragStateRef.current.selectedPixels = selectedPixels;
+                    
+                    flushSync(() => {
+                      setActiveGroup("__selected__");
+                      setGroupDragStart(dragState);
+                      setGroupDragCurrent(null);
+                      setIsDrawing(true);
+                      setRenderTrigger(prev => prev + 1);
+                    });
+                  }
+                }
               } else {
                 console.log("Click outside grid bounds:", { row, col, rows, maxRow: rows - 1 });
               }
@@ -4100,6 +4248,30 @@ const savedData = ${dataString};
                       setActiveGroup(pixelGroup.group);
                       setGroupDragStart({ pixelIndex: i, startRow, startCol, clientX, clientY });
                       setIsDrawing(true);
+                    } else if (selectedPixels.length > 0) {
+                      // Clicking on empty space but have selected pixels - move __selected__ layer
+                      const startRow = Math.floor(i / 200);
+                      const startCol = i % 200;
+                      const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+                      const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+                      const dragState = { pixelIndex: i, startRow, startCol, clientX, clientY };
+                      
+                      console.log("=== MOVEGROUP START (empty space, moving __selected__) ===", { 
+                        pixel: i, 
+                        selectedPixelsCount: selectedPixels.length
+                      });
+                      
+                      setActiveGroup("__selected__");
+                      setGroupDragStart(dragState);
+                      setGroupDragCurrent(null);
+                      setIsDrawing(true);
+                      
+                      // Update ref for immediate access
+                      dragStateRef.current.activeGroup = "__selected__";
+                      dragStateRef.current.groupDragStart = dragState;
+                      dragStateRef.current.groupDragCurrent = null;
+                      dragStateRef.current.isDrawing = true;
+                      dragStateRef.current.selectedPixels = selectedPixels;
                     }
                   } else if (activeDrawingTool === "pencil") {
                     setIsDrawing(true);
