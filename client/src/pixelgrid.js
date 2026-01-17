@@ -4760,30 +4760,51 @@ const savedData = ${dataString};
                       // Extract only the selected pixels from the layer
                       extractSelectionToSelected(clickedPixelGroup.group, selectedPixels);
                     }
+                    const dragState = { pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY };
                     setActiveGroup("__selected__");
-                    setGroupDragStart({ pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY });
+                    setGroupDragStart(dragState);
                     setGroupDragCurrent(null);
                     setSelectionTransform({ deltaRow: 0, deltaCol: 0, active: true });
                     setIsDrawing(true);
+                    
+                    // Update ref for immediate access
+                    dragStateRef.current.activeGroup = "__selected__";
+                    dragStateRef.current.groupDragStart = dragState;
+                    dragStateRef.current.groupDragCurrent = null;
+                    dragStateRef.current.isDrawing = true;
                   }
                   // Priority 2: No selection - move entire layer
                   else if (pixelGroup) {
                     // Clicking on a layer pixel - extract entire layer to __selected__
                     extractLayerToSelected(pixelGroup.group);
+                    const dragState = { pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY };
                     setActiveGroup("__selected__");
                     setSelectedPixels([]); // Clear any rectangular selection
-                    setGroupDragStart({ pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY });
+                    setGroupDragStart(dragState);
                     setGroupDragCurrent(null);
                     setSelectionTransform({ deltaRow: 0, deltaCol: 0, active: true });
                     setIsDrawing(true);
+                    
+                    // Update ref for immediate access
+                    dragStateRef.current.activeGroup = "__selected__";
+                    dragStateRef.current.groupDragStart = dragState;
+                    dragStateRef.current.groupDragCurrent = null;
+                    dragStateRef.current.isDrawing = true;
                   }
                   // Priority 3: __selected__ layer exists (from previous operation)
                   else if (activeGroup === "__selected__") {
                     // Clicking on __selected__ layer - enable drag
-                    setGroupDragStart({ pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY });
+                    const dragState = { pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY };
+                    setGroupDragStart(dragState);
                     setGroupDragCurrent(null);
                     setSelectionTransform({ deltaRow: 0, deltaCol: 0, active: true });
                     setIsDrawing(true);
+                    
+                    // Update ref for immediate access
+                    dragStateRef.current.activeGroup = "__selected__";
+                    dragStateRef.current.groupDragStart = dragState;
+                    dragStateRef.current.groupDragCurrent = null;
+                    dragStateRef.current.isDrawing = true;
                   }
                 }
                 // LINE TOOL
@@ -4937,6 +4958,7 @@ const savedData = ${dataString};
                   }
                   
                   // Handle __selected__ layer: commit to base canvas instead of restoring to layer
+                  let shouldReloadFromStorage = false;
                   if (selectedLayer && activeGroup === "__selected__") {
                     console.log("onPointerUp: Committing __selected__ pixels to base canvas");
                     
@@ -4980,10 +5002,17 @@ const savedData = ${dataString};
                       }).filter(idx => idx !== null);
                       
                       setSelectedPixels(newSelectedPixels);
+                      shouldReloadFromStorage = true; // Reload after committing to base canvas
+                    } else {
+                      // No movement - just remove __selected__ layer without changing anything
+                      console.log("onPointerUp: No movement, removing __selected__ layer only");
+                      setGroups(prevGroups => prevGroups.filter(g => g.name !== "__selected__"));
+                      setActiveGroup(selectedLayer.originalLayerName);
                     }
                   } else if (selectedLayer) {
                     console.log("onPointerUp: Restoring __selected__ to original layer");
                     restoreSelectedToLayer(movedPixelIndices);
+                    // Don't reload from storage - the restore updated React state correctly
                   } else {
                     console.log("onPointerUp: No __selected__ layer to restore");
                   }
@@ -5002,42 +5031,46 @@ const savedData = ${dataString};
                     setSelectionTransform({ deltaRow: 0, deltaCol: 0, active: false }); // Double-clear to ensure preview is gone
                     console.log("onPointerUp: Forced render refresh and preview clear");
                     
-                    // Reload all layers from localStorage to ensure original data is displayed
-                    setTimeout(() => {
-                      console.log("Reloading all layers from localStorage");
-                      try {
-                        const storedGroups = localStorage.getItem("pixelgrid_groups");
-                        if (storedGroups) {
-                          const parsedGroups = JSON.parse(storedGroups);
-                          
-                          // Reload groups from localStorage
-                          setGroups(parsedGroups.map(g => ({
-                            ...g,
-                            pixels: Object.freeze({ ...g.pixels }),
-                            originalSelectionArea: g.originalSelectionArea || []
-                          })));
-                          
-                          // Rebuild pixelGroups from localStorage layer data
-                          const newPixelGroups = {};
-                          parsedGroups.forEach(layer => {
-                            if (layer.pixels) {
-                              Object.keys(layer.pixels).forEach(pixelIndex => {
-                                const idx = parseInt(pixelIndex, 10);
-                                newPixelGroups[idx] = {
-                                  group: layer.name,
-                                  zIndex: layer.zIndex || 0
-                                };
-                              });
-                            }
-                          });
-                          setPixelGroups(newPixelGroups);
-                          
-                          console.log("Layers reloaded from localStorage");
+                    // Only reload from localStorage if we actually moved pixels to base canvas
+                    if (shouldReloadFromStorage) {
+                      setTimeout(() => {
+                        console.log("Reloading all layers from localStorage");
+                        try {
+                          const storedGroups = localStorage.getItem("pixelgrid_groups");
+                          if (storedGroups) {
+                            const parsedGroups = JSON.parse(storedGroups);
+                            
+                            // Reload groups from localStorage
+                            setGroups(parsedGroups.map(g => ({
+                              ...g,
+                              pixels: Object.freeze({ ...g.pixels }),
+                              originalSelectionArea: g.originalSelectionArea || []
+                            })));
+                            
+                            // Rebuild pixelGroups from localStorage layer data
+                            const newPixelGroups = {};
+                            parsedGroups.forEach(layer => {
+                              if (layer.pixels) {
+                                Object.keys(layer.pixels).forEach(pixelIndex => {
+                                  const idx = parseInt(pixelIndex, 10);
+                                  newPixelGroups[idx] = {
+                                    group: layer.name,
+                                    zIndex: layer.zIndex || 0
+                                  };
+                                });
+                              }
+                            });
+                            setPixelGroups(newPixelGroups);
+                            
+                            console.log("Layers reloaded from localStorage");
+                          }
+                        } catch (error) {
+                          console.error("Failed to reload layers from localStorage:", error);
                         }
-                      } catch (error) {
-                        console.error("Failed to reload layers from localStorage:", error);
-                      }
-                    }, 100);
+                      }, 100);
+                    } else {
+                      console.log("Skipping localStorage reload - no base canvas commit");
+                    }
                   }, 0);
                   
                   console.log("=== POINTER UP: MOVE TOOL COMPLETE ===");
