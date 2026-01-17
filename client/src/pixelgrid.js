@@ -3186,6 +3186,52 @@ const savedData = ${dataString};
           )}
         </div>
         
+        {/* UNDO BUTTON */}
+        <button
+          onClick={() => {
+            // TODO: Implement undo functionality
+            console.log("Undo clicked");
+          }}
+          style={{
+            background: "#fff",
+            color: "#000",
+            border: "0.2vw solid #000",
+            width: "100%",
+            cursor: "pointer",
+            height: size.w <= 1024 ? "10vw" : "7vw",
+            fontSize: size.w <= 1024 ? "4vw" : "1.5vw",
+            fontWeight: "bold",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
+          <i className="fas fa-undo"></i>
+        </button>
+        
+        {/* REDO BUTTON */}
+        <button
+          onClick={() => {
+            // TODO: Implement redo functionality
+            console.log("Redo clicked");
+          }}
+          style={{
+            background: "#fff",
+            color: "#000",
+            border: "0.2vw solid #000",
+            width: "100%",
+            cursor: "pointer",
+            height: size.w <= 1024 ? "10vw" : "7vw",
+            fontSize: size.w <= 1024 ? "4vw" : "1.5vw",
+            fontWeight: "bold",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
+          <i className="fas fa-redo"></i>
+        </button>
+        
         {/* VIEW BUTTON */}
         <div style={{ position: "relative" }}>
           <button
