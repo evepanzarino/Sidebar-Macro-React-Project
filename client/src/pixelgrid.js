@@ -1606,6 +1606,31 @@ export default function PixelGrid() {
       return newColors;
     });
     
+    // Clear pixels from Background layer if they exist there
+    setGroups(prevGroups => {
+      return prevGroups.map(g => {
+        if (g.name === "Background") {
+          const newPixels = { ...g.pixels };
+          selectedPixels.forEach(pixelIndex => {
+            delete newPixels[pixelIndex]; // Remove pixel from Background layer
+          });
+          return { ...g, pixels: Object.freeze(newPixels) };
+        }
+        return g;
+      });
+    });
+    
+    // Remove pixels from pixelGroups if they were in Background
+    setPixelGroups(prevPixelGroups => {
+      const newPixelGroups = { ...prevPixelGroups };
+      selectedPixels.forEach(pixelIndex => {
+        if (newPixelGroups[pixelIndex]?.group === "Background") {
+          delete newPixelGroups[pixelIndex];
+        }
+      });
+      return newPixelGroups;
+    });
+    
     // Capture selectedPixels before clearing
     const pixelsToMap = [...selectedPixels];
     
