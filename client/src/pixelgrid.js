@@ -4601,16 +4601,23 @@ const savedData = ${dataString};
                   // Check if __selected__ layer exists
                   const selectedLayer = groups.find(g => g.name === "__selected__");
                   
-                  // Calculate movement delta from transform state (most accurate)
-                  const deltaRow = selectionTransform.deltaRow || 0;
-                  const deltaCol = selectionTransform.deltaCol || 0;
+                  // Calculate movement delta from ref (works for both desktop and mobile)
+                  let deltaRow = 0;
+                  let deltaCol = 0;
+                  
+                  if (dragStateRef.current.groupDragCurrent && dragStateRef.current.groupDragStart) {
+                    deltaRow = dragStateRef.current.groupDragCurrent.row - dragStateRef.current.groupDragStart.startRow;
+                    deltaCol = dragStateRef.current.groupDragCurrent.col - dragStateRef.current.groupDragStart.startCol;
+                  }
                   
                   console.log("onPointerUp: Movement delta", { 
                     deltaRow, 
                     deltaCol, 
                     hasSelectedLayer: !!selectedLayer,
                     activeGroup,
-                    selectionTransform
+                    selectionTransform,
+                    refDragStart: dragStateRef.current.groupDragStart,
+                    refDragCurrent: dragStateRef.current.groupDragCurrent
                   });
                   
                   // Detect overlaps before moving
