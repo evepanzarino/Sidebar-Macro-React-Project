@@ -5168,6 +5168,12 @@ const savedData = ${dataString};
             borderWidth = `${0.2 * zoomFactor}vw`;
             boxShadow = `0 0 ${0.5 * zoomFactor}vw ${0.2 * zoomFactor}vw #9C27B0`;
           }
+          // __selected__ layer pixels ready to move (active but not yet moved) - show purple to indicate ready state
+          else if (selectionTransform.active && isInSelectedLayer && activeGroup === "__selected__") {
+            borderColor = '#9C27B0';
+            borderWidth = `${0.2 * zoomFactor}vw`;
+            boxShadow = `0 0 ${0.5 * zoomFactor}vw ${0.2 * zoomFactor}vw #9C27B0`;
+          }
           // Highlight active layer area to show clickable region
           else if (shouldHighlightActiveLayer) {
             borderColor = 'rgba(76, 175, 80, 0.5)'; // Green tint
