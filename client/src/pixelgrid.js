@@ -4323,23 +4323,44 @@ const savedData = ${dataString};
                     paintBucket(i);
                   } else if (activeDrawingTool === "line") {
                     if (lineStartPixel === null) {
+                      // First click: set start point
                       setLineStartPixel(i);
                       setLineEndPixel(null);
                     } else if (lineStartPixel === i) {
+                      // Clicking same pixel - cancel
                       setLineStartPixel(null);
                       setLineEndPixel(null);
+                    } else if (size.w <= 1024) {
+                      // Mobile: second click sets preview, requires third click to confirm
+                      if (lineEndPixel === null) {
+                        setLineEndPixel(i);
+                        setHoveredPixel(i);
+                      } else {
+                        // Third click or clicking different pixel - draw line
+                        drawLine(lineStartPixel, i);
+                        setLineStartPixel(null);
+                        setLineEndPixel(null);
+                      }
                     } else {
+                      // Desktop: show preview on hover
                       setLineEndPixel(i);
                       setHoveredPixel(i);
                     }
                   } else if (activeDrawingTool === "curve") {
                     if (lineStartPixel === null) {
+                      // First click: set start point
                       setLineStartPixel(i);
                       setCurveEndPixel(null);
                     } else if (lineStartPixel === i) {
+                      // Clicking same pixel - cancel
                       setLineStartPixel(null);
                       setCurveEndPixel(null);
+                    } else if (size.w <= 1024) {
+                      // Mobile: second click sets endpoint preview
+                      setCurveEndPixel(i);
+                      setHoveredPixel(i);
                     } else {
+                      // Desktop: show preview on hover
                       setCurveEndPixel(i);
                       setHoveredPixel(i);
                     }
@@ -4776,8 +4797,18 @@ const savedData = ${dataString};
                   } else if (lineStartPixel === i) {
                     // Clicking same pixel - cancel
                     setLineStartPixel(null);
+                  } else if (size.w <= 1024) {
+                    // Mobile: second click sets preview, requires third click to confirm
+                    if (lineEndPixel === null) {
+                      setLineEndPixel(i);
+                    } else {
+                      // Third click or clicking different pixel - draw line
+                      drawLine(lineStartPixel, i);
+                      setLineStartPixel(null);
+                      setLineEndPixel(null);
+                    }
                   } else {
-                    // Second click: draw straight line immediately
+                    // Desktop: second click draws line immediately
                     drawLine(lineStartPixel, i);
                     setLineStartPixel(null);
                   }
@@ -5018,6 +5049,18 @@ const savedData = ${dataString};
                     // Desktop: update selection during drag
                     setSelectionEnd(i);
                   }
+                }
+                // LINE TOOL - Update line preview on mobile
+                else if (activeDrawingTool === "line" && lineStartPixel !== null && size.w <= 1024) {
+                  // Mobile: update line preview when moving to different pixels
+                  setLineEndPixel(i);
+                  setHoveredPixel(i);
+                }
+                // CURVE TOOL - Update curve preview on mobile
+                else if (activeDrawingTool === "curve" && lineStartPixel !== null && curveEndPixel === null && size.w <= 1024) {
+                  // Mobile: update curve endpoint preview when moving to different pixels
+                  setCurveEndPixel(i);
+                  setHoveredPixel(i);
                 }
                 // MOVE TOOL - Update drag preview position
                 else if (activeDrawingTool === "movegroup" && groupDragStart !== null && activeGroup !== null && isDrawing) {
