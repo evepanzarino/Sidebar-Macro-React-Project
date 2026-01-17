@@ -2213,6 +2213,9 @@ export default function PixelGrid() {
   function restoreSelectedToLayer(movedPixelIndices = null) {
     console.log("=== RESTORE SELECTED TO LAYER START ===", { providedIndices: movedPixelIndices?.length });
     
+    // FIRST: Reload the original layer from localStorage to get complete pixel data
+    // This ensures we're restoring ALL pixels including those that may have been covered
+    let originalLayerFromStorage = null;
     const selectedLayer = groups.find(g => g.name === "__selected__");
     if (!selectedLayer || !selectedLayer.originalLayerName) {
       console.log("restoreSelectedToLayer: No __selected__ layer found or missing originalLayerName", { selectedLayer });
@@ -2221,6 +2224,24 @@ export default function PixelGrid() {
 
     const originalLayerName = selectedLayer.originalLayerName;
     const originalZIndex = selectedLayer.originalZIndex;
+    
+    // Reload the original layer from localStorage to ensure we have complete selection area
+    try {
+      const storedGroups = localStorage.getItem("pixelgrid_groups");
+      if (storedGroups) {
+        const parsedGroups = JSON.parse(storedGroups);
+        originalLayerFromStorage = parsedGroups.find(g => g.name === originalLayerName);
+        if (originalLayerFromStorage) {
+          console.log("restoreSelectedToLayer: Loaded original layer from localStorage", {
+            layerName: originalLayerName,
+            storedPixelCount: Object.keys(originalLayerFromStorage.pixels || {}).length,
+            storedSelectionAreaLength: (originalLayerFromStorage.originalSelectionArea || []).length
+          });
+        }
+      }
+    } catch (error) {
+      console.error("restoreSelectedToLayer: Failed to load from localStorage", error);
+    }
     
     // Use provided indices OR fall back to originalPixelIndices (NOT pixelGroups)
     // Because __selected__ pixels are NEVER in pixelGroups during preview
@@ -2289,12 +2310,27 @@ export default function PixelGrid() {
       });
       
       // Restore pixels using the mapping from original to new positions
-      // We must use originalColors as the source of truth to prevent contamination
+      // Use COMPLETE original selection area from localStorage if available
+      // This ensures ALL pixels are moved, even those that were covered by other layers
       const filteredPixels = {};
       if (movedPixelIndices && movedPixelIndices.length > 0) {
         // Movement occurred - map original pixels to new positions
         // Calculate the delta from the move
-        const originalIndices = selectedGroup.originalPixelIndices || [];
+        
+        // Use the COMPLETE originalSelectionArea from localStorage if available
+        // This includes ALL pixels that were originally in the layer
+        let originalIndices = selectedGroup.originalSelectionArea || selectedGroup.originalPixelIndices || [];
+        
+        // If we have the layer from storage, use its complete selection area
+        if (originalLayerFromStorage && originalLayerFromStorage.originalSelectionArea && 
+            originalLayerFromStorage.originalSelectionArea.length > 0) {
+          originalIndices = originalLayerFromStorage.originalSelectionArea;
+          console.log("restoreSelectedToLayer: Using complete selection area from localStorage", {
+            originalLayerName,
+            completeSelectionAreaLength: originalIndices.length,
+            selectedGroupIndicesLength: (selectedGroup.originalPixelIndices || []).length
+          });
+        }
         
         if (originalIndices.length > 0 && movedPixelIndices.length > 0) {
           // For each moved pixel, find its corresponding original pixel and use the original color
@@ -2305,18 +2341,26 @@ export default function PixelGrid() {
           
           console.log("restoreSelectedToLayer: Calculated delta", { deltaRow, deltaCol });
           
-          // STRICT: For each original pixel, calculate its new position and use ONLY original color
-          // This prevents contamination from pixels that were dragged over during the move
+          // For each original pixel in the COMPLETE selection area, calculate new position
+          // Use originalColors first, then fall back to localStorage data
           originalIndices.forEach(originalIdx => {
-            // CRITICAL: Only use originalColors Map - never trust selectedGroupPixels
-            const originalColor = selectedGroup.originalColors.get(originalIdx);
+            // Try to get color from originalColors Map first
+            let originalColor = selectedGroup.originalColors.get(originalIdx);
             
-            // Verify this pixel was actually in our original selection
+            // If not in originalColors, try to get from localStorage
+            if (originalColor === undefined && originalLayerFromStorage && originalLayerFromStorage.pixels) {
+              originalColor = originalLayerFromStorage.pixels[originalIdx];
+              if (originalColor !== undefined) {
+                console.log("restoreSelectedToLayer: Using color from localStorage for pixel", {
+                  pixelIndex: originalIdx,
+                  color: originalColor
+                });
+              }
+            }
+            
+            // Skip pixels that don't exist in either source
             if (originalColor === undefined) {
-              console.warn("restoreSelectedToLayer: Skipping pixel not in originalColors", { 
-                pixelIndex: originalIdx 
-              });
-              return; // Skip pixels not in original selection
+              return;
             }
             
             const row = Math.floor(originalIdx / 200);
@@ -2385,7 +2429,10 @@ export default function PixelGrid() {
             
             // Map from old indices to new indices based on the delta
             if (movedPixelIndices && movedPixelIndices.length > 0) {
-              const originalIndices = selectedGroup.originalPixelIndices || [];
+              // Use complete selection area if available
+              const originalIndices = (originalLayerFromStorage && originalLayerFromStorage.originalSelectionArea) || 
+                                     selectedGroup.originalSelectionArea || 
+                                     selectedGroup.originalPixelIndices || [];
               if (originalIndices.length > 0) {
                 const firstOriginalIdx = originalIndices[0];
                 const firstMovedIdx = movedPixelIndices[0];
@@ -2401,8 +2448,13 @@ export default function PixelGrid() {
                   const oldCol = newCol - deltaCol;
                   const oldIndex = oldRow * 200 + oldCol;
                   
-                  // Get the color from originalColors using the OLD index
-                  const color = selectedGroup.originalColors.get(oldIndex);
+                  // Get the color from originalColors first, then from localStorage
+                  let color = selectedGroup.originalColors.get(oldIndex);
+                  
+                  // If not in originalColors, try localStorage
+                  if (color === undefined && originalLayerFromStorage && originalLayerFromStorage.pixels) {
+                    color = originalLayerFromStorage.pixels[oldIndex];
+                  }
                   
                   // Store using the NEW index
                   if (color !== undefined) {
