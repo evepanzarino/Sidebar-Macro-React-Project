@@ -2108,12 +2108,9 @@ export default function PixelGrid() {
             return g;
           })
           .concat([selectedLayer]);
-        console.log("extractLayerToSelected: __selected__ layer created with complete selection area", { 
+        console.log("extractLayerToSelected: Updated groups", { 
           groupCount: updated.length, 
           selectedPixels: layerPixelIndices.length,
-          selectionAreaLength: selectedLayer.originalSelectionArea.length,
-          selectedLayerPixelCount: Object.keys(selectedLayer.pixels).length,
-          selectedLayerZIndex: selectedLayer.zIndex,
           pixelIdentifiers: Array.from(pixelIdentifiers.entries()).slice(0, 5).map(([idx, id]) => ({ index: idx, id }))
         });
         return updated;
@@ -2137,14 +2134,6 @@ export default function PixelGrid() {
           return updatedPixelGroups;
         });
       }
-    });
-    
-    // Verify the selection area was loaded before proceeding
-    console.log("extractLayerToSelected: Extraction complete, selection area verified", {
-      layerName,
-      originalSelectionAreaLength: currentSelectionArea.length,
-      pixelCount: Object.keys(completeRectanglePixels).length,
-      readyForMove: true
     });
 
     // DON'T update pixelGroups during extraction - keep pixels pointing to original layer
@@ -2297,25 +2286,10 @@ export default function PixelGrid() {
     // Use flushSync to ensure this completes before drag starts
     flushSync(() => {
       setGroups(prevGroups => {
-        const updated = prevGroups
+        return prevGroups
           .filter(g => g.name !== "__selected__")
           .concat([selectedLayer]);
-        console.log("extractSelectionToSelected: __selected__ layer created with selection", {
-          groupCount: updated.length,
-          selectedPixelCount: layerSelectedPixels.length,
-          selectedLayerPixelCount: Object.keys(selectedLayer.pixels).length,
-          selectedLayerZIndex: selectedLayer.zIndex,
-          originalLayerName: layerName
-        });
-        return updated;
       });
-    });
-    
-    // Verify the selection was loaded before proceeding
-    console.log("extractSelectionToSelected: Extraction complete, selection verified", {
-      layerName,
-      selectedPixelCount: layerSelectedPixels.length,
-      readyForMove: true
     });
 
     // DON'T update pixelGroups during extraction - keep pixels pointing to original layer
@@ -2400,27 +2374,8 @@ export default function PixelGrid() {
       }
       
       // Add new positions
-      // IMPORTANT: Only update pixelGroups if this layer has equal or higher zIndex
-      // This preserves pixels from higher layers and prevents data loss
       selectedPixelIndices.forEach(pixelIndex => {
-        const existingEntry = updatedPixelGroups[pixelIndex];
-        // Only update if:
-        // 1. No existing entry, OR
-        // 2. Existing entry is from a lower or equal zIndex layer, OR
-        // 3. Existing entry is from the same layer we're restoring
-        if (!existingEntry || 
-            existingEntry.zIndex <= originalZIndex || 
-            existingEntry.group === originalLayerName) {
-          updatedPixelGroups[pixelIndex] = { group: originalLayerName, zIndex: originalZIndex };
-        } else {
-          // A higher zIndex layer owns this pixel - don't overwrite
-          console.log("restoreSelectedToLayer: Preserving higher zIndex pixel", {
-            pixelIndex,
-            existingGroup: existingEntry.group,
-            existingZIndex: existingEntry.zIndex,
-            movingLayerZIndex: originalZIndex
-          });
-        }
+        updatedPixelGroups[pixelIndex] = { group: originalLayerName, zIndex: originalZIndex };
       });
       
       console.log("restoreSelectedToLayer: Remapped pixels to original layer", { 
@@ -5168,12 +5123,6 @@ const savedData = ${dataString};
             borderWidth = `${0.2 * zoomFactor}vw`;
             boxShadow = `0 0 ${0.5 * zoomFactor}vw ${0.2 * zoomFactor}vw #9C27B0`;
           }
-          // __selected__ layer pixels ready to move (active but not yet moved) - show purple to indicate ready state
-          else if (selectionTransform.active && isInSelectedLayer && activeGroup === "__selected__") {
-            borderColor = '#9C27B0';
-            borderWidth = `${0.2 * zoomFactor}vw`;
-            boxShadow = `0 0 ${0.5 * zoomFactor}vw ${0.2 * zoomFactor}vw #9C27B0`;
-          }
           // Highlight active layer area to show clickable region
           else if (shouldHighlightActiveLayer) {
             borderColor = 'rgba(76, 175, 80, 0.5)'; // Green tint
@@ -5358,21 +5307,18 @@ const savedData = ${dataString};
                       // Extract only the selected pixels from the layer
                       // Wait for extraction to complete before setting drag state
                       extractSelectionToSelected(clickedPixelGroup.group, selectedPixels, () => {
-                        // Use flushSync to ensure drag state is set immediately
-                        flushSync(() => {
-                          const dragState = { pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY };
-                          setActiveGroup("__selected__");
-                          setGroupDragStart(dragState);
-                          setGroupDragCurrent(null);
-                          setSelectionTransform({ deltaRow: 0, deltaCol: 0, active: true });
-                          setIsDrawing(true);
-                          
-                          // Update ref for immediate access
-                          dragStateRef.current.activeGroup = "__selected__";
-                          dragStateRef.current.groupDragStart = dragState;
-                          dragStateRef.current.groupDragCurrent = null;
-                          dragStateRef.current.isDrawing = true;
-                        });
+                        const dragState = { pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY };
+                        setActiveGroup("__selected__");
+                        setGroupDragStart(dragState);
+                        setGroupDragCurrent(null);
+                        setSelectionTransform({ deltaRow: 0, deltaCol: 0, active: true });
+                        setIsDrawing(true);
+                        
+                        // Update ref for immediate access
+                        dragStateRef.current.activeGroup = "__selected__";
+                        dragStateRef.current.groupDragStart = dragState;
+                        dragStateRef.current.groupDragCurrent = null;
+                        dragStateRef.current.isDrawing = true;
                       });
                     } else {
                       const dragState = { pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY };
@@ -5394,22 +5340,19 @@ const savedData = ${dataString};
                     // Clicking on a layer pixel - extract entire layer to __selected__
                     // Wait for extraction to complete before setting drag state
                     extractLayerToSelected(pixelGroup.group, () => {
-                      // Use flushSync to ensure drag state is set immediately
-                      flushSync(() => {
-                        const dragState = { pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY };
-                        setActiveGroup("__selected__");
-                        setSelectedPixels([]); // Clear any rectangular selection
-                        setGroupDragStart(dragState);
-                        setGroupDragCurrent(null);
-                        setSelectionTransform({ deltaRow: 0, deltaCol: 0, active: true });
-                        setIsDrawing(true);
-                        
-                        // Update ref for immediate access
-                        dragStateRef.current.activeGroup = "__selected__";
-                        dragStateRef.current.groupDragStart = dragState;
-                        dragStateRef.current.groupDragCurrent = null;
-                        dragStateRef.current.isDrawing = true;
-                      });
+                      const dragState = { pixelIndex: i, startRow: Math.floor(i / 200), startCol: i % 200, clientX: e.clientX, clientY: e.clientY };
+                      setActiveGroup("__selected__");
+                      setSelectedPixels([]); // Clear any rectangular selection
+                      setGroupDragStart(dragState);
+                      setGroupDragCurrent(null);
+                      setSelectionTransform({ deltaRow: 0, deltaCol: 0, active: true });
+                      setIsDrawing(true);
+                      
+                      // Update ref for immediate access
+                      dragStateRef.current.activeGroup = "__selected__";
+                      dragStateRef.current.groupDragStart = dragState;
+                      dragStateRef.current.groupDragCurrent = null;
+                      dragStateRef.current.isDrawing = true;
                     });
                   }
                   // Priority 3: __selected__ layer exists (from previous operation)
@@ -6532,7 +6475,7 @@ const savedData = ${dataString};
       {size.w > 1024 && (activeDrawingTool === "select" || showLayersMenu) && (
         <div style={{
           position: "fixed",
-          top: "7.8vw",
+          top: size.w > 1650 ? "7.2vw" : "7.8vw",
           right: 0,
           width: "35vw",
           height: "100vh",
