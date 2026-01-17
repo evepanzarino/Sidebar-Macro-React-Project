@@ -571,6 +571,21 @@ export default function PixelGrid() {
     }
   }, [groups]);
   
+  // Normalize zIndex values on mount to ensure sequential ordering
+  useEffect(() => {
+    const normalLayers = groups.filter(g => g.name !== "Background" && g.name !== "__selected__");
+    if (normalLayers.length === 0) return;
+    
+    // Check if normalization is needed
+    const needsNormalization = normalLayers.some((layer, index) => layer.zIndex !== index);
+    
+    if (needsNormalization) {
+      console.log("Normalizing layer zIndex values to sequential order");
+      const normalized = normalizeZIndexes(groups);
+      setGroups(normalized);
+    }
+  }, []); // Run only on mount
+  
   useEffect(() => {
     try {
       localStorage.setItem("pixelgrid_pixelGroups", JSON.stringify(pixelGroups));
@@ -704,9 +719,14 @@ export default function PixelGrid() {
           originalColors.set(idx, color);
         });
         
+        // Calculate highest zIndex + 1 for __selected__ to ensure it's always on top
+        const normalLayers = prevGroups.filter(g => g.name !== "Background" && g.name !== "__selected__");
+        const highestZIndex = normalLayers.length > 0 ? Math.max(...normalLayers.map(g => g.zIndex || 0)) : -1;
+        const selectedZIndex = highestZIndex + 1;
+        
         const selectedLayer = {
           name: "__selected__",
-          zIndex: 9999, // Always on top
+          zIndex: selectedZIndex, // Always on top
           pixels: {},
           locked: false,
           originalPixelIndices: selectedPixels,
@@ -723,6 +743,9 @@ export default function PixelGrid() {
           }
         });
         
+        // Store selectedZIndex for use in pixelGroups update
+        selectedLayer._calculatedZIndex = selectedZIndex;
+        
         if (existingSelectedIndex >= 0) {
           // Update existing __selected__ layer
           const newGroups = [...prevGroups];
@@ -734,11 +757,14 @@ export default function PixelGrid() {
         }
       });
       
-      // Update pixelGroups to map selected pixels to __selected__
+      // Update pixelGroups to map selected pixels to __selected__ with calculated zIndex
       setPixelGroups(prevPixelGroups => {
         const newPixelGroups = { ...prevPixelGroups };
+        // Get the calculated zIndex from the selectedLayer
+        const selectedLayer = groups.find(g => g.name === "__selected__");
+        const selectedZIndex = selectedLayer?._calculatedZIndex || getHighestZIndex() + 1;
         selectedPixels.forEach(idx => {
-          newPixelGroups[idx] = { group: "__selected__", zIndex: 9999 };
+          newPixelGroups[idx] = { group: "__selected__", zIndex: selectedZIndex };
         });
         return newPixelGroups;
       });
@@ -1538,15 +1564,48 @@ export default function PixelGrid() {
     return pixels;
   }
 
+  // Get the highest zIndex from all non-Background, non-__selected__ layers
+  function getHighestZIndex() {
+    const normalLayers = groups.filter(g => g.name !== "Background" && g.name !== "__selected__");
+    if (normalLayers.length === 0) return -1;
+    return Math.max(...normalLayers.map(g => g.zIndex || 0));
+  }
+
+  // Get the next available zIndex for a new layer
+  function getNextZIndex() {
+    return getHighestZIndex() + 1;
+  }
+
+  // Normalize zIndex values to be sequential starting from 0
+  function normalizeZIndexes(layersArray) {
+    // Sort layers by current zIndex (excluding Background and __selected__)
+    const normalLayers = layersArray.filter(g => g.name !== "Background" && g.name !== "__selected__");
+    const backgroundLayer = layersArray.find(g => g.name === "Background");
+    const selectedLayer = layersArray.find(g => g.name === "__selected__");
+    
+    // Sort by zIndex, then reassign sequential values
+    normalLayers.sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+    normalLayers.forEach((layer, index) => {
+      layer.zIndex = index;
+    });
+    
+    // Reconstruct array with Background first, then normal layers, then __selected__
+    const result = [];
+    if (backgroundLayer) result.push(backgroundLayer);
+    result.push(...normalLayers);
+    if (selectedLayer) result.push(selectedLayer);
+    
+    return result;
+  }
+
   // Create group from selected pixels
   function createGroup(groupName) {
     if (selectedPixels.length === 0) return;
     
     const newGroups = [...groups];
     const existingGroup = newGroups.find(g => g.name === groupName);
-    // Exclude locked layers from z-index calculation
-    const normalLayers = groups.filter(g => !g.locked);
-    const zIndex = existingGroup ? existingGroup.zIndex : normalLayers.length;
+    // Get next sequential zIndex for new layers
+    const zIndex = existingGroup ? existingGroup.zIndex : getNextZIndex();
     
     // Get the __selected__ layer to extract pixel colors
     const selectedLayer = groups.find(g => g.name === "__selected__");
@@ -1999,9 +2058,13 @@ export default function PixelGrid() {
       isValidRectangle: true
     });
     
+    // Calculate highest zIndex + 1 for __selected__ to ensure it's always on top
+    const highestZIndex = getHighestZIndex();
+    const selectedZIndex = highestZIndex + 1;
+    
     const selectedLayer = {
       name: "__selected__",
-      zIndex: 9999, // Highest z-index for moving
+      zIndex: selectedZIndex, // Always highest z-index for moving
       pixels: Object.freeze(completeRectanglePixels), // Complete rectangle with all pixels
       originalLayerName: layerName,
       originalZIndex: layer.zIndex,
@@ -2177,10 +2240,14 @@ export default function PixelGrid() {
       committedPixels[pixelIndex] = originalColors.get(pixelIndex);
     });
 
+    // Calculate highest zIndex + 1 for __selected__ to ensure it's always on top
+    const highestZIndex = getHighestZIndex();
+    const selectedZIndex = highestZIndex + 1;
+
     // Create __selected__ layer metadata with committed pixel data
     const selectedLayer = {
       name: "__selected__",
-      zIndex: 9999,
+      zIndex: selectedZIndex,
       pixels: Object.freeze(committedPixels), // Committed layer data - frozen to prevent changes
       originalPixelIndices: Object.freeze([...layerSelectedPixels]), // Frozen array - cannot be modified
       originalColors, // Store original colors to prevent contamination
@@ -5138,7 +5205,9 @@ const savedData = ${dataString};
           // Calculate zIndex - transparent pixels always get minimum zIndex
           let pixelZIndex;
           if (isInSelectedLayer) {
-            pixelZIndex = 9999;
+            // Use the actual zIndex from the __selected__ layer (always highest)
+            const selectedLayerGroup = groups.find(g => g.name === "__selected__");
+            pixelZIndex = selectedLayerGroup ? selectedLayerGroup.zIndex : getHighestZIndex() + 1;
           } else if (pixelBackground === 'transparent' && (!displayColor || displayColor === null)) {
             // Blank/transparent pixels always at lowest zIndex to not block other layers
             pixelZIndex = -999;
