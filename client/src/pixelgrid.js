@@ -180,9 +180,33 @@ export default function PixelGrid() {
   const [selectedPixels, setSelectedPixels] = useState([]); // Array of selected pixel indices
   const [selectAllPixels, setSelectAllPixels] = useState(true); // Toggle: select all pixels vs only colored pixels (defaults to true)
   const [showLayersMenu, setShowLayersMenu] = useState(false); // Show layers menu
-  const [history, setHistory] = useState([]); // History stack for undo
-  const [historyIndex, setHistoryIndex] = useState(-1); // Current position in history
-  const [redoStack, setRedoStack] = useState([]); // Redo stack
+  const [history, setHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem("pixelgrid_history");
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      console.error("Failed to load history from localStorage:", error);
+      return [];
+    }
+  }); // History stack for undo
+  const [historyIndex, setHistoryIndex] = useState(() => {
+    try {
+      const saved = localStorage.getItem("pixelgrid_historyIndex");
+      return saved ? parseInt(saved, 10) : -1;
+    } catch (error) {
+      console.error("Failed to load historyIndex from localStorage:", error);
+      return -1;
+    }
+  }); // Current position in history
+  const [redoStack, setRedoStack] = useState(() => {
+    try {
+      const saved = localStorage.getItem("pixelgrid_redoStack");
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      console.error("Failed to load redoStack from localStorage:", error);
+      return [];
+    }
+  }); // Redo stack
   const [lastActionSaved, setLastActionSaved] = useState(true); // Track if current action was saved to history
   
   // Background image state
@@ -601,6 +625,17 @@ export default function PixelGrid() {
       console.error("Failed to save background opacity:", error);
     }
   }, [backgroundOpacity]);
+  
+  // Save history to localStorage when it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem("pixelgrid_history", JSON.stringify(history));
+      localStorage.setItem("pixelgrid_historyIndex", historyIndex.toString());
+      localStorage.setItem("pixelgrid_redoStack", JSON.stringify(redoStack));
+    } catch (error) {
+      console.error("Failed to save history to localStorage:", error);
+    }
+  }, [history, historyIndex, redoStack]);
   
   // Save groups (layers) to localStorage - ONLY when explicitly called, not automatically
   // This prevents moves from persisting until user draws with that layer selected
