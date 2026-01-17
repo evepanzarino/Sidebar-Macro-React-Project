@@ -1414,30 +1414,40 @@ export default function PixelGrid() {
     const normalLayers = groups.filter(g => !g.locked);
     const zIndex = existingGroup ? existingGroup.zIndex : normalLayers.length;
     
+    // Get the __selected__ layer to extract pixel colors
+    const selectedLayer = groups.find(g => g.name === "__selected__");
+    
     // Store pixel colors in the layer's pixels property
     const layerPixels = {};
     selectedPixels.forEach(pixelIndex => {
-      layerPixels[pixelIndex] = pixelColors[pixelIndex] || null;
+      // Try to get color from __selected__ layer first, then from base canvas
+      if (selectedLayer && selectedLayer.pixels[pixelIndex]) {
+        layerPixels[pixelIndex] = selectedLayer.pixels[pixelIndex];
+      } else {
+        layerPixels[pixelIndex] = pixelColors[pixelIndex] || null;
+      }
     });
     
     // Store the original selection area for this layer
     const originalSelectionArea = [...selectedPixels];
     
     if (!existingGroup) {
-      newGroups.push({ 
+      // Create new group (exclude __selected__ from being saved)
+      const filteredGroups = newGroups.filter(g => g.name !== "__selected__");
+      filteredGroups.push({ 
         name: groupName, 
         zIndex, 
         pixels: layerPixels,
         originalSelectionArea: originalSelectionArea // Store original selection
       });
-      setGroups(newGroups);
+      setGroups(filteredGroups);
       // Select the newly created layer and switch to move tool
       setActiveGroup(groupName);
       setActiveDrawingTool("movegroup");
     } else {
       // Merge pixels into existing group
       setGroups(prevGroups => {
-        return prevGroups.map(g => {
+        return prevGroups.filter(g => g.name !== "__selected__").map(g => {
           if (g.name === groupName) {
             // Merge selection areas if merging pixels
             const mergedSelection = [...new Set([...(g.originalSelectionArea || []), ...originalSelectionArea])];
@@ -1470,6 +1480,7 @@ export default function PixelGrid() {
       return newColors;
     });
     
+    // Clear selection which will trigger useEffect to remove __selected__ layer
     setSelectedPixels([]);
     setSelectionStart(null);
     setSelectionEnd(null);
