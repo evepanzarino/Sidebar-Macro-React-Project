@@ -5110,6 +5110,56 @@ const savedData = ${dataString};
           );
         })}
       </div>
+      
+      {/* SELECTION MOVE PREVIEW OVERLAY */}
+      {selectionTransform.active && (selectionTransform.deltaRow !== 0 || selectionTransform.deltaCol !== 0) && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none',
+          zIndex: 10000
+        }}>
+          {(() => {
+            const selectedLayer = groups.find(g => g.name === "__selected__");
+            if (!selectedLayer || !selectedLayer.pixels) return null;
+            
+            return Object.keys(selectedLayer.pixels).map(idx => {
+              const pixelIndex = parseInt(idx);
+              const originalRow = Math.floor(pixelIndex / 200);
+              const originalCol = pixelIndex % 200;
+              const newRow = originalRow + selectionTransform.deltaRow;
+              const newCol = originalCol + selectionTransform.deltaCol;
+              
+              // Only render if within bounds
+              if (newRow < 0 || newRow >= rows || newCol < 0 || newCol >= 200) return null;
+              
+              const color = selectedLayer.pixels[pixelIndex];
+              if (!color || color === null) return null;
+              
+              return (
+                <div
+                  key={`preview-${pixelIndex}`}
+                  style={{
+                    position: 'absolute',
+                    left: `${newCol * displayPixelSize}vw`,
+                    top: `${newRow * displayPixelSize}vw`,
+                    width: `${displayPixelSize}vw`,
+                    height: `${displayPixelSize}vw`,
+                    background: color,
+                    opacity: 0.5,
+                    border: `${0.15 * zoomFactor}vw solid rgba(156, 39, 176, 0.8)`,
+                    boxShadow: `0 0 ${0.5 * zoomFactor}vw rgba(156, 39, 176, 0.6)`,
+                    boxSizing: 'border-box'
+                  }}
+                />
+              );
+            });
+          })()}
+        </div>
+      )}
       </div>
       {/* End of GRID CONTAINER WITH BACKGROUND */}
       
