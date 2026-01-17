@@ -139,8 +139,6 @@ const DrawingPixel = memo(({
       onPointerEnter={onPointerEnter}
       onPointerMove={onPointerMove}
       onPointerLeave={onPointerLeave}
-      onTouchStart={onPointerDown}
-      onTouchEnd={onPointerUp}
     />
   );
 });
