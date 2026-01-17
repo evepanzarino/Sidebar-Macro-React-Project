@@ -4314,33 +4314,53 @@ const savedData = ${dataString};
                   } else if (activeDrawingTool === "bucket") {
                     paintBucket(i);
                   } else if (activeDrawingTool === "line") {
+                    console.log("=== LINE TOOL CLICK ===", { 
+                      pixelIndex: i, 
+                      lineStartPixel, 
+                      lineEndPixel,
+                      hoveredPixel,
+                      screenWidth: size.w 
+                    });
                     if (lineStartPixel === null) {
                       // First click: set start point
+                      console.log("Setting line start point:", i);
                       setLineStartPixel(i);
                       setLineEndPixel(null);
                       setHoveredPixel(i);
                     } else if (lineStartPixel === i) {
                       // Clicking same pixel - cancel
+                      console.log("Canceling line (same pixel)");
                       setLineStartPixel(null);
                       setLineEndPixel(null);
                     } else {
                       // Second click: draw line (both mobile and desktop)
+                      console.log("Drawing line from", lineStartPixel, "to", i);
                       drawLine(lineStartPixel, i);
                       setLineStartPixel(null);
                       setLineEndPixel(null);
                     }
                   } else if (activeDrawingTool === "curve") {
+                    console.log("=== CURVE TOOL CLICK ===", { 
+                      pixelIndex: i, 
+                      lineStartPixel, 
+                      curveEndPixel,
+                      hoveredPixel,
+                      screenWidth: size.w 
+                    });
                     if (lineStartPixel === null) {
                       // First click: set start point
+                      console.log("Setting curve start point:", i);
                       setLineStartPixel(i);
                       setCurveEndPixel(null);
                       setHoveredPixel(i);
                     } else if (lineStartPixel === i) {
                       // Clicking same pixel - cancel
+                      console.log("Canceling curve (same pixel)");
                       setLineStartPixel(null);
                       setCurveEndPixel(null);
                     } else {
                       // Second click: enter adjustment mode (both mobile and desktop)
+                      console.log("Setting curve endpoint:", i);
                       setCurveEndPixel(i);
                       setHoveredPixel(i);
                     }
@@ -4771,28 +4791,48 @@ const savedData = ${dataString};
                 }
                 // LINE TOOL
                 else if (activeDrawingTool === "line") {
+                  console.log("=== LINE TOOL CLICK (LAYERS) ===", { 
+                    pixelIndex: i, 
+                    lineStartPixel, 
+                    lineEndPixel,
+                    hoveredPixel,
+                    screenWidth: size.w 
+                  });
                   if (lineStartPixel === null) {
                     // First click: set start point
+                    console.log("Setting line start point:", i);
                     setLineStartPixel(i);
                     setHoveredPixel(i);
                   } else if (lineStartPixel === i) {
                     // Clicking same pixel - cancel
+                    console.log("Canceling line (same pixel)");
                     setLineStartPixel(null);
                   } else {
                     // Second click: draw line immediately (both mobile and desktop)
+                    console.log("Drawing line from", lineStartPixel, "to", i);
                     drawLine(lineStartPixel, i);
                     setLineStartPixel(null);
                   }
                 } else if (activeDrawingTool === "curve") {
+                  console.log("=== CURVE TOOL CLICK (LAYERS) ===", { 
+                    pixelIndex: i, 
+                    lineStartPixel, 
+                    curveEndPixel,
+                    hoveredPixel,
+                    screenWidth: size.w 
+                  });
                   if (lineStartPixel === null) {
                     // First click: set start point
+                    console.log("Setting curve start point:", i);
                     setLineStartPixel(i);
                     setHoveredPixel(i);
                   } else if (lineStartPixel === i) {
                     // Clicking same pixel - cancel
+                    console.log("Canceling curve (same pixel)");
                     setLineStartPixel(null);
                   } else {
                     // Second click: enter adjustment mode
+                    console.log("Setting curve endpoint:", i);
                     setCurveEndPixel(i);
                   }
                 }
@@ -5025,11 +5065,13 @@ const savedData = ${dataString};
                 // LINE TOOL - Update line preview on hover
                 else if (activeDrawingTool === "line" && lineStartPixel !== null) {
                   // Both mobile and desktop: update hover for line preview
+                  console.log("LINE PREVIEW HOVER:", { from: lineStartPixel, to: i });
                   setHoveredPixel(i);
                 }
                 // CURVE TOOL - Update curve preview on hover
                 else if (activeDrawingTool === "curve" && lineStartPixel !== null && curveEndPixel === null) {
                   // Both mobile and desktop: update hover for curve endpoint preview
+                  console.log("CURVE PREVIEW HOVER:", { from: lineStartPixel, to: i });
                   setHoveredPixel(i);
                 }
                 // MOVE TOOL - Update drag preview position
