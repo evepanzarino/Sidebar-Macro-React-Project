@@ -130,7 +130,8 @@ const DrawingPixel = memo(({
         border: borderStyle,
         boxShadow,
         opacity,
-        position: 'relative'
+        position: 'relative',
+        touchAction: activeDrawingTool === "movegroup" ? "none" : "auto"
       }}
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
@@ -138,6 +139,8 @@ const DrawingPixel = memo(({
       onPointerEnter={onPointerEnter}
       onPointerMove={onPointerMove}
       onPointerLeave={onPointerLeave}
+      onTouchStart={onPointerDown}
+      onTouchEnd={onPointerUp}
     />
   );
 });
@@ -3860,7 +3863,8 @@ const savedData = ${dataString};
             height: "100%",
             width: "100%",
             background: "transparent",
-            cursor: activeDrawingTool === "select" ? "crosshair" : "default"
+            cursor: activeDrawingTool === "select" ? "crosshair" : "default",
+            touchAction: activeDrawingTool === "movegroup" ? "none" : "auto"
           }}>
         
         {/* Selection overlay - absolute positioned inside grid to scroll with content */}
