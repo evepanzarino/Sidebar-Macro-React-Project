@@ -4447,74 +4447,6 @@ const savedData = ${dataString};
             </button>
           </div>
         </div>
-        
-        {/* BACKGROUND OPACITY CONTROL */}
-        {backgroundImage && (
-          <div style={{
-            width: "100%",
-            padding: "1vw",
-            borderTop: "0.2vw solid #ddd",
-          }}>
-            <div style={{ 
-              color: "#000000", 
-              fontSize: "1.5vw", 
-              marginBottom: "0.5vw",
-              textAlign: "center"
-            }}>
-              <b>Background Opacity</b>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={backgroundOpacity}
-              onChange={(e) => setBackgroundOpacity(parseFloat(e.target.value))}
-              style={{
-                width: "100%",
-                cursor: "pointer"
-              }}
-            />
-            <div style={{
-              textAlign: "center",
-              fontSize: "1.2vw",
-              color: "#666",
-              marginTop: "0.3vw",
-              marginBottom: "1vw"
-            }}>
-              {Math.round(backgroundOpacity * 100)}%
-            </div>
-            
-            <div style={{ 
-              color: "#000000", 
-              fontSize: "1.5vw", 
-              marginBottom: "0.5vw",
-              textAlign: "center"
-            }}>
-              <b>Background Scale</b>
-            </div>
-            <input
-              type="range"
-              min="0.1"
-              max="3"
-              step="0.1"
-              value={backgroundScale}
-              onChange={(e) => setBackgroundScale(parseFloat(e.target.value))}
-              style={{
-                width: "100%",
-                cursor: "pointer"
-              }}
-            />
-            <div style={{
-              textAlign: "center",
-              fontSize: "1.2vw",
-              color: "#666",
-              marginTop: "0.3vw"
-            }}>
-              {Math.round(backgroundScale * 100)}%
-            </div>
-          </div>
-        )}
         </div>
         
         {/* BOTTOM SECTION - Primary and Secondary Colors (Always Visible) */}
@@ -6772,6 +6704,92 @@ const savedData = ${dataString};
               Apply
             </button>
           </div>
+        </div>
+      )}
+
+      {/* BACKGROUND CONTROLS DOCKED MENU */}
+      {backgroundImage && (
+        <div
+          style={{
+            position: "fixed",
+            inset: size.w <= 1024 
+              ? (showLayersMenu ? "auto 0px 45vw 10vw" : "auto 0px 10vw 10vw") 
+              : (showLayersMenu ? "auto 35vw 0px 7vw" : "auto 0vw 0px 7vw"),
+            background: "#ffffff",
+            padding: "1vw",
+            borderTop: "0.3vw solid #000000",
+            borderBottom: "none",
+            borderLeft: "none",
+            zIndex: 1001,
+            display: "flex",
+            flexDirection: "column",
+            gap: "1vw",
+            alignItems: "center"
+          }}
+        >
+          <div style={{ 
+            color: "#000000", 
+            fontSize: "1.5vw", 
+            fontWeight: "bold",
+            textAlign: "center"
+          }}>
+            Background Controls
+          </div>
+          
+          <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "0.5vw" }}>
+            <div style={{ color: "#000000", fontSize: "1.2vw", textAlign: "center" }}>
+              Opacity: {Math.round(backgroundOpacity * 100)}%
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={backgroundOpacity}
+              onChange={(e) => setBackgroundOpacity(parseFloat(e.target.value))}
+              style={{
+                width: "100%",
+                cursor: "pointer",
+                accentColor: "#000"
+              }}
+            />
+          </div>
+          
+          <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "0.5vw" }}>
+            <div style={{ color: "#000000", fontSize: "1.2vw", textAlign: "center" }}>
+              Scale: {Math.round(backgroundScale * 100)}%
+            </div>
+            <input
+              type="range"
+              min="0.1"
+              max="3"
+              step="0.1"
+              value={backgroundScale}
+              onChange={(e) => setBackgroundScale(parseFloat(e.target.value))}
+              style={{
+                width: "100%",
+                cursor: "pointer",
+                accentColor: "#000"
+              }}
+            />
+          </div>
+          
+          <button
+            onClick={() => {
+              removeBackgroundImage();
+            }}
+            style={{
+              background: "#fff",
+              color: "#000",
+              border: "0.2vw solid #000",
+              padding: "1vw 3vw",
+              cursor: "pointer",
+              fontSize: "1.3vw",
+              fontWeight: "bold"
+            }}
+          >
+            Remove Background
+          </button>
         </div>
       )}
 
