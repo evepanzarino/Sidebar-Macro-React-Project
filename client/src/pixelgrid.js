@@ -3901,7 +3901,43 @@ const savedData = ${dataString};
                   padding: "0.5vw"
                 }}
               >
-                Save
+                Save HTML
+              </div>
+
+              <div
+                onClick={() => {
+                  setShowFileMenu(false);
+                  saveToPNG();
+                }}
+                style={{
+                  cursor: "pointer",
+                  color: "white",
+                  textAlign: "center",
+                  fontSize: size.w <= 1024 ? "1.5vw" : "1.05vw",
+                  width: size.w <= 1024 ? "10vw" : "7.5vw",
+                  borderBottom: "0.2vw solid #333",
+                  padding: "0.5vw"
+                }}
+              >
+                Save PNG
+              </div>
+
+              <div
+                onClick={() => {
+                  setShowFileMenu(false);
+                  saveToJPG();
+                }}
+                style={{
+                  cursor: "pointer",
+                  color: "white",
+                  textAlign: "center",
+                  fontSize: size.w <= 1024 ? "1.5vw" : "1.05vw",
+                  width: size.w <= 1024 ? "10vw" : "7.5vw",
+                  borderBottom: "0.2vw solid #333",
+                  padding: "0.5vw"
+                }}
+              >
+                Save JPG
               </div>
 
               <div
@@ -3920,7 +3956,7 @@ const savedData = ${dataString};
                   padding: "0.5vw"
                 }}
               >
-                Load
+                Load HTML
               </div>
               
               <div
@@ -5076,15 +5112,13 @@ const savedData = ${dataString};
                     }
                     
                     if (pickedColor) {
-                      // Left click (or touch) sets primary color
-                      if (e.button === 0 || e.type === "touchstart") {
-                        setPrimaryColor(pickedColor);
-                        setActiveTool("primary");
-                      }
-                      // Right click sets secondary color
-                      else if (e.button === 2) {
+                      // Shift+Click sets secondary color, regular click sets primary
+                      if (e.shiftKey) {
                         setSecondaryColor(pickedColor);
                         setActiveTool("secondary");
+                      } else {
+                        setPrimaryColor(pickedColor);
+                        setActiveTool("primary");
                       }
                     }
                   } else if (activeDrawingTool === "bucket") {
@@ -5247,8 +5281,13 @@ const savedData = ${dataString};
                       }
                       
                       if (pickedColor) {
-                        setPrimaryColor(pickedColor);
-                        setActiveTool("primary");
+                        if (e.shiftKey) {
+                          setSecondaryColor(pickedColor);
+                          setActiveTool("secondary");
+                        } else {
+                          setPrimaryColor(pickedColor);
+                          setActiveTool("primary");
+                        }
                       }
                     }
                   }
