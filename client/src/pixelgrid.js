@@ -171,7 +171,7 @@ export default function PixelGrid() {
   const [isDraggingSlider, setIsDraggingSlider] = useState(false);
   const [verticalScrollPosition, setVerticalScrollPosition] = useState(0);
   const [isDraggingVerticalSlider, setIsDraggingVerticalSlider] = useState(false);
-  const [activeDrawingTool, setActiveDrawingTool] = useState("pencil"); // "pencil", "eraser", "line", "curve", "bucket", "select", "movegroup"
+  const [activeDrawingTool, setActiveDrawingTool] = useState("pencil"); // "pencil", "eraser", "line", "curve", "bucket", "select", "movegroup", "eyedropper"
   const [lineStartPixel, setLineStartPixel] = useState(null); // For line/curve tool: first click position
   const [lineEndPixel, setLineEndPixel] = useState(null); // For line tool apply/preview
   const [curveEndPixel, setCurveEndPixel] = useState(null); // For curve tool adjustment mode
@@ -1048,12 +1048,51 @@ export default function PixelGrid() {
       });
     } else {
       // No active layer - erase from base pixelColors
-      setPixelColors((prev) => {
-        if (prev[index] === null) return prev; // Already erased
-        const copy = [...prev];
-        copy[index] = null; // Clear the pixel
-        return copy;
-      });
+      const pixelGroup = pixelGroups[index];
+      if (pixelGroup) {
+        // Pixel belongs to a layer - erase from that layer
+        setGroups(prevGroups => {
+          const updated = prevGroups.map(g => {
+            if (g.name === pixelGroup.group) {
+              const newPixels = { ...g.pixels };
+              delete newPixels[index];
+              return Object.freeze({ ...g, pixels: Object.freeze(newPixels) });
+            }
+            return g;
+          });
+          
+          // Save to localStorage
+          try {
+            const frozenGroups = updated.filter(g => g.name !== "__selected__").map(g => ({
+              name: g.name,
+              zIndex: g.zIndex,
+              pixels: { ...g.pixels },
+              locked: g.locked,
+              originalSelectionArea: g.originalSelectionArea || []
+            }));
+            localStorage.setItem("pixelgrid_groups", JSON.stringify(frozenGroups));
+          } catch (error) {
+            console.error("Failed to save to localStorage:", error);
+          }
+          
+          return updated;
+        });
+        
+        // Remove from pixelGroups tracking
+        setPixelGroups(prevPixelGroups => {
+          const newPixelGroups = { ...prevPixelGroups };
+          delete newPixelGroups[index];
+          return newPixelGroups;
+        });
+      } else {
+        // Erase from base pixelColors
+        setPixelColors((prev) => {
+          if (prev[index] === null) return prev; // Already erased
+          const copy = [...prev];
+          copy[index] = null; // Clear the pixel
+          return copy;
+        });
+      }
     }
   }
 
@@ -1061,7 +1100,7 @@ export default function PixelGrid() {
     // Only allow painting with drawing tools (pencil, bucket, line, curve)
     const isDrawingTool = ["pencil", "bucket", "line", "curve"].includes(activeDrawingTool);
     if (!isDrawingTool) {
-      return; // Don't paint if using select/movegroup/eraser tools
+      return; // Don't paint if using select/movegroup/eraser/eyedropper tools
     }
     
     // If there's an active group, paint into the layer's pixels
@@ -3055,6 +3094,118 @@ export default function PixelGrid() {
     console.log("moveSelectedPixels complete");
   }
 
+  function saveToPNG() {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const pixelSize = 10; // Each pixel will be 10x10 in the exported image
+    
+    canvas.width = cols * pixelSize;
+    canvas.height = rows * pixelSize;
+    
+    // Fill with white background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Create a combined view of all pixels (layers + base)
+    const finalPixels = new Array(pixelColors.length).fill(null);
+    
+    // First, add base pixels
+    pixelColors.forEach((color, i) => {
+      if (color && !pixelGroups[i]) {
+        finalPixels[i] = color;
+      }
+    });
+    
+    // Then, layer pixels by zIndex (lowest to highest)
+    const sortedGroups = [...groups]
+      .filter(g => g.name !== "__selected__")
+      .sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+    
+    sortedGroups.forEach(group => {
+      Object.entries(group.pixels || {}).forEach(([idx, color]) => {
+        if (color) {
+          finalPixels[parseInt(idx)] = color;
+        }
+      });
+    });
+    
+    // Draw pixels
+    finalPixels.forEach((color, i) => {
+      if (color) {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        ctx.fillStyle = color;
+        ctx.fillRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);
+      }
+    });
+    
+    // Download
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'pixel-art.png';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  function saveToJPG() {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const pixelSize = 10; // Each pixel will be 10x10 in the exported image
+    
+    canvas.width = cols * pixelSize;
+    canvas.height = rows * pixelSize;
+    
+    // Fill with white background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Create a combined view of all pixels (layers + base)
+    const finalPixels = new Array(pixelColors.length).fill(null);
+    
+    // First, add base pixels
+    pixelColors.forEach((color, i) => {
+      if (color && !pixelGroups[i]) {
+        finalPixels[i] = color;
+      }
+    });
+    
+    // Then, layer pixels by zIndex (lowest to highest)
+    const sortedGroups = [...groups]
+      .filter(g => g.name !== "__selected__")
+      .sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+    
+    sortedGroups.forEach(group => {
+      Object.entries(group.pixels || {}).forEach(([idx, color]) => {
+        if (color) {
+          finalPixels[parseInt(idx)] = color;
+        }
+      });
+    });
+    
+    // Draw pixels
+    finalPixels.forEach((color, i) => {
+      if (color) {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        ctx.fillStyle = color;
+        ctx.fillRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);
+      }
+    });
+    
+    // Download as JPG
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'pixel-art.jpg';
+      a.click();
+      URL.revokeObjectURL(url);
+    }, 'image/jpeg', 0.95);
+  }
+
   function saveToHTML() {
     const data = {
       pixelColors: pixelColors,
@@ -4136,6 +4287,31 @@ const savedData = ${dataString};
               <i className="fas fa-fill-drip"></i>
             </button>
             
+            {/* Eyedropper Tool */}
+            <button
+              onClick={() => {
+                setActiveDrawingTool("eyedropper");
+                setViewMode("drawing");
+                setLineStartPixel(null);
+              }}
+              style={{
+                width: size.w <= 1024 ? "8vw" : "3vw",
+                height: size.w <= 1024 ? "8vw" : "3vw",
+                background: activeDrawingTool === "eyedropper" ? "#000" : "#fff",
+                color: activeDrawingTool === "eyedropper" ? "white" : "black",
+                border: "0.15vw solid #000000",
+                padding: "0",
+                cursor: "pointer",
+                fontSize: size.w <= 1024 ? "4vw" : "1.2vw",
+                fontWeight: "bold",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <i className="fas fa-eye-dropper"></i>
+            </button>
+            
             {/* Move Tool */}
             <button
               onClick={() => {
@@ -4338,6 +4514,48 @@ const savedData = ${dataString};
                   : "none",
               }}
             />
+          </div>
+          
+          {/* EXPORT BUTTONS */}
+          <div style={{
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.5vw",
+            padding: "0.5vw",
+            borderTop: "0.1vw solid #ddd"
+          }}>
+            <div style={{ color: "#000000", fontSize: "1.2vw", textAlign: "center" }}><b>Export</b></div>
+            <button
+              onClick={saveToPNG}
+              style={{
+                width: "100%",
+                padding: "0.5vw",
+                background: "#000",
+                color: "white",
+                border: "0.15vw solid #000",
+                cursor: "pointer",
+                fontSize: "1vw",
+                fontWeight: "bold"
+              }}
+            >
+              Save PNG
+            </button>
+            <button
+              onClick={saveToJPG}
+              style={{
+                width: "100%",
+                padding: "0.5vw",
+                background: "#000",
+                color: "white",
+                border: "0.15vw solid #000",
+                cursor: "pointer",
+                fontSize: "1vw",
+                fontWeight: "bold"
+              }}
+            >
+              Save JPG
+            </button>
           </div>
         </div>
       </div>
@@ -4841,6 +5059,33 @@ const savedData = ${dataString};
                   } else if (activeDrawingTool === "eraser") {
                     setIsDrawing(true);
                     erasePixel(e, i);
+                  } else if (activeDrawingTool === "eyedropper") {
+                    // Pick color from clicked pixel
+                    const pixelGroup = pixelGroups[i];
+                    let pickedColor = null;
+                    
+                    if (pixelGroup) {
+                      // Get color from layer
+                      const layer = groups.find(g => g.name === pixelGroup.group);
+                      if (layer && layer.pixels && layer.pixels[i]) {
+                        pickedColor = layer.pixels[i];
+                      }
+                    } else {
+                      // Get color from base pixels
+                      pickedColor = pixelColors[i];
+                    }
+                    
+                    if (pickedColor) {
+                      // Left click (or touch) sets primary color
+                      if (e.button === 0 || e.type === "touchstart") {
+                        setColor(pickedColor);
+                        setPrimaryColor(pickedColor);
+                      }
+                      // Right click sets secondary color
+                      else if (e.button === 2) {
+                        setSecondaryColor(pickedColor);
+                      }
+                    }
                   } else if (activeDrawingTool === "bucket") {
                     paintBucket(i);
                   } else if (activeDrawingTool === "line") {
@@ -4985,6 +5230,26 @@ const savedData = ${dataString};
                     paintPixel(null, i);
                   } else if (isDrawing && activeDrawingTool === "eraser") {
                     erasePixel(null, i);
+                  } else if (activeDrawingTool === "eyedropper") {
+                    // Pick color on pointer move when drawing (dragging)
+                    if (isDrawing) {
+                      const pixelGroup = pixelGroups[i];
+                      let pickedColor = null;
+                      
+                      if (pixelGroup) {
+                        const layer = groups.find(g => g.name === pixelGroup.group);
+                        if (layer && layer.pixels && layer.pixels[i]) {
+                          pickedColor = layer.pixels[i];
+                        }
+                      } else {
+                        pickedColor = pixelColors[i];
+                      }
+                      
+                      if (pickedColor) {
+                        setColor(pickedColor);
+                        setPrimaryColor(pickedColor);
+                      }
+                    }
                   }
                   
                   // Note: groupDragCurrent for selected pixels move is now handled by global pointermove handler
