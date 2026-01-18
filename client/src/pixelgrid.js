@@ -4551,48 +4551,6 @@ const savedData = ${dataString};
               }}
             />
           </div>
-          
-          {/* EXPORT BUTTONS */}
-          <div style={{
-            width: "100%",
-            display: "flex",
-            flexDirection: "column",
-            gap: "0.5vw",
-            padding: "0.5vw",
-            borderTop: "0.1vw solid #ddd"
-          }}>
-            <div style={{ color: "#000000", fontSize: "1.2vw", textAlign: "center" }}><b>Export</b></div>
-            <button
-              onClick={saveToPNG}
-              style={{
-                width: "100%",
-                padding: "0.5vw",
-                background: "#000",
-                color: "white",
-                border: "0.15vw solid #000",
-                cursor: "pointer",
-                fontSize: "1vw",
-                fontWeight: "bold"
-              }}
-            >
-              Save PNG
-            </button>
-            <button
-              onClick={saveToJPG}
-              style={{
-                width: "100%",
-                padding: "0.5vw",
-                background: "#000",
-                color: "white",
-                border: "0.15vw solid #000",
-                cursor: "pointer",
-                fontSize: "1vw",
-                fontWeight: "bold"
-              }}
-            >
-              Save JPG
-            </button>
-          </div>
         </div>
       </div>
 
@@ -5112,13 +5070,11 @@ const savedData = ${dataString};
                     }
                     
                     if (pickedColor) {
-                      // Shift+Click sets secondary color, regular click sets primary
-                      if (e.shiftKey) {
+                      // Set color based on active tool (primary or secondary)
+                      if (activeTool === "secondary") {
                         setSecondaryColor(pickedColor);
-                        setActiveTool("secondary");
                       } else {
                         setPrimaryColor(pickedColor);
-                        setActiveTool("primary");
                       }
                     }
                   } else if (activeDrawingTool === "bucket") {
@@ -5281,9 +5237,12 @@ const savedData = ${dataString};
                       }
                       
                       if (pickedColor) {
-                        // During drag, always set primary color
-                        setPrimaryColor(pickedColor);
-                        setActiveTool("primary");
+                        // Set color based on active tool (primary or secondary)
+                        if (activeTool === "secondary") {
+                          setSecondaryColor(pickedColor);
+                        } else {
+                          setPrimaryColor(pickedColor);
+                        }
                       }
                     }
                   }
